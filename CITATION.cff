@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+title: "geomGMD: Translation- and Rotation-Invariant Geometric Graph Mapping Distance for Building Footprint Similarity"
+type: software
+authors:
+  - family-names: "Bülte"
+    given-names: "Laura"
+  - family-names: "Naumann"
+    given-names: "Alexander"
+  - family-names: "Schlurmann"
+    given-names: "Johanna"
+  - family-names: "Haunert"
+    given-names: "Jan-Henrik"
+  - family-names: "Mutzel"
+    given-names: "Petra"
+repository-code: "https://github.com/lbuelte/geomGMD"
