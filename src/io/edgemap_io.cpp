@@ -111,7 +111,7 @@ std::optional<json> find_graph_mapping_from_file(
 }
 
 
-std::optional<double> find_modGED_value_from_file(
+std::optional<double> find_geomGMD_value_from_file(
         const std::string& filename,
         GraphID g_id,
         GraphID h_id)
@@ -336,9 +336,9 @@ void write_edge_mapping_svg(
     // Optimality and distance
     std::string optimality = legend_info.map_is_optimal ? "optimal map" : "best found map";
     std::string distance_text = [&](){ 
-        if (legend_info.modGED_dist.has_value()){
+        if (legend_info.geomGMD_dist.has_value()){
             std::ostringstream ss;
-            ss << std::fixed << std::setprecision(3) << legend_info.modGED_dist.value();
+            ss << std::fixed << std::setprecision(3) << legend_info.geomGMD_dist.value();
             std::string distance_str = ss.str();
             return "distance: " + distance_str;
         }

@@ -6,7 +6,7 @@
 #include "json/json.hpp"
 #include "geometric_graph.h"
 #include "config.h"
-#include "modGED.h"
+#include "geomGMDSolver.h"
 
 #include <optional>
 
@@ -50,7 +50,7 @@ struct SVGLegendInfo {
     GraphID g;
     GraphID h;
     GurobiParams const &params;
-    std::optional<double> modGED_dist = std::nullopt;
+    std::optional<double> geomGMD_dist = std::nullopt;
 };
 
 std::optional<json> find_graph_mapping_from_file(
@@ -59,7 +59,7 @@ std::optional<json> find_graph_mapping_from_file(
         GraphID h_id,
         bool &g_before_h);
 
-std::optional<double> find_modGED_value_from_file(
+std::optional<double> find_geomGMD_value_from_file(
         const std::string& filename,
         GraphID g_id,
         GraphID h_id);

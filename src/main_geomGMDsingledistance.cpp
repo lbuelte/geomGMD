@@ -8,7 +8,7 @@
 #include "io/config.h"
 #include "io/edgemap_io.h"
 
-#include "modGED.h"
+#include "geomGMDSolver.h"
 
 
 int main(int argc, char* argv[]) 
@@ -64,8 +64,8 @@ int main(int argc, char* argv[])
 
     auto begin = std::chrono::high_resolution_clock::now();
     
-    modGEDForiSolver modGED(geometricgraphs[g], geometricgraphs[h], gurobi_params);
-    auto dist_result = evaluate_distance_result(modGED.run_optimization());
+    GeomGMDForiSolver solver(geometricgraphs[g], geometricgraphs[h], gurobi_params);
+    auto dist_result = evaluate_distance_result(solver.run_optimization());
 
     if (!dist_result.has_value()) {
         throw std::runtime_error ("Error! Distance between graphs " + std::to_string(g) +
@@ -75,8 +75,8 @@ int main(int argc, char* argv[])
             output_path 
             / ("nodemap_" + std::to_string(H.polygon_id()) + "_" + std::to_string(G.polygon_id()) + ".svg");
     
-    auto nodemap = modGED.return_node_map_json();  
-    modGED.print_objective_breakdown();
+    auto nodemap = solver.return_node_map_json();  
+    solver.print_objective_breakdown();
     bool is_optimal_mapping = nodemap["optimal"];
     if (H <= G){
         assert(nodemap["G_id"] == g and nodemap["H_id"] == h);

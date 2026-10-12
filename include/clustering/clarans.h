@@ -2,7 +2,7 @@
 #define POLYGONCLUSTERING_CLARANS_H
 
 #include "clustering_base.h"
-#include "modGED.h"
+#include "geomGMDSolver.h"
 
 #include <random>
 
@@ -46,7 +46,7 @@ private:
     //compute entry of distance matrix
     std::optional<IntervalDistance> compute_distance_matrix_entry(GraphID const g, GraphID const h);
 
-    // Parameters for modGED objective function
+    // Parameters for geomGMD objective function
     const GurobiParams _gurobi_params;
 
     //Output context for writing output

@@ -57,7 +57,7 @@ void OutputContext::write_interval_distance_matrix(const std::vector<std::vector
     }    
 }
 
-void OutputContext::write_computation_info_row(const modGEDForiSolver &solver, IntervalDistance dist)
+void OutputContext::write_computation_info_row(const GeomGMDForiSolver &solver, IntervalDistance dist)
 {
     if (not pairwise_computation_info_writer.has_value()){
         std::cerr << "Error: write_interval_matrix is not set in config, but function write_interval_distance_matrix was called. Ignoring this call." << std::endl;

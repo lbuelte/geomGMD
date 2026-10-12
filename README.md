@@ -42,7 +42,7 @@ cmake --build build/release -j 4
 
 For a debug build, use `-DCMAKE_BUILD_TYPE=Debug` and e.g. `build/debug`.
 
-This creates the executables `SingleDistance`, `modGEDComputations`, `PolygonClustering` and `PlotNodemaps` in the build folder.
+This creates the executables `geomGMD_SingleDistanceComputation`, `geomGMD_FullDatasetComputations`, `PolygonClustering` and `PlotNodemaps` in the build folder.
 
 ## Input format
 
@@ -93,7 +93,7 @@ All parameters and their defaults are defined in `include/io/config.h`.
 ### Single geomGMD computation
 
 ```
-./build/release/SingleDistance <g> <h> [config_dist.toml]
+./build/release/geomGMD_SingleDistanceComputation <g> <h> [config_dist.toml]
 ```
 
 Computes geomGMD between the graphs with indices `g` and `h` and prints the objective to the console.
@@ -101,7 +101,7 @@ Computes geomGMD between the graphs with indices `g` and `h` and prints the obje
 ### Distance matrix
 
 ```
-./build/release/modGEDComputations [config_dist.toml]
+./build/release/geomGMD_FullDatasetComputations [config_dist.toml]
 ```
 
 Computes geomGMD for all pairs of graphs in the dataset (or the subset given by `starting_instance` and `num_instances`), in parallel with `num_threads` threads. The output folder contains:
@@ -116,7 +116,7 @@ Computes geomGMD for all pairs of graphs in the dataset (or the subset given by 
 ./build/release/PlotNodemaps [config_dist.toml]
 ```
 
-Reads the output of a `modGEDComputations` run (same `dataset`, `output_path` and `run_name`) and writes an SVG of each mapping to the `nodemaps/` subfolder.
+Reads the output of a `geomGMD_FullDatasetComputations` run (same `dataset`, `output_path` and `run_name`) and writes an SVG of each mapping to the `nodemaps/` subfolder.
 
 ### Clustering
 

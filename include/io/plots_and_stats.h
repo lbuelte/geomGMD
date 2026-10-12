@@ -3,7 +3,7 @@
 
 #include <gurobi_c++.h>
 
-#include "modGED.h"
+#include "geomGMDSolver.h"
 
 #include <filesystem>
 #include <regex>

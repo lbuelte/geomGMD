@@ -11,7 +11,7 @@
 #include "io/csv_io.h"
 #include "io/output_context.h"
 
-#include "modGED.h"
+#include "geomGMDSolver.h"
 
 
 int main(int argc, char* argv[]) {   
@@ -152,10 +152,10 @@ int main(int argc, char* argv[]) {
                 }
 
                 for (const auto& p : task.pairs) {
-                    modGEDForiSolver modGED(geometricgraphs[p.i], geometricgraphs[p.j], gurobi_params);
+                    GeomGMDForiSolver solver(geometricgraphs[p.i], geometricgraphs[p.j], gurobi_params);
                     auto dist_result =
                         evaluate_distance_result(
-                            modGED.run_optimization()
+                            solver.run_optimization()
                         );
 
                     if (!dist_result.has_value()) {
@@ -163,8 +163,8 @@ int main(int argc, char* argv[]) {
                                 << p.i << " and " << p.j << " could not be computed!\n";
                         continue;
                     }
-                    out.write_computation_info_row(modGED, dist_result.value());
-                    out.write_nodemap(modGED.return_node_map_json());
+                    out.write_computation_info_row(solver, dist_result.value());
+                    out.write_nodemap(solver.return_node_map_json());
 
                     distance_matrix[p.i][p.j] = dist_result.value();
                     distance_matrix[p.j][p.i] = dist_result.value();

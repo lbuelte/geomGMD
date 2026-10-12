@@ -1,4 +1,4 @@
-#include "modGED.h"
+#include "geomGMDSolver.h"
 
 #include "io/logger.h"  // for logging the gap statistics
 #include "geometry_helpers.h"
@@ -117,7 +117,7 @@ GRBLinExpr compute_objective_cost_FORI(GeometricGraph const &G, GeometricGraph c
 // Print the solution of the ILP model, i.e., all variables with non-zero value.
 void print_solution(GRBModel const &model, std::vector<std::vector<GRBVar>> const &x, 
         std::vector<std::vector<GRBVar>> const &y, std::vector<std::vector<GRBVar>> const &p, double gamma){
-    std::cout << "Optimum modGED value: " << model.get(GRB_DoubleAttr_ObjVal) + gamma <<" with objective value " 
+    std::cout << "Optimum geomGMD value: " << model.get(GRB_DoubleAttr_ObjVal) + gamma <<" with objective value " 
                     << model.get(GRB_DoubleAttr_ObjVal) << " and constant " << gamma << std::endl;
     auto n_g = x.size();
     auto n_h = x.front().size();
@@ -199,7 +199,7 @@ std::optional<IntervalDistance> evaluate_distance_result(const DistanceResult& r
     }, res);
 }
 
- modGEDForiSolver::modGEDForiSolver(GeometricGraph const &G_, 
+ GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_, 
                                     GeometricGraph const &H_, 
                                     GurobiParams const &gurobi_params,
                                     std::optional<double> cutoff)
@@ -215,7 +215,7 @@ std::optional<IntervalDistance> evaluate_distance_result(const DistanceResult& r
     , model(env)
 {
     env.set("OutputFlag", "0");
-    model.set(GRB_StringAttr_ModelName,  "modGED_FORI");
+    model.set(GRB_StringAttr_ModelName,  "geomGMD_FORI");
     model.set(GRB_IntParam_Threads, 1);
     model.set(GRB_DoubleParam_TimeLimit, params.timelimit_sec);
     model.set(GRB_IntParam_Seed, 1);
@@ -230,7 +230,7 @@ std::optional<IntervalDistance> evaluate_distance_result(const DistanceResult& r
     }
 }
 
-DistanceResult modGEDForiSolver::run_optimization()
+DistanceResult GeomGMDForiSolver::run_optimization()
 {
     try{
         auto begin = std::chrono::high_resolution_clock::now();
@@ -309,7 +309,7 @@ DistanceResult modGEDForiSolver::run_optimization()
     }
 }
 
-NodeMap modGEDForiSolver::return_node_map()
+NodeMap GeomGMDForiSolver::return_node_map()
 {
     if (model.get(GRB_IntAttr_SolCount) == 0){
         std::cout << "Error: Node map could not be returned, since no solution was computed." << std::endl;
@@ -346,13 +346,13 @@ NodeMap modGEDForiSolver::return_node_map()
     return NodeMap(optimal, pairs, G, H);
 }
 
-nlohmann::json modGEDForiSolver::return_node_map_json()
+nlohmann::json GeomGMDForiSolver::return_node_map_json()
 {
     auto map = return_node_map();
     return map.to_json(G.graph_id(), H.graph_id());
 }
 
-void modGEDForiSolver::print_objective_breakdown() {
+void GeomGMDForiSolver::print_objective_breakdown() {
     GRBLinExpr edge_length_expr = compute_edge_length_objective_FORI(G, H, params, z);
     GRBLinExpr angle_expr = compute_angle_diff_objective(params, directed_paths_G, directed_paths_H, p);
     double gamma_val = compute_gamma(G, H, params.cost_factor_deletion_insertion);
@@ -363,7 +363,7 @@ void modGEDForiSolver::print_objective_breakdown() {
     std::cout << "Total ILP objective: " << model.get(GRB_DoubleAttr_ObjVal) << std::endl;
 }
 
-modGEDForiSolver::SolverObjectives modGEDForiSolver::return_solver_objectives(){
+GeomGMDForiSolver::SolverObjectives GeomGMDForiSolver::return_solver_objectives(){
     GRBLinExpr edge_length_expr = compute_edge_length_objective_FORI(G, H, params, z);
     GRBLinExpr angle_expr = compute_angle_diff_objective(params, directed_paths_G, directed_paths_H, p);
     double gamma_val = compute_gamma(G, H, params.cost_factor_deletion_insertion);
@@ -371,7 +371,7 @@ modGEDForiSolver::SolverObjectives modGEDForiSolver::return_solver_objectives(){
     return {model.get(GRB_DoubleAttr_ObjVal), edge_length_expr.getValue() + gamma_val, angle_expr.getValue()};
 }
 
-void modGEDForiSolver::create_node_and_edge_variables()
+void GeomGMDForiSolver::create_node_and_edge_variables()
 {
     // Adding binary node mapping variables with no contribution to objective
     x = std::vector<std::vector<GRBVar>>(ng, std::vector<GRBVar>(nh));
@@ -407,7 +407,7 @@ void modGEDForiSolver::create_node_and_edge_variables()
         }
 }
 
-void modGEDForiSolver::create_path_variables()
+void GeomGMDForiSolver::create_path_variables()
 {
     // Adding binary path mapping variables, here without contribution to objective.
     p = std::vector<std::vector<GRBVar>>(directed_paths_G.size(), std::vector<GRBVar>(directed_paths_H.size()));
@@ -421,7 +421,7 @@ void modGEDForiSolver::create_path_variables()
     }
 }
 
-void modGEDForiSolver::add_node_mapping_constraints()
+void GeomGMDForiSolver::add_node_mapping_constraints()
 {
     // Add constraints ensuring a valid node mapping, i.e., 
     // each node in G is mapped to at most one node in H and vice versa.
@@ -433,7 +433,7 @@ void modGEDForiSolver::add_node_mapping_constraints()
     }
 }
 
-void modGEDForiSolver::add_node_edge_linking_constraints()
+void GeomGMDForiSolver::add_node_edge_linking_constraints()
 {
     // Add topological constraints linking node mapping variables to edge mapping variables.
     for (auto const &edgeG : G.edges()){    
@@ -491,7 +491,7 @@ void modGEDForiSolver::add_node_edge_linking_constraints()
     }
 }
 
-void modGEDForiSolver::add_edge_path_linking_constraints()
+void GeomGMDForiSolver::add_edge_path_linking_constraints()
 {
     for (size_t a = 0; a < directed_paths_G.size(); a++) {
         auto [i, j, h, alphaijh] = directed_paths_G[a];
@@ -510,7 +510,7 @@ void modGEDForiSolver::add_edge_path_linking_constraints()
     }
 }
 
-void modGEDForiSolver::add_cyclic_order_constraints()
+void GeomGMDForiSolver::add_cyclic_order_constraints()
 {
     
     for (size_t a = 0; a < directed_paths_G.size(); a++) {

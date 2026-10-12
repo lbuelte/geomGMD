@@ -2,7 +2,7 @@
 #define POLYGONCLUSTERING_PAM_H
 
 #include "clustering_base.h"
-#include "modGED.h"
+#include "geomGMDSolver.h"
 
 class PAM_Clustering {
 public:
@@ -44,7 +44,7 @@ private:
     //batch size per job in matrix parallelization (one item is one matrix entry)
     const size_t _BATCH_SIZE_MATRIX = 10;
 
-    //Parameters for modGED objective function
+    //Parameters for geomGMD objective function
     const GurobiParams _gurobi_params;
 
     //Output context for writing output

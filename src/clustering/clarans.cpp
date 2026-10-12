@@ -155,9 +155,9 @@ std::optional<IntervalDistance> CLARANS_Clustering::compute_distance_matrix_entr
         _distance_matrix[i][j] = ExactDistance{0.0};
         return _distance_matrix[i][j];
     }    
-    modGEDForiSolver modGED(*_graphs[i], *_graphs[j], _gurobi_params);  
+    GeomGMDForiSolver solver(*_graphs[i], *_graphs[j], _gurobi_params);  
     auto dist_result = evaluate_distance_result(
-            modGED.run_optimization());
+            solver.run_optimization());
     if (!dist_result.has_value()) {
         std::cout << "Error! Distance between graphs "
                     << i << " and " << j << " could not be computed!\n";
@@ -165,7 +165,7 @@ std::optional<IntervalDistance> CLARANS_Clustering::compute_distance_matrix_entr
     }
     _distance_matrix[i][j] = dist_result.value();
     _distance_matrix[j][i] = dist_result.value();
-    _output_context.write_nodemap(modGED.return_node_map_json());
+    _output_context.write_nodemap(solver.return_node_map_json());
     return _distance_matrix[i][j];
 }
 

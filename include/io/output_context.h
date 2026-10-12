@@ -4,7 +4,7 @@
 #define POLYGONCLUSTERING_OUTPUT_CONTEXT_H
 
 #include "result_writer.h"
-#include "modGED.h"
+#include "geomGMDSolver.h"
 
 inline std::filesystem::path create_path(const std::filesystem::path& base_path){
     std::filesystem::create_directories(base_path);
@@ -58,7 +58,7 @@ struct OutputContext {
 
     void write_interval_distance_matrix(const std::vector<std::vector<IntervalDistance>>& matrix);
 
-    void write_computation_info_row(const modGEDForiSolver &solver, IntervalDistance dist);
+    void write_computation_info_row(const GeomGMDForiSolver &solver, IntervalDistance dist);
 
     std::filesystem::path make_path(const std::string& name) const {
         return output_path / name;

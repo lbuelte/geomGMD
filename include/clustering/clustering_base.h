@@ -4,7 +4,7 @@
 #include "va_graph.h"
 #include "io/config.h"
 #include "io/output_context.h"
-#include "modGED.h"
+#include "geomGMDSolver.h"
 
 #include <thread>
 #include <vector>

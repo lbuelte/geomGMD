@@ -52,7 +52,7 @@ private:
     //Store distance matrix entries to reuse across different samples
     std::vector<std::vector<IntervalDistance>> _distance_matrix;
 
-    //Parameters for modGED objective function
+    //Parameters for geomGMD objective function
     const GurobiParams _gurobi_params;
 
     //Output context for writing output

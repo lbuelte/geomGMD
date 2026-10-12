@@ -1,5 +1,5 @@
-#ifndef MODGED_H
-#define MODGED_H
+#ifndef GEOMGMD_SOLVER_H
+#define GEOMGMD_SOLVER_H
 
 #include "geometric_graph.h"
 #include "geometry_helpers.h"
@@ -59,7 +59,7 @@ struct GurobiParams {
 
 
 
-// Result of modGED computations (return value of Gurobi) may vary depending on solver behaviour
+// Result of geomGMD computations (return value of Gurobi) may vary depending on solver behaviour
 
 // ExactDistance is returned when Gurobi finds an optimum solution
 struct ExactDistance {
@@ -123,13 +123,13 @@ struct SolverException {
     int error_code;
 };
 
-// Default is never returned by modGED computations. This is an option to verify that Gurobi ran at all.
+// Default is never returned by geomGMD computations. This is an option to verify that Gurobi ran at all.
 struct Default {};
 
-// Return type for modGED computations. 
+// Return type for geomGMD computations. 
 using DistanceResult = std::variant<ExactDistance, IntervalDistance, CutoffHit, Infeasible, SolverError, SolverException, Default>;
 
-// This function evaluates whether modGED computation returned a value type (ExactDistance or IntervalDistance), and if so, returns it. 
+// This function evaluates whether geomGMD computation returned a value type (ExactDistance or IntervalDistance), and if so, returns it. 
 // Otherwise, nullopt is returned and for Infeasible, SolverError, SolverException and Default an error message is printed.
 std::optional<IntervalDistance> evaluate_distance_result(DistanceResult const &res);
 
@@ -162,16 +162,16 @@ struct DirectedPathLength2 {
     double angle = 0.0;
 };
 
-// The class modGEDForiSolver implements the ILP formulation FORI, as described in the paper 
+// The class GeomGMDForiSolver implements the ILP formulation FORI, as described in the paper 
 // "Enhancing Graph Edit Distance Computation: Stronger and Orientation-based ILP Formulations"
 // by Andrea D'Ascenzo, Julian Meffert, Petra Mutzel and Fabrizio Rossi (2025).
 // The edge edit costs are given by edge length differences. 
 // There is an option to consider angle differences of mapped edges in the objective.
 // There are options to enforce the cyclic order given in the GeometricGraph.
 // Options are set in the config.
-class modGEDForiSolver {
+class GeomGMDForiSolver {
 public:
-    modGEDForiSolver(GeometricGraph const &G_, 
+    GeomGMDForiSolver(GeometricGraph const &G_, 
                      GeometricGraph const &H_, 
                      GurobiParams const &gurobi_params,
                      std::optional<double> cutoff = std::nullopt);
@@ -242,4 +242,4 @@ private:
     void add_cyclic_order_constraints();
 };
 
-#endif // MODGED_H
+#endif // GEOMGMD_SOLVER_H

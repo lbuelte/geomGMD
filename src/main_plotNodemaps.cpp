@@ -4,7 +4,7 @@
 
 #include "io/config.h"
 #include "io/edgemap_io.h"
-#include "modGED.h"
+#include "geomGMDSolver.h"
 
 int main(int argc, char* argv[]) {   
 
@@ -52,19 +52,19 @@ int main(int argc, char* argv[]) {
 
             bool g_before_h;
             auto json_opt = find_graph_mapping_from_file(nodemap_input_file, g, h, g_before_h);
-            auto modGED_dist = find_modGED_value_from_file(distance_matrix_input_file, g, h);
+            auto geomGMD_dist = find_geomGMD_value_from_file(distance_matrix_input_file, g, h);
             if (json_opt.has_value()){
                 bool is_optimal_mapping = json_opt.value()["optimal"];
                 if (g_before_h){
                     EdgeMap edgemap(json_opt.value(), geometricgraphs[g], geometricgraphs[h]);
-                    SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, g, h, gurobi_params, modGED_dist};
+                    SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, g, h, gurobi_params, geomGMD_dist};
                     write_edge_mapping_svg(geometricgraphs[g], geometricgraphs[h], edgemap, svg_info,
                                       nodemap_output_path.string() + "/nodemap_" 
                                       + std::to_string(geometricgraphs[g].polygon_id()) + "_" 
                                       + std::to_string(geometricgraphs[h].polygon_id()) + ".svg");
                 } else {
                     EdgeMap edgemap(json_opt.value(), geometricgraphs[h], geometricgraphs[g]);
-                    SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, h, g, gurobi_params, modGED_dist};
+                    SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, h, g, gurobi_params, geomGMD_dist};
                     write_edge_mapping_svg(geometricgraphs[h], geometricgraphs[g], edgemap, svg_info,
                                       nodemap_output_path.string() + "/nodemap_" 
                                       + std::to_string(geometricgraphs[h].polygon_id()) + "_" 
