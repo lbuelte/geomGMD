@@ -1,0 +1,51 @@
+[Gurobi]
+timelimit_sec = 10
+# enforce_cyclic_order = true
+# consider_angle_objective = false
+# cost_factor_deletion_insertion = 1.0
+# cost_factor_length_difference = 1.0
+# cost_factor_angle_difference = 2.0
+# angle_type = "signed"
+
+[PAM]
+num_threads_matrix = 8
+
+[Clara]
+# sample_size = 80
+sample_fraction = 0.2
+min_sample_size = 50
+num_samples = 5
+# reuse_distances = false
+num_threads_assignment = 16
+random_seeds = []
+
+[Clarans]
+# num_local = 2
+# max_neighbors = 100
+# num_threads = 16
+random_seeds_initialization = []
+# random_seed_local_search = 42
+
+[IO]
+dataset = "Zentrum-Rheinviertel"
+input_path = "../input/Bonn/Verwaltungsdistrikte/"
+# global_log_file = "log.txt"
+output_path = "../output/Bonn/Verwaltungsdistrikte/"
+# run_name = "
+# generate_plots = false
+# write_distance_matrix = false
+# write_nodemaps = false
+# num_instances = 100
+# starting_instance = 0
+
+[Clustering]
+k = 10
+# mode = "diminishing_va"
+# starting_va = 1.5
+# va_diff = 0.5
+# max_va_depth = 3
+# fixed_k = false
+# max_iterations = 10
+# single_run_va = 1.0
+# clustering_algo = "PAM"
+# parallel = false

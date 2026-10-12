@@ -1,0 +1,25 @@
+[Gurobi]
+timelimit_sec = 300
+# enforce_cyclic_order = true
+# consider_angle_objective = false
+cost_factor_deletion_insertion = 1.0
+cost_factor_length_difference = 1.0
+cost_factor_angle_difference = 1.0
+# angle_type = "signed"
+
+[IO]
+dataset = "Pennenfeld"
+input_path = "../input/Bonn/Verwaltungsdistrikte/"
+# global_log_file = "../Zentrum-Rheinviertel.log"
+output_path = "../output/Bonn/Verwaltungsdistrikte/"
+run_name = "testing"
+# generate_plots = false
+# write_distance_matrix = false
+# write_nodemaps = false
+# num_instances = 20
+# starting_instance = 0
+
+[Parallel]
+# run_parallel = false
+num_threads = 12
+# batch_size = 20

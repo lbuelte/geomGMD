@@ -1,0 +1,68 @@
+// Created by Laura Bülte on 2026-03-30.
+
+#ifndef POLYGONCLUSTERING_OUTPUT_CONTEXT_H
+#define POLYGONCLUSTERING_OUTPUT_CONTEXT_H
+
+#include "result_writer.h"
+#include "modGED.h"
+
+inline std::filesystem::path create_path(const std::filesystem::path& base_path){
+    std::filesystem::create_directories(base_path);
+    return base_path;
+}
+
+inline std::filesystem::path prepare_file(const std::filesystem::path& dir,
+                                          const std::string& name) {
+    auto file = dir / name;
+    std::filesystem::remove(file); // does nothing if file doesn't exist
+    return file;
+}
+
+struct OutputContext {
+
+    const std::filesystem::path output_path;
+
+    std::optional<JSONWriter> nodemap_writer;
+    std::optional<CSVWriter> intervaldistance_matrix_writer;
+    std::optional<CSVWriter> pairwise_computation_info_writer;
+    // AnalysisWriters analysis;
+    // VisualizationWriters viz;
+
+    OutputContext(const std::filesystem::path& base_path, IOConfig const& config)
+        : output_path(create_path(base_path))
+        , nodemap_writer(
+            config.write_nodemaps
+                ? std::optional<JSONWriter>(prepare_file(output_path, "nodemaps.json").string())
+                : std::nullopt)
+        , intervaldistance_matrix_writer(
+            config.write_distance_matrix
+                ? std::optional<CSVWriter>(prepare_file(output_path, "intervaldistance_matrix.csv").string())
+                : std::nullopt)
+        , pairwise_computation_info_writer(
+            config.write_distance_matrix
+                ? std::optional<CSVWriter>(prepare_file(output_path, "computation_info.csv").string())
+                : std::nullopt)
+    {
+        if (pairwise_computation_info_writer.has_value()){
+            pairwise_computation_info_writer.value().write_row({"PolygonID G", "PolygonID H", "nG", "nH", "mG", "mH", "lb", "ub", "optimal", "time in ms"});
+        }
+    }
+    
+    void write_nodemap(const nlohmann::json& j) {
+        if (not nodemap_writer.has_value()){
+            std::cerr << "Error: write_nodemap is not set in config, but function write_nodemap was called. Ignoring this call." << std::endl;
+            return;
+        }
+        nodemap_writer.value().write(j);
+    }
+
+    void write_interval_distance_matrix(const std::vector<std::vector<IntervalDistance>>& matrix);
+
+    void write_computation_info_row(const modGEDForiSolver &solver, IntervalDistance dist);
+
+    std::filesystem::path make_path(const std::string& name) const {
+        return output_path / name;
+    }
+};
+
+#endif // POLYGONCLUSTERING_OUTPUT_CONTEXT_H
