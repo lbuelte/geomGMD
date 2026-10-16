@@ -1,7 +1,7 @@
-#ifndef CLUSTERING_BASE_H
-#define CLUSTERING_BASE_H
+#ifndef POLYGONCLUSTERING_BASE_H
+#define POLYGONCLUSTERING_BASE_H
 
-#include "va_graph.h"
+#include "utility/va_graph.h"
 #include "io/config.h"
 #include "io/output_context.h"
 #include "geomGMDSolver.h"
@@ -37,4 +37,4 @@ struct ClusteringInput{
 
 void read_symmetric_IntervalDistance_matrix_from_csv(std::vector<std::vector<IntervalDistance>> &matrix, const std::string& filename);
 
-#endif // CLUSTERING_BASE_H
+#endif // POLYGONCLUSTERING_BASE_H

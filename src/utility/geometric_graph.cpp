@@ -1,4 +1,4 @@
-#include "geometric_graph.h"
+#include "utility/geometric_graph.h"
 
 #include <algorithm>
 #include <cmath>

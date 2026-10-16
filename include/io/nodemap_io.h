@@ -4,7 +4,7 @@
 #define POLYGONCLUSTERING_NODEMAP_IO_H
 
 #include "json/json.hpp"
-#include "geometric_graph.h"
+#include "utility/geometric_graph.h"
 
 #include <optional>
 

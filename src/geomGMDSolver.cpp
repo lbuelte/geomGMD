@@ -1,7 +1,7 @@
 #include "geomGMDSolver.h"
 
 #include "io/logger.h"  // for logging the gap statistics
-#include "geometry_helpers.h"
+#include "utility/angle_computation.h"
 
 namespace{
 
@@ -199,7 +199,7 @@ std::optional<IntervalDistance> evaluate_distance_result(const DistanceResult& r
     }, res);
 }
 
- GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_, 
+GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_, 
                                     GeometricGraph const &H_, 
                                     GurobiParams const &gurobi_params,
                                     std::optional<double> cutoff)

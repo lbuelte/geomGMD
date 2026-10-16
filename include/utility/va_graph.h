@@ -2,10 +2,10 @@
 // Created by naumann on 11.12.25.
 //
 
-#ifndef VA_GRAPH_H
-#define VA_GRAPH_H
+#ifndef GEOMGMD_VA_GRAPH_H
+#define GEOMGMD_VA_GRAPH_H
 
-#include "geometric_graph.h"
+#include "utility/geometric_graph.h"
 
 // lightweight wrapper class to represent a graph with vanishing angles, making it simple to reduce a boost graph
 // based on vanishing angle cutoff
@@ -27,4 +27,4 @@ private:
 
 };
 
-#endif //VA_GRAPH_H
+#endif //GEOMGMD_VA_GRAPH_H

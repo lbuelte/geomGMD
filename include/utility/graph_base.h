@@ -1,0 +1,17 @@
+// Created by Laura Bülte on 2026-08-20.
+
+#ifndef GEOMGMD_GRAPH_BASE_H
+#define GEOMGMD_GRAPH_BASE_H
+
+#include <ostream>
+
+using PolygonID  = int;
+
+using GraphID    = size_t;
+using VertexID   = size_t;
+using EdgeID     = size_t;
+using NeighborID = size_t;
+
+
+
+#endif // GEOMGMD_GRAPH_BASE_H

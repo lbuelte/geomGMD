@@ -1,7 +1,7 @@
 // Created by Laura Bülte on 2026-03-30.
 
-#ifndef POLYGONCLUSTERING_OUTPUT_CONTEXT_H
-#define POLYGONCLUSTERING_OUTPUT_CONTEXT_H
+#ifndef GEOMGMD_OUTPUT_CONTEXT_H
+#define GEOMGMD_OUTPUT_CONTEXT_H
 
 #include "result_writer.h"
 #include "geomGMDSolver.h"
@@ -65,4 +65,4 @@ struct OutputContext {
     }
 };
 
-#endif // POLYGONCLUSTERING_OUTPUT_CONTEXT_H
+#endif //GEOMGMD_OUTPUT_CONTEXT_H

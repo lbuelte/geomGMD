@@ -3,8 +3,8 @@
 #include "io/edgemap_io.h"
 
 #include "json/json.hpp"
-#include "geometric_graph.h"
-#include "geometry_helpers.h"
+#include "utility/geometric_graph.h"
+#include "utility/angle_computation.h"
 
 #include <fstream>
 #include <iostream>

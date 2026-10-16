@@ -5,10 +5,10 @@
 #include <cassert>
 #include <filesystem>
 #include <queue>
+#include <thread>
 
 #include "io/logger.h"
 #include "io/config.h"
-#include "io/csv_io.h"
 #include "io/output_context.h"
 
 #include "geomGMDSolver.h"

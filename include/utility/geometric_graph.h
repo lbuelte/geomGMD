@@ -1,5 +1,5 @@
-#ifndef GEOMETRIC_GRAPH_H
-#define GEOMETRIC_GRAPH_H
+#ifndef GEOMGMD_GEOMETRIC_GRAPH_H
+#define GEOMGMD_GEOMETRIC_GRAPH_H
 
 #include <cstddef>   // size_t
 #include <optional>  // std::optional
@@ -10,14 +10,8 @@
 #include <cassert>   // assert
 
 #include "../external/json/json.hpp"
-#include "geometry_helpers.h"
-
-using PolygonID  = int;
-
-using GraphID    = size_t;
-using VertexID   = size_t;
-using EdgeID     = size_t;
-using NeighborID = size_t;
+#include "utility/geometry_base.h"
+#include "utility/graph_base.h"
 
 
 // This is a graph data structure where the adjacencies always 
@@ -145,4 +139,4 @@ double get_mean_edge_length(std::vector<const GeometricGraph *> const &graphs);
 double get_mean_edge_length(std::vector<GeometricGraph>::iterator begin, std::vector<GeometricGraph>::iterator end);
 double get_mean_edge_length(std::span<GeometricGraph> const &graphs);
 
-#endif //GEOMETRIC_GRAPH_H
+#endif //GEOMGMD_GEOMETRIC_GRAPH_H

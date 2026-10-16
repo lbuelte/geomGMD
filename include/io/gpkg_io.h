@@ -1,5 +1,5 @@
-#ifndef GPKG_IO_H
-#define GPKG_IO_H
+#ifndef POLYGONCLUSTERING_GPKG_IO_H
+#define POLYGONCLUSTERING_GPKG_IO_H
 
 #include <ogrsf_frmts.h>
 #include <vector>
@@ -7,7 +7,7 @@
 #include <iostream>
 #include <filesystem>
 
-#include "geometric_graph.h"
+#include "utility/geometric_graph.h"
 
 void assignClustersToPolygons(
         const std::string& inputGpkg,
@@ -17,4 +17,4 @@ void assignClustersToPolygons(
         const std::vector<int>& medoidInfo,
         bool reduce_to_assigned_polys = true);
 
-#endif //GPKG_IO_H
+#endif // POLYGONCLUSTERING_GPKG_IO_H

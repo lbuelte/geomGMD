@@ -1,4 +1,4 @@
-#include "../include/va_graph.h"
+#include "utility/va_graph.h"
 
 // --- VAGRAPH CLASS ---
 

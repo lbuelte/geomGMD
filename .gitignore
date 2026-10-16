@@ -81,6 +81,7 @@ output/
 !examples/data/*/*.gpkg
 *.svg
 !docs/*.svg
+geomGMD.pdf
 
 # Run scripts
 .python_scripts/

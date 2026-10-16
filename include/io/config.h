@@ -1,5 +1,5 @@
-#ifndef POLYGONCLUSTERING_CONFIG_H
-#define POLYGONCLUSTERING_CONFIG_H
+#ifndef GEOMGMD_CONFIG_H
+#define GEOMGMD_CONFIG_H
 
 #include <string>
 #include <ostream>
@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <variant>
 
-#include "geometry_helpers.h"
+#include "utility/geometry_base.h"
 
 template<class... Ts>
 struct overloaded : Ts... { using Ts::operator()...; };
@@ -142,4 +142,4 @@ inline std::string clusteringAlgoToStr(ClusteringConfig::ClusteringAlgorithm alg
     return "UNKNOWN";
 }
 
-#endif // POLYGONCLUSTERING_CONFIG_H
+#endif // GEOMGMD_CONFIG_H

@@ -1,8 +1,8 @@
 #ifndef GEOMGMD_SOLVER_H
 #define GEOMGMD_SOLVER_H
 
-#include "geometric_graph.h"
-#include "geometry_helpers.h"
+#include "utility/geometric_graph.h"
+
 #include "io/config.h"
 #include "io/nodemap_io.h"
 
@@ -53,7 +53,7 @@ struct GurobiParams {
         out << "  cost_factor_angle_difference   = "
             << cost_factor_angle_difference << '\n';
         out << "  angle_type                     = "
-            << angleTypeToStr(angle_type) << "\n\n";
+            << angle_type << "\n\n";
     }
 };
 

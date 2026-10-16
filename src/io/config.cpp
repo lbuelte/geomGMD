@@ -414,7 +414,7 @@ void log_config(const Config& cfg, std::ostream& out)
     out << "  cost_factor_angle_difference   = "
         << cfg.gurobi.cost_factor_angle_difference << '\n';
     out << "  angle_type                     = "
-        << angleTypeToStr(cfg.gurobi.angle_type) << '\n';
+        << cfg.gurobi.angle_type << '\n';
 
     out << "\n================================================\n\n";
 }
@@ -514,7 +514,7 @@ void log_config(const DistanceConfig& cfg, std::ostream& out)
     out << "  cost_factor_angle_difference   = "
         << cfg.gurobi.cost_factor_angle_difference << '\n';
     out << "  angle_type                     = "
-        << angleTypeToStr(cfg.gurobi.angle_type) << '\n';
+        << cfg.gurobi.angle_type << '\n';
 
     /* ===================== Parallel ===================== */
     out << "\n[Parallel]\n";

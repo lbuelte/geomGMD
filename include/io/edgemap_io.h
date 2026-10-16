@@ -1,13 +1,14 @@
 // Created by Laura Bülte on 2026-04-15.
 
-#ifndef POLYGONCLUSTERING_EDGEMAP_IO_H
-#define POLYGONCLUSTERING_EDGEMAP_IO_H
+#ifndef GEOMGMD_EDGEMAP_IO_H
+#define GEOMGMD_EDGEMAP_IO_H
 
-#include "json/json.hpp"
-#include "geometric_graph.h"
+#include "utility/geometric_graph.h"
+
 #include "config.h"
 #include "geomGMDSolver.h"
 
+#include "json/json.hpp"
 #include <optional>
 
 using json = nlohmann::json;
@@ -103,4 +104,4 @@ double compute_total_angle_objective(
         const EdgeMap& edgemap);
 
 
-#endif // POLYGONCLUSTERING_EDGEMAP_IO_H
+#endif // GEOMGMD_EDGEMAP_IO_H

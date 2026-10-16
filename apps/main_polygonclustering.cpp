@@ -11,6 +11,7 @@
 #include "io/config.h"
 #include "io/csv_io.h"
 #include "io/output_context.h"
+#include "utility/va_graph.h"
 
 #include "clustering/clustering_base.h"
 

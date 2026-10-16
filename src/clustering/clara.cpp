@@ -1,6 +1,6 @@
 #include "clustering/clara.h"
 
-#include "sampling.h"
+#include "utility/sampling.h"
 #include "io/logger.h"
 
 #include <cassert>

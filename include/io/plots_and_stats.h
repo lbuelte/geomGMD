@@ -1,5 +1,5 @@
-#ifndef PLOTS_AND_STATS_H
-#define PLOTS_AND_STATS_H
+#ifndef POLYGONCLUSTERING_PLOTS_AND_STATS_H
+#define POLYGONCLUSTERING_PLOTS_AND_STATS_H
 
 #include <gurobi_c++.h>
 
@@ -245,4 +245,4 @@ std::vector<std::vector<IntervalDistance>> read_interval_distance_matrix(
 
 } //end of namespace
 
-#endif //PLOT_INSTANCES_H
+#endif //POLYGONCLUSTERING_PLOTS_AND_STATS_H

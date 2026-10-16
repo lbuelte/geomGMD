@@ -1,6 +1,6 @@
 #include "clustering/clarans.h"
 
-#include "sampling.h"
+#include "utility/sampling.h"
 #include "io/logger.h"
 
 #include <queue>
