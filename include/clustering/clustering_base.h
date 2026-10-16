@@ -1,7 +1,6 @@
 #ifndef POLYGONCLUSTERING_BASE_H
 #define POLYGONCLUSTERING_BASE_H
 
-#include "utility/va_graph.h"
 #include "io/config.h"
 #include "io/output_context.h"
 #include "geomGMDSolver.h"
@@ -22,18 +21,7 @@ struct ClusteringResult {
     void append_cluster_result(ClusteringResult const &other);
 };
 
-ClusteringResult run_clustering_single_mode(std::vector<const GeometricGraph*> const &graphs, size_t const k, Config const &config, OutputContext &out);
-ClusteringResult run_clustering_va_mode(std::vector<VAGraph> &graph_base, Config const &config, OutputContext &out);
-
-struct ClusteringInput{
-    std::vector<const GeometricGraph*> graphs;
-    std::vector<GraphID> const graph_ids;
-    double const vanishing_angle;
-    size_t const k;
-};
-
-// recursive version of run_clustering_va_mode
-// void compute_clustering(ClusteringResult &final_clustering, std::vector<VAGraph> &graph_base, std::vector<GraphID> const &graph_ids, double const vanishing_angle, Config const &config);
+ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs, size_t const k, Config const &config, OutputContext &out);
 
 void read_symmetric_IntervalDistance_matrix_from_csv(std::vector<std::vector<IntervalDistance>> &matrix, const std::string& filename);
 

@@ -40,12 +40,5 @@ output_path = "../output/Bonn/Verwaltungsdistrikte/"
 
 [Clustering]
 k = 10
-# mode = "diminishing_va"
-# starting_va = 1.5
-# va_diff = 0.5
-# max_va_depth = 3
-# fixed_k = false
-# max_iterations = 10
-# single_run_va = 1.0
 # clustering_algo = "PAM"
 # parallel = false

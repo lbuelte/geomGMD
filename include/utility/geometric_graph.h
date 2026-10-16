@@ -30,7 +30,6 @@ public:
         const VertexID v1;
         const VertexID v2;
         const double length;
-        const double vanishing_angle = 0.0;
     };
 
     GeometricGraph(const nlohmann::json& j, 

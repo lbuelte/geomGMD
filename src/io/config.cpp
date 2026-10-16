@@ -25,17 +25,6 @@ std::string to_lower(std::string s)
     return s;
 }
 
-ClusteringConfig::Mode
-parse_clustering_mode(const std::string& s_in)
-{
-    std::string s = to_lower(s_in);
-    if (s == "single")          return ClusteringConfig::Mode::SingleRun;
-    if (s == "diminishing_va")  return ClusteringConfig::Mode::DiminishingVA;
-
-    throw std::runtime_error("Unknown Clustering.mode: " + s_in);
-}
-
-
 ClusteringConfig::ClusteringAlgorithm
 parse_clustering_algo(const std::string& s_in)
 {
@@ -235,55 +224,7 @@ Config load_config(const std::string& filename)
     if (auto cl = tbl["Clustering"].as_table()) {
         read_required(*cl, "k", cfg.cluster.k);
         read_value_if(*cl, "parallel", cfg.cluster.parallel);
-        read_enum_if(*cl, "mode", cfg.cluster.mode, parse_clustering_mode);
         read_enum_if(*cl, "clustering_algo", cfg.cluster.clustering_algo, parse_clustering_algo);
-        read_value_if(*cl, "single_run_va", cfg.cluster.single_run_va);
-
-        if (cfg.cluster.mode == ClusteringConfig::Mode::DiminishingVA) {
-
-            ClusteringConfig::VAConfig va;
-            read_required(*cl, "starting_va", va.starting_va);
-            read_value_if(*cl, "fixed_k", va.fixed_k);
-            std::optional<size_t> max_iter;
-            read_optional_if(*cl, "max_iterations", max_iter);
-
-            if (not va.fixed_k and not max_iter.has_value()){
-                std::cout << "WARNING: Adaptable k in VA mode, but max iterations will be set with regards to fixed k." << std::endl;
-            }
-
-            int max_depth = 0;
-            read_value_if(*cl, "va_diff", va.va_diff);
-            read_value_if(*cl, "max_va_depth", max_depth);
-            if (not va.va_diff and max_depth == 0) {
-                throw std::runtime_error(
-                    "Clustering.mode = diminishing_va requires either "
-                    "'va_diff' or 'max_depth'");
-            } 
-            else if (not va.va_diff and max_depth > 0) {
-                va.va_diff = va.starting_va / (static_cast<double>(max_depth) - 1);
-            }
-            else if (va.va_diff and max_depth == 0) {
-                max_depth =  std::floor(va.starting_va / va.va_diff) + 1;
-            }
-            else if (va.va_diff > va.starting_va / (static_cast<double>(max_depth) - 1)){
-                throw std::runtime_error("Both va_diff = " + std::to_string(va.va_diff) 
-                                         + " and max_depth = " + std::to_string(max_depth) 
-                                         + " are set, but do not fit with starting_va = "
-                                         + std::to_string(va.starting_va));
-            }
-            va.max_iterations = max_iter.has_value()
-                    ? max_iter.value()
-                    : std::pow(cfg.cluster.k, max_depth);
-            cfg.cluster.va_mode = va;
-        } else {
-            // Currently, we do not allow VA params in single mode to make sure 
-            // that the parameters are consistent. One could also not require this 
-            // and have the mode parameter just dominate the setting of the other parameters.
-            require(not cl->contains("starting_va") and
-                    not cl->contains("va_diff") and
-                    not cl->contains("max_depth"),
-                    "VA mode parameters provided but Clustering.mode = single");
-        }
     }
     else {
         throw std::runtime_error("Missing required [Clustering] section");
@@ -291,10 +232,7 @@ Config load_config(const std::string& filename)
 
     // Generate default run_name from config if there was no run_name specified
     if (not run_name_opt.has_value()) {
-        cfg.io.run_name = (cfg.cluster.mode == ClusteringConfig::Mode::SingleRun
-                ? "single_"
-                : "diminishing_va_")
-            + clusteringAlgoToStr(cfg.cluster.clustering_algo)
+        cfg.io.run_name = clusteringAlgoToStr(cfg.cluster.clustering_algo)
             + "_"
             + std::to_string(cfg.cluster.k);                               
     }
@@ -330,26 +268,10 @@ void log_config(const Config& cfg, std::ostream& out)
 
     /* ===================== Clustering ===================== */
     out << "\n[Clustering]\n";
-    out << "  mode               = "
-        << (cfg.cluster.mode == ClusteringConfig::Mode::SingleRun
-                ? "single"
-                : "diminishing_va") << '\n';
     out << "  k                  = " << cfg.cluster.k << '\n';
     out << "  clustering_algo    = "
         << clusteringAlgoToStr(cfg.cluster.clustering_algo) << '\n';
     out << "  parallel           = " << tf(cfg.cluster.parallel) << '\n';
-
-    if (cfg.cluster.mode == ClusteringConfig::Mode::DiminishingVA) {
-        const auto& va = *cfg.cluster.va_mode;
-
-        out << "  starting_va        = " << va.starting_va << '\n';
-        out << "  va_diff            = " << va.va_diff << '\n';
-        out << "  max_iterations     = " << std::to_string(va.max_iterations) << '\n';
-        out << "  fixed_k            = " << tf(va.fixed_k) << '\n';
-    }
-    else {
-        out << "  vanishing_angle    = " << std::to_string(cfg.cluster.single_run_va) << '\n';
-    }
 
     /* ===================== Clara ===================== */
     out << "\n[Clara]\n";

@@ -241,8 +241,7 @@ void GeometricGraph::prune_edges(const std::vector<bool>& remove_mask)
             const Edge& ed = edge(e);
             new_edges.emplace_back(ed.v1,
                                 ed.v2,
-                                ed.length,
-                                ed.vanishing_angle);
+                                ed.length);
         }
         _edges.swap(new_edges);
         build_ordered_adjacency_lists();
@@ -269,8 +268,7 @@ void GeometricGraph::prune_edges(const std::vector<bool>& remove_mask)
         const Edge& ed = edge(e);
         new_edges.emplace_back(remap[ed.v1],
                                remap[ed.v2],
-                               ed.length,
-                               ed.vanishing_angle);
+                               ed.length);
     }
 
     // Swap out vertices, edges and rebuild adjacency lists

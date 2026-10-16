@@ -76,12 +76,6 @@ struct IOConfig {
 
 struct ClusteringConfig {
 
-    enum class Mode {
-        SingleRun,
-        DiminishingVA
-    };
-    Mode mode = Mode::SingleRun;
-
     size_t k;
 
     enum class ClusteringAlgorithm {
@@ -90,18 +84,6 @@ struct ClusteringConfig {
     ClusteringAlgorithm clustering_algo = ClusteringAlgorithm::CLARA;
 
     bool parallel = true;
-    bool write_dist_matrix = true;
-
-    struct VAConfig {
-        double starting_va;             
-        double va_diff;        
-        size_t max_iterations;
-
-        bool fixed_k = true;
-    };
-    std::optional<VAConfig> va_mode;
-
-    double single_run_va = 0.0;
 };
 
 struct Config {

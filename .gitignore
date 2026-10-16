@@ -91,6 +91,7 @@ geomGMD.pdf
 # Config files
 config.toml
 config_dist.toml
+config_clustering.toml
 create_configs.py
 
 # Profiling

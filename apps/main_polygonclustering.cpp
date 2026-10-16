@@ -11,14 +11,13 @@
 #include "io/config.h"
 #include "io/csv_io.h"
 #include "io/output_context.h"
-#include "utility/va_graph.h"
 
 #include "clustering/clustering_base.h"
 
 
 int main(int argc, char* argv[]) {   
 
-    std::string config_path = "config.toml";
+    std::string config_path = "config_clustering.toml";
     if (argc >= 2) {
         config_path = argv[1];
     }
@@ -61,35 +60,17 @@ int main(int argc, char* argv[]) {
     assert(starting_instance + num_instances <= geometricgraphs.size());
     global_log << "Reduced dataset: " << num_instances << " graphs starting at index " << starting_instance << "\n";
 
-    std::vector<VAGraph> va_graphs;
+    std::vector<const GeometricGraph*> graphs;
     for (GraphID i = starting_instance; i < starting_instance + num_instances; i++){
         geometricgraphs[i].set_graph_id(i);
-        va_graphs.emplace_back(geometricgraphs[i]);       
+        graphs.push_back(&geometricgraphs[i]);
     }
 
     auto begin = std::chrono::high_resolution_clock::now();
-    ClusteringResult clustering_result;
-
-    switch (config.cluster.mode)
-    {       
-        case ClusteringConfig::Mode::DiminishingVA : {
-            clustering_result = run_clustering_va_mode(va_graphs, config, out);
-            break;
-        }
-        case ClusteringConfig::Mode::SingleRun : {
-            // Prepare data set of pruned graphs
-            std::vector<const GeometricGraph*> graphs;
-            for (auto &va_graph : va_graphs){
-                graphs.push_back(&va_graph.filter(config.cluster.single_run_va));
-            }    
-            clustering_result = run_clustering_single_mode(graphs, config.cluster.k, config, out);
-            if (clustering_result._distance_matrix_opt.has_value()){
-                out.write_interval_distance_matrix(clustering_result._distance_matrix_opt.value());                 
-            }
-            break;
-        }
-        default:
-            throw std::logic_error("Unhandled clustering mode");
+    ClusteringResult clustering_result = 
+        run_clustering(graphs, config.cluster.k, config, out);
+    if (clustering_result._distance_matrix_opt.has_value()){
+        out.write_interval_distance_matrix(clustering_result._distance_matrix_opt.value());                 
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
@@ -105,9 +86,9 @@ int main(int argc, char* argv[]) {
         for (ClusterID c = 0; c < clustering_result.clusters.size(); c++){
             std::filesystem::path medoid_path =
                     plot_path / ("medoid_" + std::to_string(c) + ".svg");
-            write_instance_and_cluster_svg(va_graphs[clustering_result.medoid_indices[c]].filter(0.0), c, medoid_path);
+            write_instance_and_cluster_svg(*graphs[clustering_result.medoid_indices[c]], c, medoid_path);
             for(const GraphID &g : clustering_result.clusters[c]) {
-                auto const graph = va_graphs[g].filter(0.0);
+                auto const &graph = *graphs[g];
                 std::filesystem::path graph_path =
                         plot_path / ("graph_" + std::to_string(graph.polygon_id()) + ".svg");
                 write_instance_and_cluster_svg(graph, c, graph_path);
