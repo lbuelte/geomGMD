@@ -2,9 +2,8 @@
 #define GEOMGMD_SOLVER_H
 
 #include "utility/geometric_graph.h"
-
+#include "utility/edgemap.h"
 #include "io/config.h"
-#include "io/nodemap_io.h"
 
 #include <gurobi_c++.h>
 #include <memory>
@@ -177,8 +176,8 @@ public:
                      std::optional<double> cutoff = std::nullopt);
 
     DistanceResult run_optimization();
-    NodeMap return_node_map();
-    nlohmann::json return_node_map_json();
+    EdgeMap return_edge_map();
+    nlohmann::json return_edge_map_json();
     void print_objective_breakdown();
 
     struct SolverObjectives {

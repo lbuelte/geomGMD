@@ -320,7 +320,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
                     _distance_matrix[g][medoid_indices[order_of_centers[m]]] = dist_result.value();
                     _distance_matrix[medoid_indices[order_of_centers[m]]][g] = dist_result.value();
                 }
-                _output_context.write_nodemap(solver.return_node_map_json());
+                _output_context.write_edgemap(solver.return_edge_map_json());
             }            
 
             if (dist_result.value() < min_dist) {
@@ -424,7 +424,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
                             _distance_matrix[g][medoid_indices[order_of_centers[m]]] = dist_result.value();
                             _distance_matrix[medoid_indices[order_of_centers[m]]][g] = dist_result.value();
                         }
-                        _output_context.write_nodemap(solver.return_node_map_json());
+                        _output_context.write_edgemap(solver.return_edge_map_json());
                     }
 
                     if (dist_result.value() < min_dist) {

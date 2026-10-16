@@ -13,38 +13,6 @@
 
 using json = nlohmann::json;
 
-
-class EdgeMap {
-
-public:
-
-    struct EdgePair {
-        std::optional<EdgeID> g;
-        std::optional<EdgeID> h;
-
-        EdgePair(std::optional<EdgeID> g_, std::optional<EdgeID> h_)
-            : g(g_), h(h_) 
-        {
-            if (!g && !h) {
-                throw std::invalid_argument("Pair cannot be (dummy, dummy)");
-            }
-        }
-
-        bool operator==(const EdgePair &other) const {
-            return this->g == other.g and this->h == other.h;
-        }
-
-        bool is_substitution() const { return g.has_value() and h.has_value(); }
-        bool is_insertion() const { return not g.has_value() and h.has_value(); }
-        bool is_deletion() const { return g.has_value() and not h.has_value(); }
-    };
-
-    EdgeMap(json const &mapping_json, GeometricGraph const &G, GeometricGraph const &H);
-
-    std::vector<EdgePair> edge_pairs;
-
-};
-
 struct SVGLegendInfo {
     bool map_is_optimal;
     std::string dataset;

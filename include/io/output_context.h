@@ -22,7 +22,7 @@ struct OutputContext {
 
     const std::filesystem::path output_path;
 
-    std::optional<JSONWriter> nodemap_writer;
+    std::optional<JSONWriter> edgemap_writer;
     std::optional<CSVWriter> intervaldistance_matrix_writer;
     std::optional<CSVWriter> pairwise_computation_info_writer;
     // AnalysisWriters analysis;
@@ -30,9 +30,9 @@ struct OutputContext {
 
     OutputContext(const std::filesystem::path& base_path, IOConfig const& config)
         : output_path(create_path(base_path))
-        , nodemap_writer(
-            config.write_nodemaps
-                ? std::optional<JSONWriter>(prepare_file(output_path, "nodemaps.json").string())
+        , edgemap_writer(
+            config.write_edgemaps
+                ? std::optional<JSONWriter>(prepare_file(output_path, "edgemaps.json").string())
                 : std::nullopt)
         , intervaldistance_matrix_writer(
             config.write_distance_matrix
@@ -48,12 +48,12 @@ struct OutputContext {
         }
     }
     
-    void write_nodemap(const nlohmann::json& j) {
-        if (not nodemap_writer.has_value()){
-            std::cerr << "Error: write_nodemap is not set in config, but function write_nodemap was called. Ignoring this call." << std::endl;
+    void write_edgemap(const nlohmann::json& j) {
+        if (not edgemap_writer.has_value()){
+            std::cerr << "Error: write_edgemaps is not set in config, but function write_edgemap was called. Ignoring this call." << std::endl;
             return;
         }
-        nodemap_writer.value().write(j);
+        edgemap_writer.value().write(j);
     }
 
     void write_interval_distance_matrix(const std::vector<std::vector<IntervalDistance>>& matrix);

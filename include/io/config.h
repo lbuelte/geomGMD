@@ -68,7 +68,7 @@ struct IOConfig {
     std::string run_name;
     bool generate_plots = true;
     bool write_distance_matrix = true;
-    bool write_nodemaps = true;
+    bool write_edgemaps = true;
 
     std::optional<size_t> num_instances;
     size_t starting_instance = 0;

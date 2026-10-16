@@ -15,7 +15,7 @@ output_path = "../output/Bonn/Verwaltungsdistrikte/"
 run_name = "testing"
 # generate_plots = false
 # write_distance_matrix = false
-# write_nodemaps = false
+# write_edgemaps = false
 # num_instances = 20
 # starting_instance = 0
 

@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
                         continue;
                     }
                     out.write_computation_info_row(solver, dist_result.value());
-                    out.write_nodemap(solver.return_node_map_json());
+                    out.write_edgemap(solver.return_edge_map_json());
 
                     distance_matrix[p.i][p.j] = dist_result.value();
                     distance_matrix[p.j][p.i] = dist_result.value();

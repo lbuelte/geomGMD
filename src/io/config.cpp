@@ -209,7 +209,7 @@ Config load_config(const std::string& filename)
         read_optional_if(*io, "run_name", run_name_opt);
         read_value_if(*io, "generate_plots", cfg.io.generate_plots);
         read_value_if(*io, "write_distance_matrix", cfg.io.write_distance_matrix);
-        read_value_if(*io, "write_nodemaps", cfg.io.write_nodemaps);
+        read_value_if(*io, "write_edgemaps", cfg.io.write_edgemaps);
         read_optional_if(*io, "num_instances", cfg.io.num_instances);
         read_value_if(*io, "starting_instance", cfg.io.starting_instance);
         require(cfg.io.num_instances.has_value() or cfg.io.starting_instance == 0,
@@ -260,7 +260,7 @@ void log_config(const Config& cfg, std::ostream& out)
                                    : "log file will be generated in run output") << '\n';
     out << "  plots generated         = " << tf(cfg.io.generate_plots) << '\n';
     out << "  writing distance matrix = " << tf(cfg.io.write_distance_matrix) << '\n';
-    out << "  writing nodemaps = " << tf(cfg.io.write_nodemaps) << '\n';
+    out << "  writing edgemaps = " << tf(cfg.io.write_edgemaps) << '\n';
     out << "  num_instances           = "
         << (cfg.io.num_instances ? std::to_string(*cfg.io.num_instances)
                                  : "all") << '\n';

@@ -43,8 +43,8 @@ target_link_libraries(geomGMD_FullDatasetComputations PRIVATE geomGMD_lib)
 add_executable(PolygonClustering apps/main_polygonclustering.cpp)
 target_link_libraries(PolygonClustering PRIVATE geomGMD_lib)
 
-add_executable(PlotNodemaps apps/main_plotNodemaps.cpp)
-target_link_libraries(PlotNodemaps PRIVATE geomGMD_lib)
+add_executable(PlotEdgemaps apps/main_plotEdgemaps.cpp)
+target_link_libraries(PlotEdgemaps PRIVATE geomGMD_lib)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
   include(FeatureSummary)

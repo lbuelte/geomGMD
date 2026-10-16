@@ -309,11 +309,11 @@ DistanceResult GeomGMDForiSolver::run_optimization()
     }
 }
 
-NodeMap GeomGMDForiSolver::return_node_map()
+EdgeMap GeomGMDForiSolver::return_edge_map()
 {
     if (model.get(GRB_IntAttr_SolCount) == 0){
-        std::cout << "Error: Node map could not be returned, since no solution was computed." << std::endl;
-        return NodeMap(false, std::vector<NodeMap::NodePair>(), G, H);
+        std::cout << "Error: Edge map could not be returned, since no solution was computed." << std::endl;
+        return EdgeMap(false, std::vector<EdgeMap::EdgePair>(), G, H);
     }
 
     double tol = model.get(GRB_DoubleParam_IntFeasTol);
@@ -322,12 +322,14 @@ NodeMap GeomGMDForiSolver::return_node_map()
     };
 
     bool optimal = (model.get(GRB_IntAttr_Status) == GRB_OPTIMAL);
-    std::vector<NodeMap::NodePair> pairs;
-    std::vector<bool> is_mapped(nh, false);
-    for (int i = 0; i < ng; i++) {
+    std::vector<EdgeMap::EdgePair> pairs;
+    std::vector<bool> is_mapped(eh, false);
+    for (int i = 0; i < eg; i++) {
         bool is_mapped_i = false;
-        for (int k = 0; k < nh; k++) {
-            if (isOne(x[i][k].get(GRB_DoubleAttr_X))){
+        // z has two columns per edge k in H: 2k for (v1,v2) and 2k+1 for (v2,v1)
+        for (int c = 0; c < 2*eh; c++) {
+            if (isOne(z[i][c].get(GRB_DoubleAttr_X))){
+                EdgeID const k = c / 2;
                 is_mapped_i = true;
                 is_mapped[k] = true;
                 pairs.emplace_back(i, k);
@@ -338,17 +340,17 @@ NodeMap GeomGMDForiSolver::return_node_map()
             pairs.emplace_back(i, std::nullopt);
         }
     }
-    for (int k = 0; k < nh; k++) {
+    for (int k = 0; k < eh; k++) {
         if (not is_mapped[k]){
             pairs.emplace_back(std::nullopt, k);
         }
     }
-    return NodeMap(optimal, pairs, G, H);
+    return EdgeMap(optimal, pairs, G, H);
 }
 
-nlohmann::json GeomGMDForiSolver::return_node_map_json()
+nlohmann::json GeomGMDForiSolver::return_edge_map_json()
 {
-    auto map = return_node_map();
+    auto map = return_edge_map();
     return map.to_json(G.graph_id(), H.graph_id());
 }
 

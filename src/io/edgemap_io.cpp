@@ -151,68 +151,6 @@ std::optional<double> find_geomGMD_value_from_file(
     return std::nullopt;
 }
 
-
-EdgeMap::EdgeMap(json const &mapping_json, GeometricGraph const &G, GeometricGraph const &H) 
-{
-    // Map storing for each mapped node in g its partner in h
-    std::unordered_map<VertexID, VertexID> g_to_h;
-    for (const auto& entry : mapping_json["node_map"]) {
-        if (!entry["g"].is_null() && !entry["h"].is_null()) {
-            g_to_h[entry["g"]] = entry["h"];
-        }
-    }
-
-    // Set storing the tuples of edge endpoints in H
-    std::set<std::pair<VertexID, VertexID>> h_edges;
-    for (auto const &edge : H.edges()) {
-        auto a = std::min(edge.v1, edge.v2);
-        auto b = std::max(edge.v1, edge.v2);
-        h_edges.insert({a, b});
-    }
-
-    std::vector<bool> h_edge_is_mapped(H.num_edges(), false);
-
-    std::vector<EdgePair> mapped_edges;
-    for (EdgeID eg = 0; eg < G.num_edges(); ++eg) {
-        auto const edge = G.edge(eg);
-
-        if (g_to_h.contains(edge.v1) && g_to_h.contains(edge.v2)) {
-            VertexID h1 = g_to_h[edge.v1];
-            VertexID h2 = g_to_h[edge.v2];
-
-            auto a = std::min(h1, h2);
-            auto b = std::max(h1, h2);
-
-            if (h_edges.contains({a, b})) {
-                // find actual edge id in H
-                for (EdgeID eh = 0; eh < H.num_edges(); ++eh) {
-                    auto hedge = H.edge(eh);
-                    if ((hedge.v1 == h1 && hedge.v2 == h2) ||
-                        (hedge.v1 == h2 && hedge.v2 == h1)) {
-
-                        mapped_edges.push_back({eg, eh});
-                        h_edge_is_mapped[eh] = true;
-                        break;
-                    }
-                }
-            } else {
-                // If the mapped nodes are not endpoints of an edge, e is deleted
-                mapped_edges.push_back({eg, std::nullopt});
-            }
-        } else {
-            // If not both endpoints of e are mapped, it is deleted
-            mapped_edges.emplace_back(eg, std::nullopt);
-        }
-    }
-    edge_pairs = std::move(mapped_edges);
-    for (EdgeID eh = 0; eh < H.num_edges(); ++eh){
-        if (not h_edge_is_mapped[eh]){
-            edge_pairs.emplace_back(std::nullopt, eh);
-        }
-    }
-}
-
-
 void write_edge_mapping_svg(
         const GeometricGraph& G,
         const GeometricGraph& H,

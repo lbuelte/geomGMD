@@ -165,7 +165,7 @@ std::optional<IntervalDistance> CLARANS_Clustering::compute_distance_matrix_entr
     }
     _distance_matrix[i][j] = dist_result.value();
     _distance_matrix[j][i] = dist_result.value();
-    _output_context.write_nodemap(solver.return_node_map_json());
+    _output_context.write_edgemap(solver.return_edge_map_json());
     return _distance_matrix[i][j];
 }
 

@@ -43,30 +43,30 @@ int main(int argc, char* argv[]) {
     std::cout << "Reduced dataset: " << num_instances << " graphs starting at index " << starting_instance << "\n";
     
     std::filesystem::path distance_matrix_input_file = input_path / "intervaldistance_matrix.csv";
-    std::filesystem::path nodemap_input_file = input_path / "nodemaps.json";
-    std::filesystem::path nodemap_output_path = input_path / "nodemaps";
-    std::filesystem::create_directories(nodemap_output_path);
+    std::filesystem::path edgemap_input_file = input_path / "edgemaps.json";
+    std::filesystem::path edgemap_output_path = input_path / "edgemaps";
+    std::filesystem::create_directories(edgemap_output_path);
 
     for (GraphID g = starting_instance; g < starting_instance + num_instances; ++g){
         for (GraphID h = g + 1; h < starting_instance + num_instances; ++h){
 
             bool g_before_h;
-            auto json_opt = find_graph_mapping_from_file(nodemap_input_file, g, h, g_before_h);
+            auto json_opt = find_graph_mapping_from_file(edgemap_input_file, g, h, g_before_h);
             auto geomGMD_dist = find_geomGMD_value_from_file(distance_matrix_input_file, g, h);
             if (json_opt.has_value()){
                 bool is_optimal_mapping = json_opt.value()["optimal"];
                 if (g_before_h){
-                    EdgeMap edgemap(json_opt.value(), geometricgraphs[g], geometricgraphs[h]);
+                    EdgeMap edgemap = EdgeMap::from_json(json_opt.value(), geometricgraphs[g], geometricgraphs[h]);
                     SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, g, h, gurobi_params, geomGMD_dist};
                     write_edge_mapping_svg(geometricgraphs[g], geometricgraphs[h], edgemap, svg_info,
-                                      nodemap_output_path.string() + "/nodemap_" 
+                                      edgemap_output_path.string() + "/edgemap_" 
                                       + std::to_string(geometricgraphs[g].polygon_id()) + "_" 
                                       + std::to_string(geometricgraphs[h].polygon_id()) + ".svg");
                 } else {
-                    EdgeMap edgemap(json_opt.value(), geometricgraphs[h], geometricgraphs[g]);
+                    EdgeMap edgemap = EdgeMap::from_json(json_opt.value(), geometricgraphs[h], geometricgraphs[g]);
                     SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, h, g, gurobi_params, geomGMD_dist};
                     write_edge_mapping_svg(geometricgraphs[h], geometricgraphs[g], edgemap, svg_info,
-                                      nodemap_output_path.string() + "/nodemap_" 
+                                      edgemap_output_path.string() + "/edgemap_" 
                                       + std::to_string(geometricgraphs[h].polygon_id()) + "_" 
                                       + std::to_string(geometricgraphs[g].polygon_id()) + ".svg");
                 }        
