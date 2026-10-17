@@ -114,3 +114,15 @@ void read_symmetric_IntervalDistance_matrix_from_csv(
             : IntervalDistance(lb, ub);
     }
 }
+
+void log_clustering_result(std::ofstream &log, ClusteringResult const &clustering_result, std::string const &clustering_name, size_t starting_offset)
+{
+    log << "\n" << clustering_name << " with solution value " << clustering_result.clustering_solution_value << " :\n";
+    for (int c = 0; c < clustering_result.clusters.size(); c++){
+        log << "Cluster " << c << " with medoid " << clustering_result.medoid_indices[c] << " :\n";
+        for (auto const & g : clustering_result.clusters[c]){
+            log << g + starting_offset << " ";
+        }
+        log << "\n";
+    }
+}

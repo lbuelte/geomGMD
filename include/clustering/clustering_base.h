@@ -8,6 +8,8 @@
 #include <thread>
 #include <vector>
 #include <cstddef>
+#include <fstream>
+#include <string>
 
 using ClusterID = size_t;
 
@@ -24,5 +26,11 @@ struct ClusteringResult {
 ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs, size_t const k, Config const &config, OutputContext &out);
 
 void read_symmetric_IntervalDistance_matrix_from_csv(std::vector<std::vector<IntervalDistance>> &matrix, const std::string& filename);
+
+void log_clustering_result(
+        std::ofstream &log,
+        ClusteringResult const &clustering_result,
+        std::string const &clustering_name,
+        size_t starting_offset = 0);
 
 #endif // POLYGONCLUSTERING_BASE_H
