@@ -4,6 +4,7 @@
 #define GEOMGMD_OUTPUT_CONTEXT_H
 
 #include "result_writer.h"
+#include "io/config.h"
 #include "geomGMDSolver.h"
 
 inline std::filesystem::path create_path(const std::filesystem::path& base_path){

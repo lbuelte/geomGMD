@@ -2,6 +2,7 @@
 
 #include "utility/sampling.h"
 #include "io/logger.h"
+#include "utility/overloaded.h"
 
 #include <cassert>
 #include <queue>

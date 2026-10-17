@@ -2,6 +2,7 @@
 
 #include "io/logger.h"  // for logging the gap statistics
 #include "utility/angle_computation.h"
+#include "utility/overloaded.h"
 
 namespace{
 

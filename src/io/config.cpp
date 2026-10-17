@@ -1,5 +1,6 @@
 #include "io/config.h"
 #include "io/logger.h"
+#include "utility/overloaded.h"
 
 #include "toml++/toml.h"
 

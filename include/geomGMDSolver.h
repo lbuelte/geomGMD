@@ -3,12 +3,13 @@
 
 #include "utility/geometric_graph.h"
 #include "utility/edgemap.h"
-#include "io/config.h"
+#include "solver_config.h"
 
 #include <gurobi_c++.h>
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <variant>
 
 #include "../external/json/json.hpp"
 
