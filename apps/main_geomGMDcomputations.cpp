@@ -10,6 +10,7 @@
 #include "io/logger.h"
 #include "io/config.h"
 #include "io/output_context.h"
+#include "io/solver_messages.h"
 
 #include "geomGMDSolver.h"
 
@@ -153,12 +154,11 @@ int main(int argc, char* argv[]) {
 
                 for (const auto& p : task.pairs) {
                     GeomGMDForiSolver solver(geometricgraphs[p.i], geometricgraphs[p.j], gurobi_params);
-                    auto dist_result =
-                        evaluate_distance_result(
-                            solver.run_optimization()
-                        );
+                    auto const res = solver.run_optimization();
+                    auto dist_result = evaluate_distance_result(res);
 
                     if (!dist_result.has_value()) {
+                        report_solver_failure(res);
                         std::cout << "Error! Distance between graphs "
                                 << p.i << " and " << p.j << " could not be computed!\n";
                         continue;

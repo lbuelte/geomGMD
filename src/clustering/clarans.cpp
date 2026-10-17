@@ -2,6 +2,7 @@
 
 #include "utility/sampling.h"
 #include "io/logger.h"
+#include "io/solver_messages.h"
 
 #include <queue>
 CLARANS_Clustering::CLARANS_Clustering(const std::vector<const GeometricGraph*> &graphs_, Config const &config, OutputContext &out) 
@@ -156,9 +157,10 @@ std::optional<IntervalDistance> CLARANS_Clustering::compute_distance_matrix_entr
         return _distance_matrix[i][j];
     }    
     GeomGMDForiSolver solver(*_graphs[i], *_graphs[j], _gurobi_params);  
-    auto dist_result = evaluate_distance_result(
-            solver.run_optimization());
+    auto const res = solver.run_optimization();
+    auto dist_result = evaluate_distance_result(res);
     if (!dist_result.has_value()) {
+        report_solver_failure(res);
         std::cout << "Error! Distance between graphs "
                     << i << " and " << j << " could not be computed!\n";
         return std::nullopt;

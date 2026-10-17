@@ -2,6 +2,7 @@
 
 // #include "io/plots_and_stats.h"
 #include "io/logger.h"
+#include "io/solver_messages.h"
 
 #include <queue>
 
@@ -141,9 +142,10 @@ void PAM_Clustering::compute_distance_matrix_entry(GraphID const i, GraphID cons
         return;
     } 
     GeomGMDForiSolver solver(*_graphs[i], *_graphs[j], _gurobi_params); 
-    auto dist_result = evaluate_distance_result(
-            solver.run_optimization());
+    auto const res = solver.run_optimization();
+    auto dist_result = evaluate_distance_result(res);
     if (!dist_result.has_value()) {
+        report_solver_failure(res);
         std::cout << "Error! Distance between graphs "
                     << i << " and " << j << " could not be computed!\n";
         return;
@@ -272,12 +274,11 @@ void PAM_Clustering::computeEntireDistanceMatrixMultiThreaded() {
 
             for (const auto& p : task.pairs) {
                 GeomGMDForiSolver solver(*_graphs[p.i], *_graphs[p.j], _gurobi_params);
-                auto dist_result =
-                    evaluate_distance_result(
-                        solver.run_optimization()
-                    );
+                auto const res = solver.run_optimization();
+                auto dist_result = evaluate_distance_result(res);
 
                 if (!dist_result.has_value()) {
+                    report_solver_failure(res);
                     std::cout << "Error! Distance between graphs "
                               << p.i << " and " << p.j << " could not be computed!\n";
                     continue;

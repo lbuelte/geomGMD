@@ -1,8 +1,9 @@
 #include "geomGMDSolver.h"
 
-#include "io/logger.h"  // for logging the gap statistics
 #include "utility/angle_computation.h"
 #include "utility/overloaded.h"
+
+#include <stdexcept>
 
 namespace{
 
@@ -183,19 +184,32 @@ std::optional<IntervalDistance> evaluate_distance_result(const DistanceResult& r
             return std::nullopt;
         },
         [](const Infeasible&) -> std::optional<IntervalDistance> {
-            std::cout << "Error: Gurobi finished with status Infeasible!\n";
-            global_log << "Error: Gurobi finished with status Infeasible!\n";
             return std::nullopt;
         },
-        [](const SolverError& e) -> std::optional<IntervalDistance> {
-            std::cout << "Error: Gurobi finished with status " << e.status << "!\n";
-            global_log << "Error: Gurobi finished with status " << e.status << "!\n";
+        [](const SolverError&) -> std::optional<IntervalDistance> {
             return std::nullopt;
         },
-        [](const SolverException& e) -> std::optional<IntervalDistance> {
-            std::cout << "Error: Gurobi ran into an exception! Error code = " << e.error_code << "\n";
-            global_log << "Error: Gurobi ran into an exception! Error code = " << e.error_code << "\n";
+        [](const SolverException&) -> std::optional<IntervalDistance> {
             return std::nullopt;
+        }
+    }, res);
+}
+
+std::string distance_result_error_message(const DistanceResult& res)
+{
+    return std::visit(overloaded{
+        [](const Infeasible&) -> std::string {
+            return "Error: Gurobi finished with status Infeasible!";
+        },
+        [](const SolverError& e) -> std::string {
+            return "Error: Gurobi finished with status " + std::to_string(e.status) + "!";
+        },
+        [](const SolverException& e) -> std::string {
+            return "Error: Gurobi ran into an exception! Error code = " + std::to_string(e.error_code)
+                   + ": " + e.message;
+        },
+        [](const auto&) -> std::string {
+            return "";
         }
     }, res);
 }
@@ -278,7 +292,6 @@ DistanceResult GeomGMDForiSolver::run_optimization()
             return IntervalDistance( model.get(GRB_DoubleAttr_ObjBound), 
                                         model.get(GRB_DoubleAttr_ObjVal) );
         } else if (status == GRB_INFEASIBLE) {
-            std::cout << "Model is infeasible\n";
             model.computeIIS();
             model.write("infeasible.ilp");
             return Infeasible{};
@@ -287,33 +300,26 @@ DistanceResult GeomGMDForiSolver::run_optimization()
                 return IntervalDistance( model.get(GRB_DoubleAttr_ObjBound), 
                                             model.get(GRB_DoubleAttr_ObjVal));
             } else {
-                return SolverError{};
+                return SolverError{ status };
             }        
-        } else {
-            std::cout << "Optimization stopped with status = " << status << std::endl;   
-        }   
+        }
         return SolverError{ status };    
         // }();
 
     } catch (GRBException &e) {
-        std::cout << "Gurobi ran into an exception! Error code = " << e.getErrorCode() << std::endl;
-        std::cout << e.getMessage() << std::endl;   
-        global_log << "Gurobi ran into an exception! Error code = " << e.getErrorCode() << std::endl;
-        global_log << e.getMessage() << std::endl;   
         if (e.getErrorCode() == 10009 || e.getErrorCode() == 10032) {
-            std::cout << "Licensing issue, aborting program!" << std::endl;
-            global_log << "Licensing issue, aborting program!" << std::endl;
             // Licensing failure: abort process-level computation
-            throw;
+            throw std::runtime_error("Gurobi licensing issue (error code " + std::to_string(e.getErrorCode())
+                                     + "): " + e.getMessage() + " Aborting program!");
         }     
-        return SolverException{ e.getErrorCode() };
+        return SolverException{ e.getErrorCode(), e.getMessage() };
     }
 }
 
 EdgeMap GeomGMDForiSolver::return_edge_map()
 {
     if (model.get(GRB_IntAttr_SolCount) == 0){
-        std::cout << "Error: Edge map could not be returned, since no solution was computed." << std::endl;
+        // No solution was computed (callers only request the edge map after a successful optimization)
         return EdgeMap(false, std::vector<EdgeMap::EdgePair>(), G, H);
     }
 

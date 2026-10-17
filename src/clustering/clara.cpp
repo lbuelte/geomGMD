@@ -2,6 +2,7 @@
 
 #include "utility/sampling.h"
 #include "io/logger.h"
+#include "io/solver_messages.h"
 #include "utility/overloaded.h"
 
 #include <cassert>
@@ -315,6 +316,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
 
                 dist_result = evaluate_distance_result(res);
                 if (!dist_result.has_value()) {
+                    report_solver_failure(res);
                     continue;
                 }
                 if (not _distance_matrix.empty()){
@@ -419,6 +421,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
 
                         dist_result = evaluate_distance_result(res);
                         if (!dist_result.has_value()) {
+                            report_solver_failure(res);
                             continue;
                         }
                         if (not _distance_matrix.empty()){

@@ -7,6 +7,7 @@
 #include "io/logger.h"
 #include "io/config.h"
 #include "io/edgemap_io.h"
+#include "io/solver_messages.h"
 
 #include "geomGMDSolver.h"
 
@@ -65,9 +66,11 @@ int main(int argc, char* argv[])
     auto begin = std::chrono::high_resolution_clock::now();
     
     GeomGMDForiSolver solver(geometricgraphs[g], geometricgraphs[h], gurobi_params);
-    auto dist_result = evaluate_distance_result(solver.run_optimization());
+    auto const res = solver.run_optimization();
+    auto dist_result = evaluate_distance_result(res);
 
     if (!dist_result.has_value()) {
+        report_solver_failure(res);
         throw std::runtime_error ("Error! Distance between graphs " + std::to_string(g) +
                                   " and " + std::to_string(h) + " could not be computed!");
     }

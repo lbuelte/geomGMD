@@ -9,6 +9,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <string>
 #include <variant>
 
 #include "../external/json/json.hpp"
@@ -121,6 +122,7 @@ struct SolverError {
 // SolverException is returned if Gurobi catches an exception.
 struct SolverException {
     int error_code;
+    std::string message;
 };
 
 // Default is never returned by geomGMD computations. This is an option to verify that Gurobi ran at all.
@@ -130,8 +132,11 @@ struct Default {};
 using DistanceResult = std::variant<ExactDistance, IntervalDistance, CutoffHit, Infeasible, SolverError, SolverException, Default>;
 
 // This function evaluates whether geomGMD computation returned a value type (ExactDistance or IntervalDistance), and if so, returns it. 
-// Otherwise, nullopt is returned and for Infeasible, SolverError, SolverException and Default an error message is printed.
+// Otherwise, nullopt is returned. Nothing is printed; see distance_result_error_message.
 std::optional<IntervalDistance> evaluate_distance_result(DistanceResult const &res);
+
+// Returns an error message for Infeasible, SolverError and SolverException, and an empty string otherwise.
+std::string distance_result_error_message(DistanceResult const &res);
 
 
 //manage one global Gurobi environment
