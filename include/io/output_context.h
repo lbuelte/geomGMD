@@ -46,7 +46,7 @@ struct OutputContext {
                 : std::nullopt)
     {
         if (pairwise_computation_info_writer.has_value()){
-            pairwise_computation_info_writer.value().write_row({"PolygonID G", "PolygonID H", "nG", "nH", "mG", "mH", "lb", "ub", "optimal", "time in ms"});
+            pairwise_computation_info_writer.value().write_row({"PolygonID G", "PolygonID H", "nG", "nH", "mG", "mH", "lb", "ub", "optimal", "time in ms", "status", "mip gap", "nodes"});
         }
     }
     

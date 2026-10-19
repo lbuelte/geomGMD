@@ -245,6 +245,30 @@ GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_,
     }
 }
 
+std::string gurobi_status_name(int status)
+{
+    switch (status) {
+        case GRB_LOADED:          return "LOADED";
+        case GRB_OPTIMAL:         return "OPTIMAL";
+        case GRB_INFEASIBLE:      return "INFEASIBLE";
+        case GRB_INF_OR_UNBD:     return "INF_OR_UNBD";
+        case GRB_UNBOUNDED:       return "UNBOUNDED";
+        case GRB_CUTOFF:          return "CUTOFF";
+        case GRB_ITERATION_LIMIT: return "ITERATION_LIMIT";
+        case GRB_NODE_LIMIT:      return "NODE_LIMIT";
+        case GRB_TIME_LIMIT:      return "TIME_LIMIT";
+        case GRB_SOLUTION_LIMIT:  return "SOLUTION_LIMIT";
+        case GRB_INTERRUPTED:     return "INTERRUPTED";
+        case GRB_NUMERIC:         return "NUMERIC";
+        case GRB_SUBOPTIMAL:      return "SUBOPTIMAL";
+        case GRB_INPROGRESS:      return "INPROGRESS";
+        case GRB_USER_OBJ_LIMIT:  return "USER_OBJ_LIMIT";
+        case GRB_WORK_LIMIT:      return "WORK_LIMIT";
+        case GRB_MEM_LIMIT:       return "MEM_LIMIT";
+    }
+    return "UNKNOWN_" + std::to_string(status);
+}
+
 void GurobiLogCapture::callback()
 {
     if (where != GRB_CB_MESSAGE) {
@@ -313,6 +337,16 @@ DistanceResult GeomGMDForiSolver::run_optimization()
 
         // Handle optimization output
         auto status = model.get(GRB_IntAttr_Status);
+
+        // Record statistics (only reads attributes; errors are ignored so that the result is not influenced)
+        statistics.status = status;
+        try {
+            statistics.node_count = model.get(GRB_DoubleAttr_NodeCount);
+            if (model.get(GRB_IntAttr_SolCount) > 0) {
+                statistics.mip_gap = model.get(GRB_DoubleAttr_MIPGap);
+            }
+        } catch (GRBException &) {
+        }
         // auto result = [&]() -> DistanceResult {
         if (status == GRB_OPTIMAL) {
             return ExactDistance{ model.get(GRB_DoubleAttr_ObjVal)};

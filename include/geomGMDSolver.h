@@ -174,6 +174,16 @@ struct DirectedPathLength2 {
 // There is an option to consider angle differences of mapped edges in the objective.
 // There are options to enforce the cyclic order given in the GeometricGraph.
 // Options are set in the config.
+// Statistics of the last Gurobi run (see GeomGMDForiSolver::solve_statistics).
+struct SolveStatistics {
+    std::optional<int> status;      // Gurobi status code (GRB_OPTIMAL, GRB_TIME_LIMIT, ...); empty if not optimized
+    std::optional<double> mip_gap;  // final relative MIP gap; empty if no solution was found
+    double node_count = 0;          // number of explored branch-and-bound nodes
+};
+
+// Name of a Gurobi status code, e.g. "OPTIMAL", "TIME_LIMIT"; "UNKNOWN_<code>" for unknown codes.
+std::string gurobi_status_name(int status);
+
 // Collects Gurobi's log lines via a message callback (see GeomGMDForiSolver::capture_gurobi_log).
 class GurobiLogCapture : public GRBCallback {
 public:
@@ -196,6 +206,8 @@ public:
     std::vector<std::string> gurobi_log() const;
 
     DistanceResult run_optimization();
+    // Status, MIP gap and node count of the last run_optimization() (only read from Gurobi).
+    SolveStatistics solve_statistics() const { return statistics; }
     EdgeMap return_edge_map();
     nlohmann::json return_edge_map_json();
     void print_objective_breakdown();
@@ -241,6 +253,7 @@ private:
     GRBModel model;
     std::unique_ptr<GurobiLogCapture> log_capture;
     std::chrono::milliseconds optimization_duration;
+    SolveStatistics statistics;
 
     const bool use_path_variables;
 
