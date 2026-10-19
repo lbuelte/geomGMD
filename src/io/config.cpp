@@ -94,6 +94,27 @@ void read_logging_section(const toml::table& tbl, LoggingConfig& logging)
     if (auto lg = tbl["Logging"].as_table()) {
         read_enum_if(*lg, "level", logging.level, parse_log_level_or_throw);
         read_enum_if(*lg, "file_level", logging.file_level, parse_log_level_or_throw);
+        read_value_if(*lg, "gurobi_log", logging.gurobi_log);
+        read_optional_if(*lg, "gurobi_log_min_gap", logging.gurobi_log_min_gap);
+        if (auto node = lg->get("gurobi_log_pairs")) {
+            const auto error = std::string("gurobi_log_pairs must be a list of pairs of graph ids, e.g. [[3, 19], [5, 7]]");
+            auto pairs = node->as_array();
+            if (not pairs) {
+                throw std::runtime_error(error);
+            }
+            for (auto const &entry : *pairs) {
+                auto pair = entry.as_array();
+                if (not pair or pair->size() != 2) {
+                    throw std::runtime_error(error);
+                }
+                auto g = (*pair)[0].value<int64_t>();
+                auto h = (*pair)[1].value<int64_t>();
+                if (not g or not h or *g < 0 or *h < 0) {
+                    throw std::runtime_error(error);
+                }
+                logging.gurobi_log_pairs.emplace_back(static_cast<size_t>(*g), static_cast<size_t>(*h));
+            }
+        }
     }
 }
 
@@ -102,6 +123,17 @@ void log_logging_section(const LoggingConfig& logging, std::ostream& out)
     out << "\n[Logging]\n";
     out << "  level      = " << to_string(logging.level) << '\n';
     out << "  file_level = " << to_string(logging.file_level) << '\n';
+    out << "  gurobi_log = " << (logging.gurobi_log ? "true" : "false") << '\n';
+    if (logging.gurobi_log) {
+        out << "  gurobi_log_pairs   = [";
+        for (size_t i = 0; i < logging.gurobi_log_pairs.size(); ++i) {
+            out << (i > 0 ? ", " : "") << "[" << logging.gurobi_log_pairs[i].first << ", "
+                << logging.gurobi_log_pairs[i].second << "]";
+        }
+        out << "]\n";
+        out << "  gurobi_log_min_gap = "
+            << (logging.gurobi_log_min_gap ? std::to_string(*logging.gurobi_log_min_gap) : "not set") << '\n';
+    }
 }
 
 // Helper to print booleans as true/false

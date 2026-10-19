@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
     if (command_line.positional.size() >= 1) {
         config_path = command_line.positional[0];
     }
-    auto const config = load_config(config_path);
+    auto config = load_config(config_path);
 
     std::filesystem::path output_path = 
             std::filesystem::path(config.io.output_path)
@@ -37,7 +37,8 @@ int main(int argc, char* argv[]) {
             ? std::filesystem::path(config.io.global_log_file.value())
             : output_path / "run.log";
 
-    configure_logging(resolve_logging(config.logging, command_line), log_file);
+    config.logging = resolve_logging(config.logging, command_line);
+    configure_logging(config.logging, log_file);
     logger::info("Writing log file to ", log_file, "\n");
     logger::info(config_to_string(config));
 

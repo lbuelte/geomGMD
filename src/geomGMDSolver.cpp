@@ -245,6 +245,38 @@ GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_,
     }
 }
 
+void GurobiLogCapture::callback()
+{
+    if (where != GRB_CB_MESSAGE) {
+        return;
+    }
+    // A message may contain several lines and usually ends with a line break
+    std::string message = getStringInfo(GRB_CB_MSG_STRING);
+    size_t start = 0;
+    while (start < message.size()) {
+        size_t end = message.find('\n', start);
+        if (end == std::string::npos) {
+            end = message.size();
+        }
+        lines.push_back(message.substr(start, end - start));
+        start = end + 1;
+    }
+}
+
+void GeomGMDForiSolver::capture_gurobi_log()
+{
+    log_capture = std::make_unique<GurobiLogCapture>();
+    // Switch off console output first (silently, while output is still off), then switch on the log
+    model.set(GRB_IntParam_LogToConsole, 0);
+    model.set(GRB_IntParam_OutputFlag, 1);
+    model.setCallback(log_capture.get());
+}
+
+std::vector<std::string> GeomGMDForiSolver::gurobi_log() const
+{
+    return log_capture ? log_capture->lines : std::vector<std::string>();
+}
+
 DistanceResult GeomGMDForiSolver::run_optimization()
 {
     try{

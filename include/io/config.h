@@ -7,6 +7,7 @@
 #include <vector>
 #include <cstdint>
 #include <variant>
+#include <utility>
 
 #include "utility/geometry_base.h"
 #include "solver_config.h"
@@ -72,6 +73,14 @@ struct ClusteringConfig {
 struct LoggingConfig {
     LogLevel level = LogLevel::Info;        // console
     LogLevel file_level = LogLevel::Debug;  // log file
+
+    // Gurobi's own log per computed pair (written at level debug, prefixed with the pair "[g,h]").
+    // If enabled without filters, the log of every pair is written. Otherwise only pairs in
+    // gurobi_log_pairs (graph ids = positions in the input file, order irrelevant) and/or pairs whose
+    // final gap exceeds gurobi_log_min_gap. Pairs with a solver error are always written.
+    bool gurobi_log = false;
+    std::vector<std::pair<size_t, size_t>> gurobi_log_pairs;
+    std::optional<double> gurobi_log_min_gap;
 };
 
 struct Config {

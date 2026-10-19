@@ -48,6 +48,7 @@ private:
 
     // Parameters for geomGMD objective function
     const GurobiParams _gurobi_params;
+    const LoggingConfig _logging;
 
     //Output context for writing output
     OutputContext &_output_context;

@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
     if (command_line.positional.size() >= 1) {
         config_path = command_line.positional[0];
     }
-    auto const config = load_dist_config(config_path);
+    auto config = load_dist_config(config_path);
 
     std::filesystem::path output_path = 
             std::filesystem::path(config.io.output_path)
@@ -37,7 +37,8 @@ int main(int argc, char* argv[]) {
             ? std::filesystem::path(config.io.global_log_file.value())
             : output_path / "run.log";
 
-    configure_logging(resolve_logging(config.logging, command_line), log_file);
+    config.logging = resolve_logging(config.logging, command_line);
+    configure_logging(config.logging, log_file);
     logger::info("Writing log file to ", log_file, "\n");
     logger::info(config_to_string(config));
 
@@ -157,7 +158,9 @@ int main(int argc, char* argv[]) {
 
                 for (const auto& p : task.pairs) {
                     GeomGMDForiSolver solver(geometricgraphs[p.i], geometricgraphs[p.j], gurobi_params);
+                    if (config.logging.gurobi_log) solver.capture_gurobi_log();
                     auto const res = solver.run_optimization();
+                    report_gurobi_log(config.logging, geometricgraphs[p.i], geometricgraphs[p.j], res, solver.gurobi_log());
                     auto dist_result = evaluate_distance_result(res);
 
                     if (!dist_result.has_value()) {

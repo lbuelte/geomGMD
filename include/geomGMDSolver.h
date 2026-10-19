@@ -174,12 +174,26 @@ struct DirectedPathLength2 {
 // There is an option to consider angle differences of mapped edges in the objective.
 // There are options to enforce the cyclic order given in the GeometricGraph.
 // Options are set in the config.
+// Collects Gurobi's log lines via a message callback (see GeomGMDForiSolver::capture_gurobi_log).
+class GurobiLogCapture : public GRBCallback {
+public:
+    std::vector<std::string> lines;
+protected:
+    void callback() override;
+};
+
 class GeomGMDForiSolver {
 public:
-    GeomGMDForiSolver(GeometricGraph const &G_, 
-                     GeometricGraph const &H_, 
+    GeomGMDForiSolver(GeometricGraph const &G_,
+                     GeometricGraph const &H_,
                      GurobiParams const &gurobi_params,
                      std::optional<double> cutoff = std::nullopt);
+
+    // Captures Gurobi's own log of this computation (for debugging; call before run_optimization).
+    // The log is not printed; the captured lines are returned by gurobi_log().
+    // Without this call, Gurobi's output stays switched off and no callback is registered.
+    void capture_gurobi_log();
+    std::vector<std::string> gurobi_log() const;
 
     DistanceResult run_optimization();
     EdgeMap return_edge_map();
@@ -225,6 +239,7 @@ private:
 
     GRBEnv &env;
     GRBModel model;
+    std::unique_ptr<GurobiLogCapture> log_capture;
     std::chrono::milliseconds optimization_duration;
 
     const bool use_path_variables;

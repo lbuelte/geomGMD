@@ -44,6 +44,8 @@ CommandLine parse_command_line(int argc, char* argv[])
             command_line.log_level = parse_level_option(option, take_value());
         } else if (option == "--file-log-level") {
             command_line.file_log_level = parse_level_option(option, take_value());
+        } else if (option == "--gurobi-log" and not value) {
+            command_line.gurobi_log = true;
         } else {
             throw std::runtime_error("Unknown option: " + option);
         }
@@ -65,5 +67,6 @@ LoggingConfig resolve_logging(LoggingConfig const &config, CommandLine const &co
     LoggingConfig logging = config;
     if (command_line.log_level) logging.level = *command_line.log_level;
     if (command_line.file_log_level) logging.file_level = *command_line.file_log_level;
+    if (command_line.gurobi_log) logging.gurobi_log = true;
     return logging;
 }

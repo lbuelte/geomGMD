@@ -12,6 +12,7 @@ CLARANS_Clustering::CLARANS_Clustering(const std::vector<const GeometricGraph*> 
     , _num_local(config.clarans.num_local)
     , _num_clusters(config.cluster.k)
     , _gurobi_params(GurobiParams::from_config(config.gurobi))
+    , _logging(config.logging)
     , _output_context(out)
     , _rng_local()
 {
@@ -156,7 +157,9 @@ std::optional<IntervalDistance> CLARANS_Clustering::compute_distance_matrix_entr
         return _distance_matrix[i][j];
     }    
     GeomGMDForiSolver solver(*_graphs[i], *_graphs[j], _gurobi_params);  
+    if (_logging.gurobi_log) solver.capture_gurobi_log();
     auto const res = solver.run_optimization();
+    report_gurobi_log(_logging, *_graphs[i], *_graphs[j], res, solver.gurobi_log());
     auto dist_result = evaluate_distance_result(res);
     if (!dist_result.has_value()) {
         report_solver_failure(res);

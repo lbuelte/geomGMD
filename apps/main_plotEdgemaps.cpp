@@ -17,8 +17,9 @@ int main(int argc, char* argv[]) {
     if (command_line.positional.size() >= 1) {
         config_path = command_line.positional[0];
     }
-    auto const config = load_dist_config(config_path);
-    configure_logging(resolve_logging(config.logging, command_line), std::nullopt);
+    auto config = load_dist_config(config_path);
+    config.logging = resolve_logging(config.logging, command_line);
+    configure_logging(config.logging, std::nullopt);
     logger::info(config_to_string(config));
 
     std::filesystem::path input_path = 

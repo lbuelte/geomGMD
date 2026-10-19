@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
     if (args.size() >= 3) {
         config_path = args[2];
     }
-    auto const config = load_dist_config(config_path);
+    auto config = load_dist_config(config_path);
 
     std::filesystem::path output_path = 
             std::filesystem::path(config.io.output_path)
@@ -48,7 +48,8 @@ int main(int argc, char* argv[])
     std::filesystem::create_directories(output_path);
 
     // Console only: a log file in the output folder would overwrite the run.log of a full dataset computation
-    configure_logging(resolve_logging(config.logging, command_line), std::nullopt);
+    config.logging = resolve_logging(config.logging, command_line);
+    configure_logging(config.logging, std::nullopt);
     logger::info(config_to_string(config));
 
     const GurobiParams gurobi_params = GurobiParams::from_config(config.gurobi);
@@ -77,7 +78,9 @@ int main(int argc, char* argv[])
     auto begin = std::chrono::high_resolution_clock::now();
     
     GeomGMDForiSolver solver(geometricgraphs[g], geometricgraphs[h], gurobi_params);
+    if (config.logging.gurobi_log) solver.capture_gurobi_log();
     auto const res = solver.run_optimization();
+    report_gurobi_log(config.logging, geometricgraphs[g], geometricgraphs[h], res, solver.gurobi_log());
     auto dist_result = evaluate_distance_result(res);
 
     if (!dist_result.has_value()) {

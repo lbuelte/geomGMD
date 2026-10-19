@@ -12,6 +12,7 @@
 CLARA_Clustering::CLARA_Clustering(const std::vector<const GeometricGraph*> &graphs_, Config const &config, OutputContext &out) 
     : _graphs(graphs_) 
     , _gurobi_params(GurobiParams::from_config(config.gurobi))
+    , _logging(config.logging)
     , _num_samples(config.clara.num_samples)
     , _output_context(out)
     , _num_clusters(config.cluster.k)
@@ -308,7 +309,9 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
                         *medoids[order_of_centers[m]],
                         _gurobi_params,
                         min_dist.ub);
+                if (_logging.gurobi_log) solver.capture_gurobi_log();
                 auto res = solver.run_optimization();
+                report_gurobi_log(_logging, *_graphs[g], *medoids[order_of_centers[m]], res, solver.gurobi_log());
 
                 dist_result = evaluate_distance_result(res);
                 if (!dist_result.has_value()) {
@@ -413,7 +416,9 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
                                 *medoids[order_of_centers[m]],
                                 _gurobi_params,
                                 min_dist.ub);
+                        if (_logging.gurobi_log) solver.capture_gurobi_log();
                         auto res = solver.run_optimization();
+                        report_gurobi_log(_logging, *_graphs[g], *medoids[order_of_centers[m]], res, solver.gurobi_log());
 
                         dist_result = evaluate_distance_result(res);
                         if (!dist_result.has_value()) {
