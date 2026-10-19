@@ -6,20 +6,24 @@
 #include <filesystem>
 
 #include "io/gpkg_io.h"
-#include "io/logger.h"
+#include "io/command_line.h"
 #include "io/plots_and_stats.h"
 #include "io/config.h"
 #include "io/csv_io.h"
 #include "io/output_context.h"
 
 #include "clustering/clustering_base.h"
+#include "utility/log.h"
 
+
+namespace logger = geomgmd::log;
 
 int main(int argc, char* argv[]) {   
 
+    auto const command_line = parse_command_line(argc, argv);
     std::string config_path = "config_clustering.toml";
-    if (argc >= 2) {
-        config_path = argv[1];
+    if (command_line.positional.size() >= 1) {
+        config_path = command_line.positional[0];
     }
     auto const config = load_config(config_path);
 
@@ -33,10 +37,9 @@ int main(int argc, char* argv[]) {
             ? std::filesystem::path(config.io.global_log_file.value())
             : output_path / "run.log";
 
-    init_global_log(log_file);
-    std::cout << "Writing global log file to " << log_file << '\n' << std::endl;
-    log_config(config, global_log);
-    log_config(config, std::cout);
+    configure_logging(resolve_logging(config.logging, command_line), log_file);
+    logger::info("Writing log file to ", log_file, "\n");
+    logger::info(config_to_string(config));
 
     // Log config in extra file
     std::filesystem::copy_file(
@@ -58,7 +61,7 @@ int main(int argc, char* argv[]) {
                                                                           geometricgraphs.size() - starting_instance)
                                                                : geometricgraphs.size() - starting_instance;
     assert(starting_instance + num_instances <= geometricgraphs.size());
-    global_log << "Reduced dataset: " << num_instances << " graphs starting at index " << starting_instance << "\n";
+    logger::debug("Reduced dataset: ", num_instances, " graphs starting at index ", starting_instance);
 
     std::vector<const GeometricGraph*> graphs;
     for (GraphID i = starting_instance; i < starting_instance + num_instances; i++){
@@ -74,8 +77,7 @@ int main(int argc, char* argv[]) {
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-    std::cout << "Overall Clustering took " << (double)dur.count() / 1000.0 << " [s].\n";
-    global_log << "Overall Clustering took " << (double)dur.count() / 1000.0 << " [s].\n";
+    logger::info("Overall Clustering took ", (double)dur.count() / 1000.0, " [s].");
     
     if (config.io.generate_plots){
         // Write graphs and medoids color-coded by clusters to svg
@@ -97,9 +99,9 @@ int main(int argc, char* argv[]) {
     }
 
     // Logging final clustering
-    log_clustering_result(global_log, clustering_result, std::string("Final clustering"), starting_instance);
+    logger::info(clustering_result_to_string(clustering_result, std::string("Final clustering"), starting_instance));
     
-    close_global_log();
+    logger::close_file();
 
     // write geopackage with assigned cluster ids and information about medoids
     std::vector<int> cluster_ids(geometricgraphs.size(), -1), is_medoid(geometricgraphs.size(), -1);

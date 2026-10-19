@@ -6,6 +6,7 @@
 #include "result_writer.h"
 #include "io/config.h"
 #include "geomGMDSolver.h"
+#include "utility/log.h"
 
 inline std::filesystem::path create_path(const std::filesystem::path& base_path){
     std::filesystem::create_directories(base_path);
@@ -51,7 +52,7 @@ struct OutputContext {
     
     void write_edgemap(const nlohmann::json& j) {
         if (not edgemap_writer.has_value()){
-            std::cerr << "Error: write_edgemaps is not set in config, but function write_edgemap was called. Ignoring this call." << std::endl;
+            geomgmd::log::error("Error: write_edgemaps is not set in config, but function write_edgemap was called. Ignoring this call.");
             return;
         }
         edgemap_writer.value().write(j);

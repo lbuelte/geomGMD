@@ -51,6 +51,15 @@ CommandLine parse_command_line(int argc, char* argv[])
     return command_line;
 }
 
+void configure_logging(LoggingConfig const &logging, std::optional<std::filesystem::path> const &log_file)
+{
+    geomgmd::log::set_console_level(logging.level);
+    geomgmd::log::set_file_level(logging.file_level);
+    if (log_file) {
+        geomgmd::log::set_file(*log_file);
+    }
+}
+
 LoggingConfig resolve_logging(LoggingConfig const &config, CommandLine const &command_line)
 {
     LoggingConfig logging = config;

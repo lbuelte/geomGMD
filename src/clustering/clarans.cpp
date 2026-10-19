@@ -1,7 +1,9 @@
 #include "clustering/clarans.h"
 
 #include "utility/sampling.h"
-#include "io/logger.h"
+#include "utility/log.h"
+
+#include <sstream>
 #include "io/solver_messages.h"
 
 #include <queue>
@@ -28,8 +30,9 @@ CLARANS_Clustering::CLARANS_Clustering(const std::vector<const GeometricGraph*> 
     if (config.cluster.parallel){
         _num_threads = config.clarans.num_threads;
     }
-    _gurobi_params.log(std::cout);
-    _gurobi_params.log(global_log);
+    std::ostringstream gurobi_params_text;
+    _gurobi_params.log(gurobi_params_text);
+    geomgmd::log::info(gurobi_params_text.str());
 }
 
 ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config) 
@@ -39,7 +42,7 @@ ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config)
     //set k
     _num_clusters = k;
 
-    std::cout << "CLARANS Clustering on " << _num_graphs << " graphs with k = " << _num_clusters << std::endl;
+    geomgmd::log::info("CLARANS Clustering on ", _num_graphs, " graphs with k = ", _num_clusters);
 
     if (_num_graphs <= _num_clusters){
         ClusteringResult trivial_clustering;
@@ -49,31 +52,28 @@ ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config)
             trivial_clustering.clusters.push_back(std::vector<GraphID>());
             trivial_clustering.clusters[i].push_back(i);
         }
-        global_log << "Returning trivial clustering from CLARA with " << _num_graphs 
-                   << " graphs and " << _num_clusters << " clusters!\n";
+        geomgmd::log::debug("Returning trivial clustering from CLARA with ", _num_graphs,
+                            " graphs and ", _num_clusters, " clusters!");
         return trivial_clustering;
     }
 
     double best_value = std::numeric_limits<double>::infinity();
     std::vector<GraphID> best_medoids;
 
-    global_log << "Running " << _num_local << " iterations of outer CLARANS loop:\n"; 
+    geomgmd::log::debug("Running ", _num_local, " iterations of outer CLARANS loop:"); 
 
     for (int it = 0; it < _num_local; it++)
     {
         auto init_time = std::chrono::high_resolution_clock::now();
 
         sample_starting_medoids(config.random_seeds_initialization[it]);
-        global_log << "Iteration " << it << ": Sampled " << _num_clusters 
-                   << " starting medoids using seed " << config.random_seeds_initialization[it] << " : ";
-        std::cout << "Iteration " << it << ": Sampled " << _num_clusters 
-                  << " starting medoids using seed " << config.random_seeds_initialization[it] << " : ";
+        std::ostringstream medoids_text;
+        medoids_text << "Iteration " << it << ": Sampled " << _num_clusters 
+                     << " starting medoids using seed " << config.random_seeds_initialization[it] << " : ";
         for (auto const &m : _medoids){
-            global_log << m << " ";
-            std::cout << m << " ";
+            medoids_text << m << " ";
         }
-        global_log << "\n";
-        std::cout << "\n";
+        geomgmd::log::info(medoids_text.str());
 
         double current_cost = swap();
         if (current_cost <= best_value){
@@ -85,8 +85,7 @@ ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config)
 
         auto it_time = std::chrono::high_resolution_clock::now();
         auto it_dur = std::chrono::duration_cast<std::chrono::milliseconds>(it_time - init_time);
-        global_log << "Completed CLARANS clustering iteration " << it << " in " << it_dur.count() << " ms.\n";
-        std::cout << "Completed CLARANS clustering iteration " << it << " in " << it_dur.count() << " ms.\n";
+        geomgmd::log::info("Completed CLARANS clustering iteration ", it, " in ", it_dur.count(), " ms.");
     }
 
     //assign elements to clusters
@@ -98,7 +97,7 @@ ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config)
     
     auto solution_value = computeTotalCost(_medoids);
 
-    global_log << " Computed " << [&](){
+    geomgmd::log::debug("Computed ", [&](){
             int num_computed_entries = 0;
             for (GraphID i = 0; i < _num_graphs; i++){
                 for (GraphID j = 0; j < _num_graphs; j++){
@@ -108,13 +107,13 @@ ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config)
                 }
             }
             return num_computed_entries;
-        }() 
-               << " / " << _num_graphs * _num_graphs << " distance matrix entries.\n";
+        }(),
+        " / ", _num_graphs * _num_graphs, " distance matrix entries.");
 
     auto end = std::chrono::high_resolution_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    global_log << "\nFinished CLARANS Clustering in " << dur.count() << " ms.\n"
-               << "Best clustering has solution value " << best_value << "\n";
+    geomgmd::log::debug("Finished CLARANS Clustering in ", dur.count(), " ms.");
+    geomgmd::log::debug("Best clustering has solution value ", best_value);
 
     return {clustering, CLARANS_Clustering::_medoids, solution_value};
 }
@@ -145,7 +144,7 @@ CLARANS_Clustering::MedoidSwap CLARANS_Clustering::sample_medoid_swap(std::vecto
 std::optional<IntervalDistance> CLARANS_Clustering::compute_distance_matrix_entry(GraphID const i, GraphID const j) 
 {
     if (_distance_matrix.empty()) {
-        std::cout << "WARNING: Cannot compute values of empty distance matrix!" << std::endl;
+        geomgmd::log::warning("WARNING: Cannot compute values of empty distance matrix!");
         return std::nullopt;
     }
     
@@ -161,8 +160,7 @@ std::optional<IntervalDistance> CLARANS_Clustering::compute_distance_matrix_entr
     auto dist_result = evaluate_distance_result(res);
     if (!dist_result.has_value()) {
         report_solver_failure(res);
-        std::cout << "Error! Distance between graphs "
-                    << i << " and " << j << " could not be computed!\n";
+        geomgmd::log::error("Error! Distance between graphs ", i, " and ", j, " could not be computed!");
         return std::nullopt;
     }
     _distance_matrix[i][j] = dist_result.value();
@@ -309,7 +307,7 @@ double CLARANS_Clustering::swap() {
     double current_cost = computeTotalCost(_medoids);
     size_t search_count = 0;
 
-    std::cout << "Swapping medoids. We try at most " << _max_neighbors << " many swaps if there is no improvement...\n";
+    geomgmd::log::info("Swapping medoids. We try at most ", _max_neighbors, " many swaps if there is no improvement...");
     while (search_count < _max_neighbors){
         printProgressBar(search_count, _max_neighbors);
         MedoidSwap swap_indices = sample_medoid_swap(_medoids);
@@ -319,7 +317,7 @@ double CLARANS_Clustering::swap() {
             current_cost = new_cost;
             auto removed_it = std::find(_medoids.begin(), _medoids.end(), swap_indices.idx_removed);
             if (removed_it == _medoids.end()){
-                std::cout << "Error: Medoid to be removed is not actually contained in _medoids!" << std::endl;
+                geomgmd::log::error("Error: Medoid to be removed is not actually contained in _medoids!");
             }
             *removed_it = swap_indices.idx_added; 
             search_count = 0;
@@ -335,7 +333,7 @@ double CLARANS_Clustering::swap() {
 // Compute current total cost
 double CLARANS_Clustering::computeTotalCost(const std::vector<GraphID>& _medoids) 
 {
-    std::cout << "Computing total cost for " << _num_graphs << " graphs and " << _num_clusters << " clusters...\n";
+    geomgmd::log::info("Computing total cost for ", _num_graphs, " graphs and ", _num_clusters, " clusters...");
     double total = 0.0;
     for (GraphID i = 0; i < _num_graphs; ++i) {
         IntervalDistance best = {std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};

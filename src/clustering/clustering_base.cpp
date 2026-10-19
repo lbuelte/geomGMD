@@ -2,9 +2,10 @@
 
 #include "clustering/clara.h"
 #include "clustering/clarans.h"
-#include "io/logger.h"
+#include "utility/log.h"
 
 #include <cassert>
+#include <sstream>
 #include <queue>
 
 
@@ -27,10 +28,9 @@ ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs
 
         case ClusteringConfig::ClusteringAlgorithm::CLARA: {
             CLARA_Clustering clara_clustering(graphs, config, out);
-            global_log << "\nRunning CLARA Clustering (k=" << k
-                       << ") on " << graphs.size() << " graphs on " << config.pam.num_threads_matrix 
-                       << "/" << config.clara.num_threads_assignment 
-                       << " threads and " << config.clara.num_samples << " samples." << std::endl;
+            geomgmd::log::debug("Running CLARA Clustering (k=", k, ") on ", graphs.size(), " graphs on ",
+                                config.pam.num_threads_matrix, "/", config.clara.num_threads_assignment,
+                                " threads and ", config.clara.num_samples, " samples.");
             clustering_result = clara_clustering.cluster(k, config);
             if (config.io.write_distance_matrix){
                 clustering_result._distance_matrix_opt = clara_clustering.return_distance_matrix();
@@ -40,9 +40,9 @@ ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs
 
         case ClusteringConfig::ClusteringAlgorithm::CLARANS: {
             CLARANS_Clustering clarans_clustering(graphs, config, out);
-            global_log << "\nRunning CLARANS Clustering (k=" << k 
-                       << ") on " << graphs.size() << " graphs on " << config.pam.num_threads_matrix 
-                       << " threads and " << config.clarans.num_local << " starting samples." << std::endl;
+            geomgmd::log::debug("Running CLARANS Clustering (k=", k, ") on ", graphs.size(), " graphs on ",
+                                config.pam.num_threads_matrix, " threads and ", config.clarans.num_local,
+                                " starting samples.");
             clustering_result =  clarans_clustering.cluster(k, config.clarans);
             if (config.io.write_distance_matrix){
                 clustering_result._distance_matrix_opt = clarans_clustering.return_distance_matrix();
@@ -52,9 +52,8 @@ ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs
 
         case ClusteringConfig::ClusteringAlgorithm::PAM: {
             PAM_Clustering pam_clustering(graphs, config, out);
-            global_log << "\nRunning PAM Clustering (k=" << k 
-                       << ") on " << graphs.size() << " graphs on " << config.pam.num_threads_matrix 
-                       << " threads." << std::endl;
+            geomgmd::log::debug("Running PAM Clustering (k=", k, ") on ", graphs.size(), " graphs on ",
+                                config.pam.num_threads_matrix, " threads.");
             clustering_result =  pam_clustering.cluster(config, k);
             if (config.io.write_distance_matrix){
                 clustering_result._distance_matrix_opt = pam_clustering.return_distance_matrix();
@@ -77,7 +76,7 @@ void read_symmetric_IntervalDistance_matrix_from_csv(
         throw std::runtime_error("Could not open file: " + filename);
     }
 
-    std::cout << "Reading IntervalDistance matrix from file " << filename << " ..." << std::endl;
+    geomgmd::log::info("Reading IntervalDistance matrix from file ", filename, " ...");
     int n = matrix.size();
 
     std::string line;
@@ -115,14 +114,15 @@ void read_symmetric_IntervalDistance_matrix_from_csv(
     }
 }
 
-void log_clustering_result(std::ofstream &log, ClusteringResult const &clustering_result, std::string const &clustering_name, size_t starting_offset)
+std::string clustering_result_to_string(ClusteringResult const &clustering_result, std::string const &clustering_name, size_t starting_offset)
 {
-    log << "\n" << clustering_name << " with solution value " << clustering_result.clustering_solution_value << " :\n";
+    std::ostringstream log;
+    log << clustering_name << " with solution value " << clustering_result.clustering_solution_value << " :";
     for (int c = 0; c < clustering_result.clusters.size(); c++){
-        log << "Cluster " << c << " with medoid " << clustering_result.medoid_indices[c] << " :\n";
+        log << "\nCluster " << c << " with medoid " << clustering_result.medoid_indices[c] << " :\n";
         for (auto const & g : clustering_result.clusters[c]){
             log << g + starting_offset << " ";
         }
-        log << "\n";
     }
+    return log.str();
 }

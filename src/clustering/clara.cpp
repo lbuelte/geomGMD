@@ -1,7 +1,9 @@
 #include "clustering/clara.h"
 
 #include "utility/sampling.h"
-#include "io/logger.h"
+#include "utility/log.h"
+
+#include <sstream>
 #include "io/solver_messages.h"
 #include "utility/overloaded.h"
 
@@ -28,8 +30,9 @@ CLARA_Clustering::CLARA_Clustering(const std::vector<const GeometricGraph*> &gra
         _distance_matrix = std::vector<std::vector<IntervalDistance>>(_num_graphs, std::vector<IntervalDistance>(_num_graphs, {-1.0, -1.0}));
     }
 
-    _gurobi_params.log(std::cout);
-    _gurobi_params.log(global_log);
+    std::ostringstream gurobi_params_text;
+    _gurobi_params.log(gurobi_params_text);
+    geomgmd::log::info(gurobi_params_text.str());
 }
 
 
@@ -39,8 +42,8 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
     _num_clusters = k;
     auto start = std::chrono::high_resolution_clock::now();
 
-    std::cout << "CLARA Clustering on " << _num_graphs << " graphs with " << _num_samples 
-              << " samples and k = " << _num_clusters << std::endl;
+    geomgmd::log::info("CLARA Clustering on ", _num_graphs, " graphs with ", _num_samples,
+                       " samples and k = ", _num_clusters);
 
     if (_num_graphs <= _num_clusters){
         ClusteringResult trivial_clustering;
@@ -50,20 +53,17 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
             trivial_clustering.clusters.push_back(std::vector<GraphID>());
             trivial_clustering.clusters[i].push_back(i);
         }
-        global_log << "Returning trivial clustering from CLARA with " << _num_graphs 
-                   << " graphs and " << _num_clusters << " clusters!\n";
-        std::cout << "Returning trivial clustering from CLARA with " << _num_graphs 
-                  << " graphs and " << _num_clusters << " clusters!\n";
+        geomgmd::log::info("Returning trivial clustering from CLARA with ", _num_graphs,
+                           " graphs and ", _num_clusters, " clusters!");
         return trivial_clustering;
     }
     if (_sample_size >= _num_graphs){
-        global_log << "CLARA sample size >= number of graphs: Running PAM on the whole dataset.\n";
-        std::cout << "CLARA sample size >= number of graphs: Running PAM on the whole dataset.\n";
+        geomgmd::log::info("CLARA sample size >= number of graphs: Running PAM on the whole dataset.");
         PAM_Clustering pam_clustering(_graphs, config, _output_context);
         return pam_clustering.cluster(config, _num_clusters);
     }
 
-    global_log << "\nStarted CLARA Clustering with " << _num_samples << " samples:\n";
+    geomgmd::log::debug("Started CLARA Clustering with ", _num_samples, " samples:");
 
     std::pair<ClusteringResult, AssignmentResult> best_clustering;
     double best_clustering_value = std::numeric_limits<double>::infinity();
@@ -73,7 +73,7 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
     for (int s = 0; s < _num_samples; s++){
 
         auto init_time = std::chrono::high_resolution_clock::now();
-        global_log << "\nSample " << s << ":\n";
+        geomgmd::log::debug("Sample ", s, ":");
 
         Sample sample = get_sample(config.clara.random_seeds[s]);       
 
@@ -92,7 +92,7 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
 
         auto sampled_time = std::chrono::high_resolution_clock::now();
         auto sampled_dur = std::chrono::duration_cast<std::chrono::milliseconds>(sampled_time - init_time);
-        global_log << "Completed clustering of sampled set " << s << ". It took " << sampled_dur.count() << " ms.\n";
+        geomgmd::log::debug("Completed clustering of sampled set ", s, ". It took ", sampled_dur.count(), " ms.");
 
         // Store medoids as graphs
         std::vector<const GeometricGraph*> medoids;   
@@ -107,9 +107,9 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
 
         auto assigned_time = std::chrono::high_resolution_clock::now();
         auto assign_dur = std::chrono::duration_cast<std::chrono::milliseconds>(assigned_time - sampled_time);
-        global_log << "Completed assignment of graphs to medoids of sample " << s << ". It took " << assign_dur.count() << " ms.\n"
-                   << "Total cost of this sample clustering: " << sample_cluster_result.clustering_solution_value << " + " 
-                   << assignment.solution_value << " = " << sample_cluster_result.clustering_solution_value + assignment.solution_value <<  "\n";
+        geomgmd::log::debug("Completed assignment of graphs to medoids of sample ", s, ". It took ", assign_dur.count(), " ms.");
+        geomgmd::log::debug("Total cost of this sample clustering: ", sample_cluster_result.clustering_solution_value, " + ",
+                            assignment.solution_value, " = ", sample_cluster_result.clustering_solution_value + assignment.solution_value);
 
         // Compare to results from previous samples
         if (sample_cluster_result.clustering_solution_value + assignment.solution_value < best_clustering_value){
@@ -120,14 +120,14 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
         }   
         auto it_end = std::chrono::high_resolution_clock::now();
         auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(it_end - init_time);
-        global_log << "Iteration " << s << " took " << dur.count() << " ms in total.\n";
+        geomgmd::log::debug("Iteration ", s, " took ", dur.count(), " ms in total.");
 
     }
 
     auto end = std::chrono::high_resolution_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    global_log << "\nFinished CLARA Clustering in " << dur.count() << " ms.\n"
-               << "Best clustering with solution value " << best_clustering_value << " based on sample " << best_it << "\n";
+    geomgmd::log::debug("Finished CLARA Clustering in ", dur.count(), " ms.");
+    geomgmd::log::debug("Best clustering with solution value ", best_clustering_value, " based on sample ", best_it);
 
     return build_clustering_result_from_sample_cluster_and_assignment(best_clustering, best_sample);
 
@@ -187,11 +187,12 @@ CLARA_Clustering::Sample CLARA_Clustering::get_sample(std::optional<uint32_t> co
 {
     auto sample_indices = uniformly_sample_indices(_num_graphs, _sample_size, rs);
 
-    global_log << "Sampled " << _sample_size << " of " << _num_graphs;
+    std::ostringstream sample_text;
+    sample_text << "Sampled " << _sample_size << " of " << _num_graphs;
     if (rs){
-        global_log << " with seed " << rs.value() << " : ";
+        sample_text << " with seed " << rs.value() << " : ";
     } else {
-        global_log << " : ";
+        sample_text << " : ";
     }
     
     // Prepare reduced dataset
@@ -199,9 +200,9 @@ CLARA_Clustering::Sample CLARA_Clustering::get_sample(std::optional<uint32_t> co
     for(int i = 0; i < _sample_size; i++){
         int graph_id = sample_indices[i];
         sample_graphs.push_back(_graphs[graph_id]);
-        global_log << graph_id << " ";
+        sample_text << graph_id << " ";
     }
-    global_log << "\n";
+    geomgmd::log::debug(sample_text.str());
 
     return {sample_graphs, sample_indices};
 }
@@ -229,8 +230,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
     std::vector<ClusterID> order_of_centers =
         sort_center_indices_by_graph_size(medoids);
 
-    std::cout << "Computing assignment of graphs to centers of sampled clustering using " << _num_threads_assignment << " threads ..."
-              << std::endl;
+    geomgmd::log::info("Computing assignment of graphs to centers of sampled clustering using ", _num_threads_assignment, " threads ...");
     auto start = std::chrono::high_resolution_clock::now();
 
     const GraphID n = _graphs.size();
@@ -263,13 +263,9 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
     auto duration =
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-    std::cout << std::endl
-              << "Assignment computation using " << _num_threads_assignment << " threads complete, it took "
-              << duration.count() << " ms." << std::endl;
-
-    global_log << std::endl
-               << "Assignment computation using "<< _num_threads_assignment << " threads took "
-               << duration.count() << " ms\n";
+    std::cout << std::endl;  // end the progress bar line
+    geomgmd::log::info("Assignment computation using ", _num_threads_assignment, " threads complete, it took ",
+                       duration.count(), " ms.");
 
     return assignment_result;
 }

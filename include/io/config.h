@@ -86,6 +86,7 @@ struct Config {
 
 Config load_config(const std::string& filename);
 void log_config(const Config& cfg, std::ostream& out);
+std::string config_to_string(const Config& cfg);
 
 struct ParallelConfig {
     bool run_parallel = true;
@@ -102,6 +103,7 @@ struct DistanceConfig {
 
 DistanceConfig load_dist_config(const std::string& filename);
 void log_config(const DistanceConfig& cfg, std::ostream& out);
+std::string config_to_string(const DistanceConfig& cfg);
 
 
 // Helper to print ClusteringAlgorithm enum

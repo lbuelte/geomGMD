@@ -7,19 +7,23 @@
 #include <queue>
 #include <thread>
 
-#include "io/logger.h"
+#include "io/command_line.h"
 #include "io/config.h"
 #include "io/output_context.h"
 #include "io/solver_messages.h"
 
 #include "geomGMDSolver.h"
+#include "utility/log.h"
 
+
+namespace logger = geomgmd::log;
 
 int main(int argc, char* argv[]) {   
 
+    auto const command_line = parse_command_line(argc, argv);
     std::string config_path = "config_dist.toml";
-    if (argc >= 2) {
-        config_path = argv[1];
+    if (command_line.positional.size() >= 1) {
+        config_path = command_line.positional[0];
     }
     auto const config = load_dist_config(config_path);
 
@@ -33,10 +37,9 @@ int main(int argc, char* argv[]) {
             ? std::filesystem::path(config.io.global_log_file.value())
             : output_path / "run.log";
 
-    init_global_log(log_file);
-    std::cout << "Writing global log file to " << log_file << '\n' << std::endl;
-    log_config(config, global_log);
-    log_config(config, std::cout);
+    configure_logging(resolve_logging(config.logging, command_line), log_file);
+    logger::info("Writing log file to ", log_file, "\n");
+    logger::info(config_to_string(config));
 
     // Log config in extra file
     std::filesystem::copy_file(
@@ -59,13 +62,13 @@ int main(int argc, char* argv[]) {
                                                                : geometricgraphs.size() - starting_instance;
     
     assert(starting_instance + num_instances <= geometricgraphs.size());
-    global_log << "Reduced dataset: " << num_instances << " graphs starting at index " << starting_instance << "\n";
+    logger::debug("Reduced dataset: ", num_instances, " graphs starting at index ", starting_instance);
     const GurobiParams gurobi_params = GurobiParams::from_config(config.gurobi);
 
     std::vector<std::vector<IntervalDistance>> distance_matrix(num_instances, std::vector<IntervalDistance>(num_instances, {-1.0, -1.0}));
     size_t num_threads = config.parallel.num_threads_matrix;
 
-    std::cout << "Computing distance matrix with " << num_threads << " threads ..." << std::endl;
+    logger::info("Computing distance matrix with ", num_threads, " threads ...");
     auto begin = std::chrono::high_resolution_clock::now();
     { 
         struct Pair {
@@ -159,8 +162,7 @@ int main(int argc, char* argv[]) {
 
                     if (!dist_result.has_value()) {
                         report_solver_failure(res);
-                        std::cout << "Error! Distance between graphs "
-                                << p.i << " and " << p.j << " could not be computed!\n";
+                        logger::error("Error! Distance between graphs ", p.i, " and ", p.j, " could not be computed!");
                         continue;
                     }
                     out.write_computation_info_row(solver, dist_result.value());
@@ -197,13 +199,12 @@ int main(int argc, char* argv[]) {
 
     auto end = std::chrono::high_resolution_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-    std::cout << "Overall computation took " << (double)dur.count() / 1000.0 << " [s].\n";
-    global_log << "Overall computation took " << (double)dur.count() / 1000.0 << " [s].\n";
+    logger::info("Overall computation took ", (double)dur.count() / 1000.0, " [s].");
 
-    global_log << "Writing distance matrix to " << out.output_path << std::endl;
+    logger::debug("Writing distance matrix to ", out.output_path);
     out.write_interval_distance_matrix(distance_matrix);                 
 
-    close_global_log();
+    logger::close_file();
 
     return EXIT_SUCCESS;
 }

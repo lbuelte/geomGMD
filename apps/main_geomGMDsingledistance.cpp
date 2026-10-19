@@ -3,47 +3,58 @@
 #include <chrono>
 #include <cassert>
 #include <filesystem>
+#include <sstream>
 
-#include "io/logger.h"
+#include "io/command_line.h"
 #include "io/config.h"
 #include "io/edgemap_io.h"
 #include "io/solver_messages.h"
 
 #include "geomGMDSolver.h"
+#include "utility/log.h"
 
+
+namespace logger = geomgmd::log;
 
 int main(int argc, char* argv[]) 
 {  
-    if (argc < 3){
+    auto const command_line = parse_command_line(argc, argv);
+    auto const &args = command_line.positional;
+    if (args.size() < 2){
         throw std::runtime_error("Error: Need graph IDs as input arguments");
     }
     GraphID g,h;
     try {
-        g = std::stoi(argv[1]);
+        g = std::stoi(args[0]);
     } catch (const std::exception& e) {
-        std::cerr << "Invalid integer: " << argv[1] << std::endl;
+        logger::error("Invalid integer: ", args[0]);
     }
     try {
-        h = std::stoi(argv[2]);
+        h = std::stoi(args[1]);
     } catch (const std::exception& e) {
-        std::cerr << "Invalid integer: " << argv[2] << std::endl;
+        logger::error("Invalid integer: ", args[1]);
     }    
 
     std::string config_path = "config_dist.toml";
-    if (argc >= 4) {
-        config_path = argv[3];
+    if (args.size() >= 3) {
+        config_path = args[2];
     }
     auto const config = load_dist_config(config_path);
-    log_config(config, std::cout);
-
-    const GurobiParams gurobi_params = GurobiParams::from_config(config.gurobi);
-    gurobi_params.log(std::cout);
 
     std::filesystem::path output_path = 
             std::filesystem::path(config.io.output_path)
             / config.io.dataset
             / config.io.run_name;
     std::filesystem::create_directories(output_path);
+
+    // Console only: a log file in the output folder would overwrite the run.log of a full dataset computation
+    configure_logging(resolve_logging(config.logging, command_line), std::nullopt);
+    logger::info(config_to_string(config));
+
+    const GurobiParams gurobi_params = GurobiParams::from_config(config.gurobi);
+    std::ostringstream gurobi_params_text;
+    gurobi_params.log(gurobi_params_text);
+    logger::info(gurobi_params_text.str());
 
     // Log config in extra file
     std::filesystem::copy_file(
@@ -95,10 +106,9 @@ int main(int argc, char* argv[])
 
     auto end = std::chrono::high_resolution_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
-    std::cout << "Overall computation took " << (double)dur.count() / 1000.0 << " [s].\n";
-    global_log << "Overall computation took " << (double)dur.count() / 1000.0 << " [s].\n";            
+    logger::info("Overall computation took ", (double)dur.count() / 1000.0, " [s].");
 
-    close_global_log();
+    logger::close_file();
 
     return EXIT_SUCCESS;
 }

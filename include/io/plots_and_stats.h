@@ -4,6 +4,7 @@
 #include <gurobi_c++.h>
 
 #include "geomGMDSolver.h"
+#include "utility/log.h"
 
 #include <filesystem>
 #include <regex>
@@ -35,7 +36,7 @@ const std::vector<std::string> cluster_colors = {
 void delete_svgs(const std::string& folderPath) {
     try {
         if (!std::filesystem::exists(folderPath)) {
-            std::cerr << "Directory does not exist: " << folderPath << "\n";
+            geomgmd::log::error("Directory does not exist: ", folderPath);
             return;
         }
 
@@ -45,10 +46,10 @@ void delete_svgs(const std::string& folderPath) {
             }
         }
 
-        std::cout << "All .svg files deleted in " << folderPath << "\n";
+        geomgmd::log::info("All .svg files deleted in ", folderPath);
     }
     catch (const std::exception& e) {
-        std::cerr << "Error while deleting .svg files: " << e.what() << "\n";
+        geomgmd::log::error("Error while deleting .svg files: ", e.what());
     }
 }
 
@@ -146,7 +147,7 @@ void write_interval_distance_matrix(
 
     std::ofstream ofs(filename);
     if (!ofs.is_open()) {
-        std::cerr << "Error: Could not open " << filename << "\n";
+        geomgmd::log::error("Error: Could not open ", filename);
         return;
     }
 
@@ -184,7 +185,7 @@ void write_interval_distance_matrix(
     ofs << "\n";
 
     ofs.close();
-    std::cout << "Wrote matrix to " << filename << "\n";            
+    geomgmd::log::info("Wrote matrix to ", filename);            
 }
 
 
@@ -193,7 +194,7 @@ std::vector<std::vector<IntervalDistance>> read_interval_distance_matrix(
 {
     std::ifstream ifs(filename);
     if (!ifs.is_open()) {
-        std::cerr << "Error: Could not open " << filename << " for reading\n";
+        geomgmd::log::error("Error: Could not open ", filename, " for reading");
         return {};
     }
     

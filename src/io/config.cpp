@@ -1,5 +1,4 @@
 #include "io/config.h"
-#include "io/logger.h"
 #include "utility/overloaded.h"
 
 #include "toml++/toml.h"
@@ -478,4 +477,18 @@ void log_config(const DistanceConfig& cfg, std::ostream& out)
     log_logging_section(cfg.logging, out);
 
     out << "\n================================================\n\n";
+}
+
+std::string config_to_string(const Config& cfg)
+{
+    std::ostringstream oss;
+    log_config(cfg, oss);
+    return oss.str();
+}
+
+std::string config_to_string(const DistanceConfig& cfg)
+{
+    std::ostringstream oss;
+    log_config(cfg, oss);
+    return oss.str();
 }

@@ -4,6 +4,7 @@
 #include "io/config.h"
 #include "utility/log.h"
 
+#include <filesystem>
 #include <optional>
 #include <string>
 #include <vector>
@@ -23,5 +24,8 @@ CommandLine parse_command_line(int argc, char* argv[]);
 
 // Logging settings from the config, overridden by the command line options.
 LoggingConfig resolve_logging(LoggingConfig const &config, CommandLine const &command_line);
+
+// Sets the console and file log levels and, if given, the log file of geomgmd::log.
+void configure_logging(LoggingConfig const &logging, std::optional<std::filesystem::path> const &log_file);
 
 #endif // GEOMGMD_IO_COMMAND_LINE_H

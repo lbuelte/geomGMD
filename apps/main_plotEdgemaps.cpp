@@ -2,18 +2,24 @@
 #include <fstream>
 #include <filesystem>
 
+#include "io/command_line.h"
 #include "io/config.h"
 #include "io/edgemap_io.h"
 #include "geomGMDSolver.h"
+#include "utility/log.h"
+
+namespace logger = geomgmd::log;
 
 int main(int argc, char* argv[]) {   
 
+    auto const command_line = parse_command_line(argc, argv);
     std::string config_path = "config_dist.toml";
-    if (argc >= 2) {
-        config_path = argv[1];
+    if (command_line.positional.size() >= 1) {
+        config_path = command_line.positional[0];
     }
     auto const config = load_dist_config(config_path);
-    log_config(config, std::cout);
+    configure_logging(resolve_logging(config.logging, command_line), std::nullopt);
+    logger::info(config_to_string(config));
 
     std::filesystem::path input_path = 
             std::filesystem::path(config.io.output_path)
@@ -40,7 +46,7 @@ int main(int argc, char* argv[]) {
                                                                           geometricgraphs.size() - starting_instance)
                                                                : geometricgraphs.size() - starting_instance;    
     assert(starting_instance + num_instances <= geometricgraphs.size());
-    std::cout << "Reduced dataset: " << num_instances << " graphs starting at index " << starting_instance << "\n";
+    logger::info("Reduced dataset: ", num_instances, " graphs starting at index ", starting_instance);
     
     std::filesystem::path distance_matrix_input_file = input_path / "intervaldistance_matrix.csv";
     std::filesystem::path edgemap_input_file = input_path / "edgemaps.json";

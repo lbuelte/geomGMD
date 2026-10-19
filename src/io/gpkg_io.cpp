@@ -1,4 +1,5 @@
-#include "../include/io/gpkg_io.h"
+#include "io/gpkg_io.h"
+#include "utility/log.h"
 
 void assignClustersToPolygons(
         const std::string& inputGpkg,
@@ -17,7 +18,7 @@ void assignClustersToPolygons(
             nullptr, nullptr, nullptr);
 
     if (!inDs) {
-        std::cerr << "Failed to open input GeoPackage: " << inputGpkg << "\n";
+        geomgmd::log::error("Failed to open input GeoPackage: ", inputGpkg);
         return;
     }
 
@@ -25,21 +26,20 @@ void assignClustersToPolygons(
     try {
         inLayer = inDs->GetLayerByName("polygons");
         if (!inLayer) {
-            std::cerr << "Layer 'polygons' not found, trying layer 0\n";
+            geomgmd::log::warning("Layer 'polygons' not found, trying layer 0");
             inLayer = inDs->GetLayer(0);
         }
         if (!inLayer) {
             throw std::runtime_error("Could not get any layer from GeoPackage.");
         }
 
-        std::cout << "Layer name: " << inLayer->GetName() << "\n";
-        std::cout << "Feature count: " << inLayer->GetFeatureCount() << "\n";
+        geomgmd::log::info("Layer name: ", inLayer->GetName());
+        geomgmd::log::info("Feature count: ", inLayer->GetFeatureCount());
         OGRFeatureDefn* layerDef = inLayer->GetLayerDefn();
-        std::cout << "Geometry type: " 
-                << OGRGeometryTypeToName(layerDef->GetGeomType()) << "\n";
+        geomgmd::log::info("Geometry type: ", OGRGeometryTypeToName(layerDef->GetGeomType()));
 
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << "\n";
+        geomgmd::log::error("Error: ", e.what());
         GDALClose(inDs);
         return;
     }
@@ -47,7 +47,7 @@ void assignClustersToPolygons(
     // Create output geopackage
     GDALDriver* driver = GetGDALDriverManager()->GetDriverByName("GPKG");
     if (!driver) {
-        std::cerr << "GPKG driver not available\n";
+        geomgmd::log::error("GPKG driver not available");
         GDALClose(inDs);
         return;
     }
@@ -63,7 +63,7 @@ void assignClustersToPolygons(
             outputGpkg.c_str(), 0, 0, 0, GDT_Unknown, nullptr);
 
     if (!outDs) {
-        std::cerr << "Failed to create output GeoPackage\n";
+        geomgmd::log::error("Failed to create output GeoPackage");
         GDALClose(inDs);
         return;
     }
@@ -95,7 +95,7 @@ void assignClustersToPolygons(
 
     //sanity check
     if (inLayer->GetFeatureCount() != clusterIds.size()) {
-        std::cerr << "Warning: number of features in input layer (" << inLayer->GetFeatureCount() << ") does not match number of cluster ids (" << clusterIds.size() << ")\n";
+        geomgmd::log::warning("Warning: number of features in input layer (", inLayer->GetFeatureCount(), ") does not match number of cluster ids (", clusterIds.size(), ")");
     }
 
     while ((inFeat = inLayer->GetNextFeature()) != nullptr) {
@@ -111,14 +111,14 @@ void assignClustersToPolygons(
                 pid = static_cast<int>(inFeat->GetFID());
             }
         } catch (const std::exception& e) {
-            std::cerr << "Error: " << e.what() << "\n";
+            geomgmd::log::error("Error: ", e.what());
             GDALClose(inDs);
             return;
         }
         GraphID gid = polygon_id_to_graph_id.at(pid);
 
         if (gid < 0 || gid >= clusterIds.size()) {
-            std::cerr << "Warning: cluster ID out of range for graph id " << gid << "\n";
+            geomgmd::log::warning("Warning: cluster ID out of range for graph id ", gid);
             OGRFeature::DestroyFeature(inFeat);
             continue;
         }
@@ -151,9 +151,7 @@ void assignClustersToPolygons(
         auto err = outLayer->CreateFeature(outFeat);
 
         if (err != OGRERR_NONE) {
-            std::cerr << "Failed to create feature with id="
-                      << outFeat->GetFieldAsInteger("id")
-                      << std::endl;
+            geomgmd::log::error("Failed to create feature with id=", outFeat->GetFieldAsInteger("id"));
         }
 
         OGRFeature::DestroyFeature(inFeat);
@@ -163,5 +161,5 @@ void assignClustersToPolygons(
     GDALClose(inDs);
     GDALClose(outDs);
 
-    std::cout << "Clustered polygons written to: " << outputGpkg << "\n";
+    geomgmd::log::info("Clustered polygons written to: ", outputGpkg);
 }

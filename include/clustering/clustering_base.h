@@ -27,8 +27,8 @@ ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs
 
 void read_symmetric_IntervalDistance_matrix_from_csv(std::vector<std::vector<IntervalDistance>> &matrix, const std::string& filename);
 
-void log_clustering_result(
-        std::ofstream &log,
+// Text representation of a clustering (clusters with medoids; graph ids shifted by starting_offset) for the log.
+std::string clustering_result_to_string(
         ClusteringResult const &clustering_result,
         std::string const &clustering_name,
         size_t starting_offset = 0);

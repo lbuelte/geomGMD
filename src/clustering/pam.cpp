@@ -1,7 +1,9 @@
 #include "clustering/pam.h"
 
 // #include "io/plots_and_stats.h"
-#include "io/logger.h"
+#include "utility/log.h"
+
+#include <sstream>
 #include "io/solver_messages.h"
 
 #include <queue>
@@ -21,8 +23,9 @@ PAM_Clustering::PAM_Clustering(const std::vector<const GeometricGraph*> &graphs,
     if (config.cluster.parallel){
         _num_threads_distance_matrix = config.pam.num_threads_matrix;
     }
-    _gurobi_params.log(std::cout);
-    _gurobi_params.log(global_log);
+    std::ostringstream gurobi_params_text;
+    _gurobi_params.log(gurobi_params_text);
+    geomgmd::log::info(gurobi_params_text.str());
 }
 
 PAM_Clustering::PAM_Clustering(
@@ -49,8 +52,9 @@ PAM_Clustering::PAM_Clustering(
     if (config.cluster.parallel){
         _num_threads_distance_matrix = config.pam.num_threads_matrix;
     }
-    _gurobi_params.log(std::cout);
-    _gurobi_params.log(global_log);
+    std::ostringstream gurobi_params_text;
+    _gurobi_params.log(gurobi_params_text);
+    geomgmd::log::info(gurobi_params_text.str());
 }
 
 
@@ -59,7 +63,7 @@ ClusteringResult PAM_Clustering::cluster(Config const &config, int k)
     //set k
     this->k = k;
 
-    std::cout << "PAM Clustering on " << n << " graphs with k = " << k << std::endl;
+    geomgmd::log::info("PAM Clustering on ", n, " graphs with k = ", k);
 
     //building phase: choose init cluster centers greedily
     build(config.io);
@@ -131,7 +135,7 @@ void PAM_Clustering::build(IOConfig const &config) {
 void PAM_Clustering::compute_distance_matrix_entry(GraphID const i, GraphID const j)
 {
     if (_distance_matrix.empty()) {
-        std::cout << "WARNING: Cannot compute values of empty distance matrix!" << std::endl;
+        geomgmd::log::warning("WARNING: Cannot compute values of empty distance matrix!");
     }
     
     if (_distance_matrix[i][j].ub > -1.0){
@@ -146,8 +150,7 @@ void PAM_Clustering::compute_distance_matrix_entry(GraphID const i, GraphID cons
     auto dist_result = evaluate_distance_result(res);
     if (!dist_result.has_value()) {
         report_solver_failure(res);
-        std::cout << "Error! Distance between graphs "
-                    << i << " and " << j << " could not be computed!\n";
+        geomgmd::log::error("Error! Distance between graphs ", i, " and ", j, " could not be computed!");
         return;
     }
     _output_context.write_edgemap(solver.return_edge_map_json());
@@ -161,11 +164,11 @@ void PAM_Clustering::compute_distance_matrix_entry(GraphID const i, GraphID cons
 void PAM_Clustering::computeEntireDistanceMatrix()
 {
     if (_distance_matrix.empty()) {
-        std::cout << "WARNING: Cannot compute values of empty distance matrix!" << std::endl;
+        geomgmd::log::warning("WARNING: Cannot compute values of empty distance matrix!");
         return;
     }
 
-    std::cout << "Computing distance matrix for PAM clustering with " << _num_threads_distance_matrix << " threads ..." << std::endl;
+    geomgmd::log::info("Computing distance matrix for PAM clustering with ", _num_threads_distance_matrix, " threads ...");
     auto start = std::chrono::high_resolution_clock::now();
 
     // === NAIVE PATH: SINGLE THREAD ===
@@ -183,13 +186,9 @@ void PAM_Clustering::computeEntireDistanceMatrix()
     const GraphID n = _distance_matrix.size();
     const int totalPairs = (n * (n - 1)) / 2;
 
-    std::cout << std::endl
-              << "Distance matrix computation with " << _num_threads_distance_matrix << " threads complete, it took "
-              << duration.count() << " ms." << std::endl;
-
-    global_log << "Distance matrix computation with " << _num_threads_distance_matrix << " threads ("
-               << totalPairs << " pairs) took "
-               << duration.count() << " ms\n";
+    std::cout << std::endl;  // end the progress bar line
+    geomgmd::log::info("Distance matrix computation with ", _num_threads_distance_matrix, " threads (",
+                       totalPairs, " pairs) complete, it took ", duration.count(), " ms.");
 }
 
 void PAM_Clustering::computeEntireDistanceMatrixSingleThreaded() {
@@ -279,8 +278,7 @@ void PAM_Clustering::computeEntireDistanceMatrixMultiThreaded() {
 
                 if (!dist_result.has_value()) {
                     report_solver_failure(res);
-                    std::cout << "Error! Distance between graphs "
-                              << p.i << " and " << p.j << " could not be computed!\n";
+                    geomgmd::log::error("Error! Distance between graphs ", p.i, " and ", p.j, " could not be computed!");
                     continue;
                 }
                 _output_context.write_edgemap(solver.return_edge_map_json());
