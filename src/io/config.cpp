@@ -83,6 +83,28 @@ void read_enum_if(const toml::table& t,
         out = parse_fn(*s);
 }
 
+LogLevel
+parse_log_level_or_throw(const std::string& s)
+{
+    if (auto level = parse_log_level(s)) return *level;
+    throw std::runtime_error("Unknown log level: " + s + " (expected error, warning, info or debug)");
+}
+
+void read_logging_section(const toml::table& tbl, LoggingConfig& logging)
+{
+    if (auto lg = tbl["Logging"].as_table()) {
+        read_enum_if(*lg, "level", logging.level, parse_log_level_or_throw);
+        read_enum_if(*lg, "file_level", logging.file_level, parse_log_level_or_throw);
+    }
+}
+
+void log_logging_section(const LoggingConfig& logging, std::ostream& out)
+{
+    out << "\n[Logging]\n";
+    out << "  level      = " << to_string(logging.level) << '\n';
+    out << "  file_level = " << to_string(logging.file_level) << '\n';
+}
+
 // Helper to print booleans as true/false
 const char* tf(bool b) { return b ? "true" : "false"; }
 
@@ -231,6 +253,9 @@ Config load_config(const std::string& filename)
         throw std::runtime_error("Missing required [Clustering] section");
     }
 
+    /* ===================== Logging ===================== */
+    read_logging_section(tbl, cfg.logging);
+
     // Generate default run_name from config if there was no run_name specified
     if (not run_name_opt.has_value()) {
         cfg.io.run_name = clusteringAlgoToStr(cfg.cluster.clustering_algo)
@@ -339,6 +364,8 @@ void log_config(const Config& cfg, std::ostream& out)
     out << "  angle_type                     = "
         << cfg.gurobi.angle_type << '\n';
 
+    log_logging_section(cfg.logging, out);
+
     out << "\n================================================\n\n";
 }
 
@@ -390,6 +417,9 @@ DistanceConfig load_dist_config(const std::string& filename)
         read_value_if(*par, "num_threads", cfg.parallel.num_threads_matrix);
         read_value_if(*par, "batch_size", cfg.parallel.default_batch_size);
     }
+
+    /* ===================== Logging ===================== */
+    read_logging_section(tbl, cfg.logging);
 
     // Generate default run_name from config if there was no run_name specified
     if (not run_name_opt.has_value()) {
@@ -444,6 +474,8 @@ void log_config(const DistanceConfig& cfg, std::ostream& out)
     out << "  run_parallel       = " << tf(cfg.parallel.run_parallel) << '\n';
     out << "  num_threads_matrix = " << cfg.parallel.num_threads_matrix << '\n';
     out << "  default_batch_size = " << cfg.parallel.default_batch_size << '\n';
+
+    log_logging_section(cfg.logging, out);
 
     out << "\n================================================\n\n";
 }

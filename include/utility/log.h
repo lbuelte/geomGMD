@@ -3,13 +3,14 @@
 
 // Small thread-safe logger with log levels.
 //
-// Every message is written to the console (errors and warnings to stderr, info and debug to stdout)
-// and, if a log file was set, additionally to the log file (with time stamp and level).
-// Messages above the current log level are discarded; the arguments are only formatted if the
-// message is actually written.
+// Messages are written to the console (errors and warnings to stderr, info and debug to stdout) and,
+// if a log file was set, to the log file (with time stamp and level). Console and file have separate
+// levels; a message is written to a sink if its level is at most the level of that sink.
+// Defaults: console LogLevel::Info, file LogLevel::Debug (i.e. debug messages only go to the file).
+// The arguments are only formatted if the message is written to at least one sink.
 //
 // Usage:
-//     geomgmd::log::set_level(LogLevel::Debug);
+//     geomgmd::log::set_console_level(LogLevel::Warning);
 //     geomgmd::log::set_file(output_path / "run.log");
 //     geomgmd::log::info("Computed ", n, " pairs in ", seconds, " s.");
 
@@ -29,17 +30,23 @@ std::optional<LogLevel> parse_log_level(std::string_view s);
 
 namespace geomgmd::log {
 
-// Messages with a level above the given one are discarded. Default: LogLevel::Info.
-void set_level(LogLevel level);
-LogLevel level();
+// Maximum level of messages written to the console. Default: LogLevel::Info.
+void set_console_level(LogLevel level);
+LogLevel console_level();
+
+// Maximum level of messages written to the log file. Default: LogLevel::Debug.
+void set_file_level(LogLevel level);
+LogLevel file_level();
+
+// True if a message of the given level is written to at least one sink.
 bool is_enabled(LogLevel level);
 
-// Additionally writes all messages to the given file (truncated; parent directories are created).
+// Writes messages (up to the file level) to the given file (truncated; parent directories are created).
 // Throws std::runtime_error if the file cannot be opened.
 void set_file(const std::filesystem::path &path);
 void close_file();
 
-// Writes one message (one line) to the console and, if set, to the log file.
+// Writes one message (one line) to the console and/or the log file, depending on their levels.
 void write(LogLevel level, std::string_view message);
 
 template<class... Args>

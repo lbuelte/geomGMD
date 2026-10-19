@@ -10,6 +10,7 @@
 
 #include "utility/geometry_base.h"
 #include "solver_config.h"
+#include "utility/log.h"
 
 struct PAMConfig {
     size_t num_threads_matrix = 8;
@@ -67,6 +68,12 @@ struct ClusteringConfig {
     bool parallel = true;
 };
 
+// Log levels of console and log file (see utility/log.h); can be overridden on the command line.
+struct LoggingConfig {
+    LogLevel level = LogLevel::Info;        // console
+    LogLevel file_level = LogLevel::Debug;  // log file
+};
+
 struct Config {
     GurobiConfig gurobi;
     PAMConfig pam;
@@ -74,6 +81,7 @@ struct Config {
     ClaransConfig clarans;
     IOConfig io;
     ClusteringConfig cluster;
+    LoggingConfig logging;
 };
 
 Config load_config(const std::string& filename);
@@ -89,6 +97,7 @@ struct DistanceConfig {
     GurobiConfig gurobi;
     IOConfig io;
     ParallelConfig parallel;
+    LoggingConfig logging;
 };
 
 DistanceConfig load_dist_config(const std::string& filename);

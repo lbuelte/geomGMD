@@ -13,9 +13,16 @@
 
 namespace {
 
-std::atomic<LogLevel> current_level{LogLevel::Info};
+std::atomic<LogLevel> console_max_level{LogLevel::Info};
+std::atomic<LogLevel> file_max_level{LogLevel::Debug};
+std::atomic<bool> file_is_open{false};
 std::mutex log_mutex;
 std::ofstream log_file;
+
+bool at_most(LogLevel level, LogLevel max_level)
+{
+    return static_cast<int>(level) <= static_cast<int>(max_level);
+}
 
 std::string time_stamp()
 {
@@ -61,19 +68,29 @@ std::optional<LogLevel> parse_log_level(std::string_view s)
 
 namespace geomgmd::log {
 
-void set_level(LogLevel level)
+void set_console_level(LogLevel level)
 {
-    current_level = level;
+    console_max_level = level;
 }
 
-LogLevel level()
+LogLevel console_level()
 {
-    return current_level;
+    return console_max_level;
+}
+
+void set_file_level(LogLevel level)
+{
+    file_max_level = level;
+}
+
+LogLevel file_level()
+{
+    return file_max_level;
 }
 
 bool is_enabled(LogLevel level)
 {
-    return static_cast<int>(level) <= static_cast<int>(current_level.load());
+    return at_most(level, console_max_level) or (file_is_open and at_most(level, file_max_level));
 }
 
 void set_file(const std::filesystem::path &path)
@@ -81,6 +98,7 @@ void set_file(const std::filesystem::path &path)
     std::lock_guard<std::mutex> lock(log_mutex);
     if (log_file.is_open()) {
         log_file.close();
+        file_is_open = false;
     }
     if (path.has_parent_path()) {
         std::filesystem::create_directories(path.parent_path());
@@ -89,6 +107,7 @@ void set_file(const std::filesystem::path &path)
     if (not log_file) {
         throw std::runtime_error("Could not open log file " + path.string());
     }
+    file_is_open = true;
 }
 
 void close_file()
@@ -97,17 +116,22 @@ void close_file()
     if (log_file.is_open()) {
         log_file.close();
     }
+    file_is_open = false;
 }
 
 void write(LogLevel level, std::string_view message)
 {
-    if (not is_enabled(level)) {
+    const bool to_console = at_most(level, console_max_level);
+    const bool to_file = file_is_open and at_most(level, file_max_level);
+    if (not to_console and not to_file) {
         return;
     }
     std::lock_guard<std::mutex> lock(log_mutex);
-    std::ostream &console = (level == LogLevel::Error or level == LogLevel::Warning) ? std::cerr : std::cout;
-    console << message << '\n';
-    if (log_file.is_open()) {
+    if (to_console) {
+        std::ostream &console = (level == LogLevel::Error or level == LogLevel::Warning) ? std::cerr : std::cout;
+        console << message << '\n';
+    }
+    if (to_file and log_file.is_open()) {
         log_file << time_stamp() << " [" << to_string(level) << "] " << message << std::endl;
     }
 }
