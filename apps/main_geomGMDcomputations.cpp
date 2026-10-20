@@ -10,6 +10,7 @@
 #include "io/command_line.h"
 #include "io/config.h"
 #include "io/output_context.h"
+#include "io/edgemap_io.h"
 #include "io/solver_messages.h"
 
 #include "distance/geomGMDSolver.h"
@@ -169,7 +170,7 @@ int main(int argc, char* argv[]) {
                         continue;
                     }
                     out.write_computation_info_row(solver, dist_result.value());
-                    out.write_edgemap(solver.return_edge_map_json());
+                    out.write_edgemap(edgemap_json(solver));
 
                     distance_matrix[p.i][p.j] = dist_result.value();
                     distance_matrix[p.j][p.i] = dist_result.value();

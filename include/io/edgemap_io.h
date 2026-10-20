@@ -13,6 +13,15 @@
 
 using json = nlohmann::json;
 
+// JSON representation of an edge map, as written to edgemaps.json:
+//   {"G_id": <graph id of G>, "H_id": <graph id of H>, "optimal": <bool>,
+//    "edge_map": [{"g": <edge of G or null>, "h": <edge of H or null>}, ...]}
+json edgemap_to_json(EdgeMap const &edgemap, bool optimal);
+EdgeMap edgemap_from_json(json const &j);
+
+// JSON of the edge map computed by the solver, with the optimality of that run.
+json edgemap_json(GeomGMDForiSolver &solver);
+
 struct SVGLegendInfo {
     bool map_is_optimal;
     std::string dataset;

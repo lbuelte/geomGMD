@@ -63,14 +63,14 @@ int main(int argc, char* argv[]) {
             if (json_opt.has_value()){
                 bool is_optimal_mapping = json_opt.value()["optimal"];
                 if (g_before_h){
-                    EdgeMap edgemap = EdgeMap::from_json(json_opt.value(), geometricgraphs[g], geometricgraphs[h]);
+                    EdgeMap edgemap = edgemap_from_json(json_opt.value());
                     SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, g, h, gurobi_params, geomGMD_dist};
                     write_edge_mapping_svg(geometricgraphs[g], geometricgraphs[h], edgemap, svg_info,
                                       edgemap_output_path.string() + "/edgemap_" 
                                       + std::to_string(geometricgraphs[g].polygon_id()) + "_" 
                                       + std::to_string(geometricgraphs[h].polygon_id()) + ".svg");
                 } else {
-                    EdgeMap edgemap = EdgeMap::from_json(json_opt.value(), geometricgraphs[h], geometricgraphs[g]);
+                    EdgeMap edgemap = edgemap_from_json(json_opt.value());
                     SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, h, g, gurobi_params, geomGMD_dist};
                     write_edge_mapping_svg(geometricgraphs[h], geometricgraphs[g], edgemap, svg_info,
                                       edgemap_output_path.string() + "/edgemap_" 

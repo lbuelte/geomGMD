@@ -1,6 +1,7 @@
 #include "clustering/clara.h"
 
 #include "clustering/sampling.h"
+#include "io/edgemap_io.h"
 #include "utility/log.h"
 
 #include <sstream>
@@ -322,7 +323,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
                     _distance_matrix[g][medoid_indices[order_of_centers[m]]] = dist_result.value();
                     _distance_matrix[medoid_indices[order_of_centers[m]]][g] = dist_result.value();
                 }
-                _output_context.write_edgemap(solver.return_edge_map_json());
+                _output_context.write_edgemap(edgemap_json(solver));
             }            
 
             if (dist_result.value() < min_dist) {
@@ -429,7 +430,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
                             _distance_matrix[g][medoid_indices[order_of_centers[m]]] = dist_result.value();
                             _distance_matrix[medoid_indices[order_of_centers[m]]][g] = dist_result.value();
                         }
-                        _output_context.write_edgemap(solver.return_edge_map_json());
+                        _output_context.write_edgemap(edgemap_json(solver));
                     }
 
                     if (dist_result.value() < min_dist) {

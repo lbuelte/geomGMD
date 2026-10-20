@@ -386,7 +386,7 @@ EdgeMap GeomGMDForiSolver::return_edge_map()
 {
     if (model.get(GRB_IntAttr_SolCount) == 0){
         // No solution was computed (callers only request the edge map after a successful optimization)
-        return EdgeMap(false, std::vector<EdgeMap::EdgePair>(), G, H);
+        return EdgeMap{G.graph_id(), H.graph_id(), {}};
     }
 
     double tol = model.get(GRB_DoubleParam_IntFeasTol);
@@ -394,7 +394,6 @@ EdgeMap GeomGMDForiSolver::return_edge_map()
         return val > 1.0 - tol;
     };
 
-    bool optimal = (model.get(GRB_IntAttr_Status) == GRB_OPTIMAL);
     std::vector<EdgeMap::EdgePair> pairs;
     std::vector<bool> is_mapped(eh, false);
     for (int i = 0; i < eg; i++) {
@@ -418,14 +417,9 @@ EdgeMap GeomGMDForiSolver::return_edge_map()
             pairs.emplace_back(std::nullopt, k);
         }
     }
-    return EdgeMap(optimal, pairs, G, H);
+    return EdgeMap{G.graph_id(), H.graph_id(), std::move(pairs)};
 }
 
-nlohmann::json GeomGMDForiSolver::return_edge_map_json()
-{
-    auto map = return_edge_map();
-    return map.to_json(G.graph_id(), H.graph_id());
-}
 
 void GeomGMDForiSolver::print_objective_breakdown() {
     GRBLinExpr edge_length_expr = compute_edge_length_objective_FORI(G, H, params, z);

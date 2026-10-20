@@ -92,17 +92,17 @@ int main(int argc, char* argv[])
             output_path 
             / ("edgemap_" + std::to_string(H.polygon_id()) + "_" + std::to_string(G.polygon_id()) + ".svg");
     
-    auto edgemap_json = solver.return_edge_map_json();
+    auto mapping_json = edgemap_json(solver);
     solver.print_objective_breakdown();
-    bool is_optimal_mapping = edgemap_json["optimal"];
+    bool is_optimal_mapping = mapping_json["optimal"];
     if (H <= G){
-        assert(edgemap_json["G_id"] == g and edgemap_json["H_id"] == h);
-        EdgeMap edgemap = EdgeMap::from_json(edgemap_json, G, H);
+        assert(mapping_json["G_id"] == g and mapping_json["H_id"] == h);
+        EdgeMap edgemap = edgemap_from_json(mapping_json);
         SVGLegendInfo svg_info{is_optimal_mapping, config.io.dataset, g, h, gurobi_params, dist_result.value().ub};
         write_edge_mapping_svg(G, H, edgemap, svg_info, edgemap_output_file);
     } else {
-        assert(edgemap_json["G_id"] == h and edgemap_json["H_id"] == g);
-        EdgeMap edgemap = EdgeMap::from_json(edgemap_json, H, G);
+        assert(mapping_json["G_id"] == h and mapping_json["H_id"] == g);
+        EdgeMap edgemap = edgemap_from_json(mapping_json);
         SVGLegendInfo svg_info{is_optimal_mapping, config.io.dataset, h, g, gurobi_params, dist_result.value().ub};
         write_edge_mapping_svg(H, G, edgemap, svg_info, edgemap_output_file);
     }             

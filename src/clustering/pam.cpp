@@ -1,6 +1,7 @@
 #include "clustering/pam.h"
 
 // #include "clustering/plots_and_stats.h"
+#include "io/edgemap_io.h"
 #include "utility/log.h"
 
 #include <sstream>
@@ -157,7 +158,7 @@ void PAM_Clustering::compute_distance_matrix_entry(GraphID const i, GraphID cons
         geomgmd::log::error("Error! Distance between graphs ", i, " and ", j, " could not be computed!");
         return;
     }
-    _output_context.write_edgemap(solver.return_edge_map_json());
+    _output_context.write_edgemap(edgemap_json(solver));
     _output_context.write_computation_info_row(solver, dist_result.value());
     _distance_matrix[i][j] = dist_result.value();
     _distance_matrix[j][i] = dist_result.value();
@@ -287,7 +288,7 @@ void PAM_Clustering::computeEntireDistanceMatrixMultiThreaded() {
                     geomgmd::log::error("Error! Distance between graphs ", p.i, " and ", p.j, " could not be computed!");
                     continue;
                 }
-                _output_context.write_edgemap(solver.return_edge_map_json());
+                _output_context.write_edgemap(edgemap_json(solver));
                 _output_context.write_computation_info_row(solver, dist_result.value());
 
                 _distance_matrix[p.i][p.j] = dist_result.value();

@@ -1,6 +1,7 @@
 #include "clustering/clarans.h"
 
 #include "clustering/sampling.h"
+#include "io/edgemap_io.h"
 #include "utility/log.h"
 
 #include <sstream>
@@ -168,7 +169,7 @@ std::optional<IntervalDistance> CLARANS_Clustering::compute_distance_matrix_entr
     }
     _distance_matrix[i][j] = dist_result.value();
     _distance_matrix[j][i] = dist_result.value();
-    _output_context.write_edgemap(solver.return_edge_map_json());
+    _output_context.write_edgemap(edgemap_json(solver));
     return _distance_matrix[i][j];
 }
 

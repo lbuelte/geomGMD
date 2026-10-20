@@ -12,7 +12,6 @@
 #include <string>
 #include <variant>
 
-#include "../external/json/json.hpp"
 
 struct GurobiParams {
     int timelimit_sec;
@@ -179,6 +178,8 @@ struct SolveStatistics {
     std::optional<int> status;      // Gurobi status code (GRB_OPTIMAL, GRB_TIME_LIMIT, ...); empty if not optimized
     std::optional<double> mip_gap;  // final relative MIP gap; empty if no solution was found
     double node_count = 0;          // number of explored branch-and-bound nodes
+
+    bool is_optimal() const { return status.has_value() and *status == GRB_OPTIMAL; }
 };
 
 // Name of a Gurobi status code, e.g. "OPTIMAL", "TIME_LIMIT"; "UNKNOWN_<code>" for unknown codes.
@@ -208,8 +209,9 @@ public:
     DistanceResult run_optimization();
     // Status, MIP gap and node count of the last run_optimization() (only read from Gurobi).
     SolveStatistics solve_statistics() const { return statistics; }
+    // Constrained edge map of the computed solution, between the solver's G and H (see g_graph_id/h_graph_id;
+    // the solver uses the graph with more edges as G). Empty if no solution was computed.
     EdgeMap return_edge_map();
-    nlohmann::json return_edge_map_json();
     void print_objective_breakdown();
 
     struct SolverObjectives {
