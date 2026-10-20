@@ -1,5 +1,5 @@
-#ifndef GEOMGMD_CONFIG_H
-#define GEOMGMD_CONFIG_H
+#ifndef GEOMGMD_IO_CONFIG_H
+#define GEOMGMD_IO_CONFIG_H
 
 #include <string>
 #include <ostream>
@@ -125,4 +125,4 @@ inline std::string clusteringAlgoToStr(ClusteringConfig::ClusteringAlgorithm alg
     return "UNKNOWN";
 }
 
-#endif // GEOMGMD_CONFIG_H
+#endif // GEOMGMD_IO_CONFIG_H

@@ -88,4 +88,4 @@ inline std::vector<std::vector<IntervalDistance>> PAM_Clustering::return_distanc
 }
 
 
-#endif //POLYGONCLUSTERING_PAM_H
+#endif // POLYGONCLUSTERING_PAM_H

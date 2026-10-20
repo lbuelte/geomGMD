@@ -1,5 +1,5 @@
-#ifndef GEOMGMD_SOLVER_CONFIG_H
-#define GEOMGMD_SOLVER_CONFIG_H
+#ifndef GEOMGMD_DISTANCE_SOLVER_CONFIG_H
+#define GEOMGMD_DISTANCE_SOLVER_CONFIG_H
 
 #include "utility/geometry_base.h"
 
@@ -17,4 +17,4 @@ struct GurobiConfig {
     double cost_factor_angle_difference = 2.0;
 };
 
-#endif // GEOMGMD_SOLVER_CONFIG_H
+#endif // GEOMGMD_DISTANCE_SOLVER_CONFIG_H

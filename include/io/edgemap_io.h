@@ -1,7 +1,7 @@
 // Created by Laura Bülte on 2026-04-15.
 
-#ifndef GEOMGMD_EDGEMAP_IO_H
-#define GEOMGMD_EDGEMAP_IO_H
+#ifndef GEOMGMD_IO_EDGEMAP_IO_H
+#define GEOMGMD_IO_EDGEMAP_IO_H
 
 #include "utility/geometric_graph.h"
 
@@ -72,4 +72,4 @@ double compute_total_angle_objective(
         const EdgeMap& edgemap);
 
 
-#endif // GEOMGMD_EDGEMAP_IO_H
+#endif // GEOMGMD_IO_EDGEMAP_IO_H

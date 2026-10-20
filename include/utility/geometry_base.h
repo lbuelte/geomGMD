@@ -1,7 +1,7 @@
 // Created by Laura Bülte on 2026-08-20.
 
-#ifndef GEOMGMD_GEOMETRY_BASE_H
-#define GEOMGMD_GEOMETRY_BASE_H
+#ifndef GEOMGMD_UTILITY_GEOMETRY_BASE_H
+#define GEOMGMD_UTILITY_GEOMETRY_BASE_H
 
 #include <ostream>
 
@@ -27,4 +27,4 @@ inline std::ostream& operator<<(std::ostream& os, AngleType angle) {
     return os << "UNKNOWN";
 }
 
-#endif // GEOMGMD_GEOMETRY_BASE_H
+#endif // GEOMGMD_UTILITY_GEOMETRY_BASE_H

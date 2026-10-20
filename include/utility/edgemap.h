@@ -1,7 +1,7 @@
 // Created by Laura Bülte on 2026-04-01.
 
-#ifndef GEOMGMD_EDGEMAP_H
-#define GEOMGMD_EDGEMAP_H
+#ifndef GEOMGMD_UTILITY_EDGEMAP_H
+#define GEOMGMD_UTILITY_EDGEMAP_H
 
 #include "utility/geometric_graph.h"
 
@@ -88,4 +88,4 @@ public:
     std::vector<EdgePair> edge_pairs;
 };
 
-#endif // GEOMGMD_EDGEMAP_H
+#endif // GEOMGMD_UTILITY_EDGEMAP_H

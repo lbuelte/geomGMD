@@ -1,5 +1,5 @@
-#ifndef GEOMGMD_GEOMETRIC_GRAPH_H
-#define GEOMGMD_GEOMETRIC_GRAPH_H
+#ifndef GEOMGMD_UTILITY_GEOMETRIC_GRAPH_H
+#define GEOMGMD_UTILITY_GEOMETRIC_GRAPH_H
 
 #include <cstddef>   // size_t
 #include <optional>  // std::optional
@@ -138,4 +138,4 @@ double get_mean_edge_length(std::vector<const GeometricGraph *> const &graphs);
 double get_mean_edge_length(std::vector<GeometricGraph>::iterator begin, std::vector<GeometricGraph>::iterator end);
 double get_mean_edge_length(std::span<GeometricGraph> const &graphs);
 
-#endif //GEOMGMD_GEOMETRIC_GRAPH_H
+#endif // GEOMGMD_UTILITY_GEOMETRIC_GRAPH_H

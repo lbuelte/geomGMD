@@ -1,7 +1,7 @@
 // Created by Laura Bülte on 2026-03-30.
 
-#ifndef GEOMGMD_OUTPUT_CONTEXT_H
-#define GEOMGMD_OUTPUT_CONTEXT_H
+#ifndef GEOMGMD_IO_OUTPUT_CONTEXT_H
+#define GEOMGMD_IO_OUTPUT_CONTEXT_H
 
 #include "result_writer.h"
 #include "io/config.h"
@@ -67,4 +67,4 @@ struct OutputContext {
     }
 };
 
-#endif //GEOMGMD_OUTPUT_CONTEXT_H
+#endif // GEOMGMD_IO_OUTPUT_CONTEXT_H

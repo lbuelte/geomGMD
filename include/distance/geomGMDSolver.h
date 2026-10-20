@@ -1,5 +1,5 @@
-#ifndef GEOMGMD_SOLVER_H
-#define GEOMGMD_SOLVER_H
+#ifndef GEOMGMD_DISTANCE_GEOMGMDSOLVER_H
+#define GEOMGMD_DISTANCE_GEOMGMDSOLVER_H
 
 #include "utility/geometric_graph.h"
 #include "utility/edgemap.h"
@@ -275,4 +275,4 @@ private:
     void add_cyclic_order_constraints();
 };
 
-#endif // GEOMGMD_SOLVER_H
+#endif // GEOMGMD_DISTANCE_GEOMGMDSOLVER_H

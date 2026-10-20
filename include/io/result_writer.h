@@ -1,7 +1,7 @@
 // Created by Laura Bülte on 2026-03-30.
 
-#ifndef RESULT_WRITER_H
-#define RESULT_WRITER_H
+#ifndef GEOMGMD_IO_RESULT_WRITER_H
+#define GEOMGMD_IO_RESULT_WRITER_H
 
 #include <fstream>
 #include <mutex>
@@ -64,4 +64,4 @@ public:
 };
 
 
-#endif // RESULT_WRITER_H
+#endif // GEOMGMD_IO_RESULT_WRITER_H

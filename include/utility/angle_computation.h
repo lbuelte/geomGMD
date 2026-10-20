@@ -1,7 +1,7 @@
 // Created by Laura Bülte on 2026-04-27.
 
-#ifndef GEOMGMD_ANGLE_COMPUTATION_H
-#define GEOMGMD_ANGLE_COMPUTATION_H
+#ifndef GEOMGMD_UTILITY_ANGLE_COMPUTATION_H
+#define GEOMGMD_UTILITY_ANGLE_COMPUTATION_H
 
 #include "utility/geometry_base.h"
 
@@ -18,4 +18,4 @@ long double compute_signed_angle_between_lines(Point const &a, Point const &b, P
 long double compute_unsigned_angle_between_lines(Point const &a, Point const &b, Point const &c);
 
 
-#endif // GEOMGMD_ANGLE_COMPUTATION_H
+#endif // GEOMGMD_UTILITY_ANGLE_COMPUTATION_H

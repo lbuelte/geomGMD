@@ -107,4 +107,4 @@ inline std::vector<std::vector<IntervalDistance>> CLARA_Clustering::return_dista
     return _distance_matrix;
 }
 
-#endif //POLYGONCLUSTERING_CLARA_H
+#endif // POLYGONCLUSTERING_CLARA_H

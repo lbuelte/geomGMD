@@ -246,4 +246,4 @@ std::vector<std::vector<IntervalDistance>> read_interval_distance_matrix(
 
 } //end of namespace
 
-#endif //POLYGONCLUSTERING_PLOTS_AND_STATS_H
+#endif // POLYGONCLUSTERING_PLOTS_AND_STATS_H
