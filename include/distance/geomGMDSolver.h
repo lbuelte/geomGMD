@@ -148,11 +148,20 @@ protected:
 
 class GeomGMDForiSolver {
 public:
+    // G_ and H_ are not copied: they must outlive the solver.
     GeomGMDForiSolver(GeometricGraph const &G_,
                      GeometricGraph const &H_,
                      ModelParameters const &model_parameters,
                      SolverSettings const &solver_settings,
                      std::optional<double> cutoff = std::nullopt);
+
+    // Temporary graphs would be destroyed while the solver still refers to them: compile error.
+    GeomGMDForiSolver(GeometricGraph &&, GeometricGraph const &, ModelParameters const &,
+                      SolverSettings const &, std::optional<double> = std::nullopt) = delete;
+    GeomGMDForiSolver(GeometricGraph const &, GeometricGraph &&, ModelParameters const &,
+                      SolverSettings const &, std::optional<double> = std::nullopt) = delete;
+    GeomGMDForiSolver(GeometricGraph &&, GeometricGraph &&, ModelParameters const &,
+                      SolverSettings const &, std::optional<double> = std::nullopt) = delete;
 
     // Captures Gurobi's own log of this computation (for debugging; call before run_optimization).
     // The log is not printed; the captured lines are returned by gurobi_log().
@@ -198,6 +207,7 @@ private:
     const ModelParameters params;
     const SolverSettings settings;
 
+    // References to the caller's graphs (G = the one with more edges, see constructor); not copied
     const GeometricGraph &G;
     const GeometricGraph &H;
 
