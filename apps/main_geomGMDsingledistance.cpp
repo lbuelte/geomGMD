@@ -53,10 +53,7 @@ int main(int argc, char* argv[])
     configure_logging(config.logging, std::nullopt);
     logger::info(config_to_string(config));
 
-    const GurobiParams gurobi_params = GurobiParams::from_config(config.gurobi);
-    std::ostringstream gurobi_params_text;
-    gurobi_params.log(gurobi_params_text);
-    logger::info(gurobi_params_text.str());
+    logger::info(to_string(config.model, config.solver));
 
     // Log config in extra file
     std::filesystem::copy_file(
@@ -78,7 +75,7 @@ int main(int argc, char* argv[])
 
     auto begin = std::chrono::high_resolution_clock::now();
     
-    GeomGMDForiSolver solver(geometricgraphs[g], geometricgraphs[h], gurobi_params);
+    GeomGMDForiSolver solver(geometricgraphs[g], geometricgraphs[h], config.model, config.solver);
     if (config.logging.gurobi_log) solver.capture_gurobi_log();
     auto const res = solver.run_optimization();
     report_gurobi_log(config.logging, geometricgraphs[g], geometricgraphs[h], res, solver.gurobi_log());
@@ -99,12 +96,12 @@ int main(int argc, char* argv[])
     if (H <= G){
         assert(mapping_json["G_id"] == g and mapping_json["H_id"] == h);
         EdgeMap edgemap = edgemap_from_json(mapping_json);
-        SVGLegendInfo svg_info{is_optimal_mapping, config.io.dataset, g, h, gurobi_params, dist_result.value().ub};
+        SVGLegendInfo svg_info{is_optimal_mapping, config.io.dataset, g, h, config.model, dist_result.value().ub};
         write_edge_mapping_svg(G, H, edgemap, svg_info, edgemap_output_file);
     } else {
         assert(mapping_json["G_id"] == h and mapping_json["H_id"] == g);
         EdgeMap edgemap = edgemap_from_json(mapping_json);
-        SVGLegendInfo svg_info{is_optimal_mapping, config.io.dataset, h, g, gurobi_params, dist_result.value().ub};
+        SVGLegendInfo svg_info{is_optimal_mapping, config.io.dataset, h, g, config.model, dist_result.value().ub};
         write_edge_mapping_svg(H, G, edgemap, svg_info, edgemap_output_file);
     }             
 

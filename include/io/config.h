@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "utility/geometry_base.h"
-#include "distance/solver_config.h"
+#include "distance/parameters.h"
 #include "utility/log.h"
 
 struct PAMConfig {
@@ -84,7 +84,8 @@ struct LoggingConfig {
 };
 
 struct Config {
-    GurobiConfig gurobi;
+    ModelParameters model;     // [Gurobi] section in the TOML file
+    SolverSettings solver;     // [Gurobi] section in the TOML file
     PAMConfig pam;
     ClaraConfig clara;
     ClaransConfig clarans;
@@ -104,7 +105,8 @@ struct ParallelConfig {
 };
 
 struct DistanceConfig {
-    GurobiConfig gurobi;
+    ModelParameters model;     // [Gurobi] section in the TOML file
+    SolverSettings solver;     // [Gurobi] section in the TOML file
     IOConfig io;
     ParallelConfig parallel;
     LoggingConfig logging;

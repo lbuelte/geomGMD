@@ -59,7 +59,7 @@ long double compute_gamma(const GeometricGraph &G, const GeometricGraph &H, doub
 
 // Helper function to compute the edge length difference objective for FORI using GeometricGraph
 GRBLinExpr compute_edge_length_objective_FORI(GeometricGraph const &G, GeometricGraph const &H, 
-        GurobiParams const &params, const std::vector<std::vector<GRBVar>> &z) {
+        ModelParameters const &params, const std::vector<std::vector<GRBVar>> &z) {
 
     GRBLinExpr costsum = 0;
     // Add the cost of mapping directed edge ij in G to directed edges kl and lk in H
@@ -82,7 +82,7 @@ GRBLinExpr compute_edge_length_objective_FORI(GeometricGraph const &G, Geometric
 }
 
 // Helper function to compute the angle difference objective
-GRBLinExpr compute_angle_diff_objective(GurobiParams const &params,
+GRBLinExpr compute_angle_diff_objective(ModelParameters const &params,
         std::vector<DirectedPathLength2> paths2G, std::vector<DirectedPathLength2> paths2H, std::vector<std::vector<GRBVar>> p) {
 
     GRBLinExpr costsum = 0;
@@ -109,7 +109,7 @@ GRBLinExpr compute_angle_diff_objective(GurobiParams const &params,
 // The variables z[ij][kl] represent the mapping of directed edge ij in G to the directed edge kl in H and the variables z[ij][kl+1]
 // represent the mapping of directed edge ij in G to the directed edge lk in H.
 GRBLinExpr compute_objective_cost_FORI(GeometricGraph const &G, GeometricGraph const &H, 
-        GurobiParams const &params, const std::vector<std::vector<GRBVar>> &z, 
+        ModelParameters const &params, const std::vector<std::vector<GRBVar>> &z, 
         std::vector<DirectedPathLength2> paths2G, std::vector<DirectedPathLength2> paths2H, std::vector<std::vector<GRBVar>> p) 
 {
     return compute_edge_length_objective_FORI(G, H, params, z) + compute_angle_diff_objective(params, paths2G, paths2H, p);
@@ -216,9 +216,11 @@ std::string distance_result_error_message(const DistanceResult& res)
 
 GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_, 
                                     GeometricGraph const &H_, 
-                                    GurobiParams const &gurobi_params,
+                                    ModelParameters const &model_parameters,
+                                    SolverSettings const &solver_settings,
                                     std::optional<double> cutoff)
-    : params(gurobi_params)
+    : params(model_parameters)
+    , settings(solver_settings)
     , use_path_variables(params.consider_angle_objective or params.enforce_cyclic_order)
     , G(std::max(G_, H_))
     , H(std::min(H_, G_))
@@ -231,9 +233,9 @@ GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_,
 {
     env.set("OutputFlag", "0");
     model.set(GRB_StringAttr_ModelName,  "geomGMD_FORI");
-    model.set(GRB_IntParam_Threads, 1);
-    model.set(GRB_DoubleParam_TimeLimit, params.timelimit_sec);
-    model.set(GRB_IntParam_Seed, 1);
+    model.set(GRB_IntParam_Threads, settings.threads);
+    model.set(GRB_DoubleParam_TimeLimit, settings.timelimit_sec);
+    model.set(GRB_IntParam_Seed, settings.seed);
     model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
     model.set(GRB_DoubleParam_Cutoff, GRB_INFINITY);
     if (cutoff.has_value()) {

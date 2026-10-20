@@ -173,18 +173,20 @@ Config load_config(const std::string& filename)
 
     /* ===================== Gurobi ===================== */
     if (auto g = tbl["Gurobi"].as_table()) {
-        read_value_if(*g, "timelimit_sec", cfg.gurobi.timelimit_sec);
+        read_value_if(*g, "timelimit_sec", cfg.solver.timelimit_sec);
+        read_value_if(*g, "threads", cfg.solver.threads);
+        read_value_if(*g, "seed", cfg.solver.seed);
         read_value_if(*g, "enforce_cyclic_order", 
-                      cfg.gurobi.enforce_cyclic_order);
+                      cfg.model.enforce_cyclic_order);
         read_value_if(*g, "consider_angle_objective", 
-                      cfg.gurobi.consider_angle_objective);
+                      cfg.model.consider_angle_objective);
         read_value_if(*g, "cost_factor_deletion_insertion",
-                      cfg.gurobi.cost_factor_deletion_insertion);
+                      cfg.model.cost_factor_deletion_insertion);
         read_value_if(*g, "cost_factor_length_difference",
-                      cfg.gurobi.cost_factor_length_difference);
+                      cfg.model.cost_factor_length_difference);
         read_value_if(*g, "cost_factor_angle_difference",
-                      cfg.gurobi.cost_factor_angle_difference);
-        read_enum_if(*g, "angle_type", cfg.gurobi.angle_type, parse_angle_type);
+                      cfg.model.cost_factor_angle_difference);
+        read_enum_if(*g, "angle_type", cfg.model.angle_type, parse_angle_type);
     }
 
     /* ===================== PAM ===================== */
@@ -381,19 +383,23 @@ void log_config(const Config& cfg, std::ostream& out)
     /* ===================== Gurobi ===================== */
     out << "\n[Gurobi]\n";
     out << "  timelimit_sec                  = "
-        << cfg.gurobi.timelimit_sec << '\n';
+        << cfg.solver.timelimit_sec << '\n';
+    out << "  threads                        = "
+        << cfg.solver.threads << '\n';
+    out << "  seed                           = "
+        << cfg.solver.seed << '\n';
     out << "  enforce_cyclic_order           = "
-        << cfg.gurobi.enforce_cyclic_order << '\n';
+        << cfg.model.enforce_cyclic_order << '\n';
     out << "  consider_angle_objective       = "
-        << cfg.gurobi.consider_angle_objective << '\n';
+        << cfg.model.consider_angle_objective << '\n';
     out << "  cost_factor_deletion_insertion = "
-        << cfg.gurobi.cost_factor_deletion_insertion << '\n';
+        << cfg.model.cost_factor_deletion_insertion << '\n';
     out << "  cost_factor_length_difference  = "
-        << cfg.gurobi.cost_factor_length_difference << '\n';
+        << cfg.model.cost_factor_length_difference << '\n';
     out << "  cost_factor_angle_difference   = "
-        << cfg.gurobi.cost_factor_angle_difference << '\n';
+        << cfg.model.cost_factor_angle_difference << '\n';
     out << "  angle_type                     = "
-        << cfg.gurobi.angle_type << '\n';
+        << cfg.model.angle_type << '\n';
 
     log_logging_section(cfg.logging, out);
 
@@ -410,18 +416,20 @@ DistanceConfig load_dist_config(const std::string& filename)
 
     /* ===================== Gurobi ===================== */
     if (auto g = tbl["Gurobi"].as_table()) {
-        read_value_if(*g, "timelimit_sec", cfg.gurobi.timelimit_sec);
+        read_value_if(*g, "timelimit_sec", cfg.solver.timelimit_sec);
+        read_value_if(*g, "threads", cfg.solver.threads);
+        read_value_if(*g, "seed", cfg.solver.seed);
         read_value_if(*g, "enforce_cyclic_order", 
-                      cfg.gurobi.enforce_cyclic_order);
+                      cfg.model.enforce_cyclic_order);
         read_value_if(*g, "consider_angle_objective", 
-                      cfg.gurobi.consider_angle_objective);
+                      cfg.model.consider_angle_objective);
         read_value_if(*g, "cost_factor_deletion_insertion",
-                      cfg.gurobi.cost_factor_deletion_insertion);
+                      cfg.model.cost_factor_deletion_insertion);
         read_value_if(*g, "cost_factor_length_difference",
-                      cfg.gurobi.cost_factor_length_difference);
+                      cfg.model.cost_factor_length_difference);
         read_value_if(*g, "cost_factor_angle_difference",
-                      cfg.gurobi.cost_factor_angle_difference);
-        read_enum_if(*g, "angle_type", cfg.gurobi.angle_type, parse_angle_type);
+                      cfg.model.cost_factor_angle_difference);
+        read_enum_if(*g, "angle_type", cfg.model.angle_type, parse_angle_type);
     }
 
     /* ===================== IO ===================== */
@@ -486,19 +494,23 @@ void log_config(const DistanceConfig& cfg, std::ostream& out)
     /* ===================== Gurobi ===================== */
     out << "\n[Gurobi]\n";
     out << "  timelimit_sec                  = "
-        << cfg.gurobi.timelimit_sec << '\n';
+        << cfg.solver.timelimit_sec << '\n';
+    out << "  threads                        = "
+        << cfg.solver.threads << '\n';
+    out << "  seed                           = "
+        << cfg.solver.seed << '\n';
     out << "  enforce_cyclic_order           = "
-        << cfg.gurobi.enforce_cyclic_order << '\n';
+        << cfg.model.enforce_cyclic_order << '\n';
     out << "  consider_angle_objective       = "
-        << cfg.gurobi.consider_angle_objective << '\n';
+        << cfg.model.consider_angle_objective << '\n';
     out << "  cost_factor_deletion_insertion = "
-        << cfg.gurobi.cost_factor_deletion_insertion << '\n';
+        << cfg.model.cost_factor_deletion_insertion << '\n';
     out << "  cost_factor_length_difference  = "
-        << cfg.gurobi.cost_factor_length_difference << '\n';
+        << cfg.model.cost_factor_length_difference << '\n';
     out << "  cost_factor_angle_difference   = "
-        << cfg.gurobi.cost_factor_angle_difference << '\n';
+        << cfg.model.cost_factor_angle_difference << '\n';
     out << "  angle_type                     = "
-        << cfg.gurobi.angle_type << '\n';
+        << cfg.model.angle_type << '\n';
 
     /* ===================== Parallel ===================== */
     out << "\n[Parallel]\n";

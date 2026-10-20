@@ -12,7 +12,8 @@ CLARANS_Clustering::CLARANS_Clustering(const std::vector<const GeometricGraph*> 
     : _graphs(graphs_)
     , _num_local(config.clarans.num_local)
     , _num_clusters(config.cluster.k)
-    , _gurobi_params(GurobiParams::from_config(config.gurobi))
+    , _model(config.model)
+    , _solver(config.solver)
     , _logging(config.logging)
     , _output_context(out)
     , _rng_local()
@@ -32,9 +33,7 @@ CLARANS_Clustering::CLARANS_Clustering(const std::vector<const GeometricGraph*> 
     if (config.cluster.parallel){
         _num_threads = config.clarans.num_threads;
     }
-    std::ostringstream gurobi_params_text;
-    _gurobi_params.log(gurobi_params_text);
-    geomgmd::log::info(gurobi_params_text.str());
+    geomgmd::log::info(to_string(_model, _solver));
 }
 
 ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config) 
@@ -157,7 +156,7 @@ std::optional<IntervalDistance> CLARANS_Clustering::compute_distance_matrix_entr
         _distance_matrix[i][j] = ExactDistance{0.0};
         return _distance_matrix[i][j];
     }    
-    GeomGMDForiSolver solver(*_graphs[i], *_graphs[j], _gurobi_params);  
+    GeomGMDForiSolver solver(*_graphs[i], *_graphs[j], _model, _solver);  
     if (_logging.gurobi_log) solver.capture_gurobi_log();
     auto const res = solver.run_optimization();
     report_gurobi_log(_logging, *_graphs[i], *_graphs[j], res, solver.gurobi_log());

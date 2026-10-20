@@ -3,7 +3,7 @@
 
 #include "utility/geometric_graph.h"
 #include "utility/edgemap.h"
-#include "distance/solver_config.h"
+#include "distance/parameters.h"
 
 #include <gurobi_c++.h>
 #include <memory>
@@ -11,53 +11,6 @@
 #include <optional>
 #include <string>
 #include <variant>
-
-
-struct GurobiParams {
-    int timelimit_sec;
-    bool enforce_cyclic_order;
-    bool consider_angle_objective;
-
-    AngleType angle_type;    
-    double cost_factor_deletion_insertion;
-    double cost_factor_length_difference;
-    double cost_factor_angle_difference;
-
-    static GurobiParams finalize(const GurobiConfig &cfg, double angle_scaling_factor) {
-        return {
-            .timelimit_sec = cfg.timelimit_sec,
-            .enforce_cyclic_order = cfg.enforce_cyclic_order,
-            .consider_angle_objective = cfg.consider_angle_objective,
-            .angle_type = cfg.angle_type,
-            .cost_factor_deletion_insertion = cfg.cost_factor_deletion_insertion,
-            .cost_factor_length_difference = cfg.cost_factor_length_difference,
-            .cost_factor_angle_difference = cfg.cost_factor_angle_difference * angle_scaling_factor
-        };
-    }
-    static GurobiParams from_config(const GurobiConfig &cfg) {
-        return finalize (cfg, 1.0);
-    }
-
-    void log(std::ostream& out) const {
-        out << "\nGurobi Parameters\n";
-        out << "  timelimit_sec                  = "
-            << timelimit_sec << '\n';
-        out << "  enforce_cyclic_order           = "
-            << enforce_cyclic_order << '\n';
-        out << "  consider_angle_objective       = "
-            << consider_angle_objective << '\n';
-        out << "  cost_factor_deletion_insertion = "
-            << cost_factor_deletion_insertion << '\n';
-        out << "  cost_factor_length_difference  = "
-            << cost_factor_length_difference << '\n';
-        out << "  cost_factor_angle_difference   = "
-            << cost_factor_angle_difference << '\n';
-        out << "  angle_type                     = "
-            << angle_type << "\n\n";
-    }
-};
-
-
 
 // Result of geomGMD computations (return value of Gurobi) may vary depending on solver behaviour
 
@@ -197,7 +150,8 @@ class GeomGMDForiSolver {
 public:
     GeomGMDForiSolver(GeometricGraph const &G_,
                      GeometricGraph const &H_,
-                     GurobiParams const &gurobi_params,
+                     ModelParameters const &model_parameters,
+                     SolverSettings const &solver_settings,
                      std::optional<double> cutoff = std::nullopt);
 
     // Captures Gurobi's own log of this computation (for debugging; call before run_optimization).
@@ -241,7 +195,8 @@ public:
     }
 
 private:
-    const GurobiParams &params;
+    const ModelParameters params;
+    const SolverSettings settings;
 
     const GeometricGraph &G;
     const GeometricGraph &H;

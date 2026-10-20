@@ -16,7 +16,7 @@ struct SVGLegendInfo {
     std::string dataset;
     GraphID g;
     GraphID h;
-    GurobiParams const &params;
+    ModelParameters params;
     std::optional<double> geomGMD_dist = std::nullopt;
 };
 

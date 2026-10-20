@@ -1,5 +1,7 @@
 [Gurobi]
 timelimit_sec = 10
+# threads = 1
+# seed = 1
 # enforce_cyclic_order = true
 # consider_angle_objective = false
 # cost_factor_deletion_insertion = 1.0

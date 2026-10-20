@@ -65,7 +65,6 @@ int main(int argc, char* argv[]) {
     
     assert(starting_instance + num_instances <= geometricgraphs.size());
     logger::debug("Reduced dataset: ", num_instances, " graphs starting at index ", starting_instance);
-    const GurobiParams gurobi_params = GurobiParams::from_config(config.gurobi);
 
     std::vector<std::vector<IntervalDistance>> distance_matrix(num_instances, std::vector<IntervalDistance>(num_instances, {-1.0, -1.0}));
     size_t num_threads = config.parallel.num_threads_matrix;
@@ -158,7 +157,7 @@ int main(int argc, char* argv[]) {
                 }
 
                 for (const auto& p : task.pairs) {
-                    GeomGMDForiSolver solver(geometricgraphs[p.i], geometricgraphs[p.j], gurobi_params);
+                    GeomGMDForiSolver solver(geometricgraphs[p.i], geometricgraphs[p.j], config.model, config.solver);
                     if (config.logging.gurobi_log) solver.capture_gurobi_log();
                     auto const res = solver.run_optimization();
                     report_gurobi_log(config.logging, geometricgraphs[p.i], geometricgraphs[p.j], res, solver.gurobi_log());

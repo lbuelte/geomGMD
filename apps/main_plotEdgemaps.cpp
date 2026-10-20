@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     // Get original dataset parameters from logged run config
     std::filesystem::path original_config_path = input_path / "config_input.toml";
     auto const original_config = load_dist_config(original_config_path.string());
-    const GurobiParams gurobi_params = GurobiParams::from_config(original_config.gurobi);
+    const ModelParameters model_parameters = original_config.model;
 
     // Get reduced dataset (depending on io parameters)
     size_t starting_instance = config.io.starting_instance;
@@ -65,14 +65,14 @@ int main(int argc, char* argv[]) {
                 bool is_optimal_mapping = json_opt.value()["optimal"];
                 if (g_before_h){
                     EdgeMap edgemap = edgemap_from_json(json_opt.value());
-                    SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, g, h, gurobi_params, geomGMD_dist};
+                    SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, g, h, model_parameters, geomGMD_dist};
                     write_edge_mapping_svg(geometricgraphs[g], geometricgraphs[h], edgemap, svg_info,
                                       edgemap_output_path.string() + "/edgemap_" 
                                       + std::to_string(geometricgraphs[g].polygon_id()) + "_" 
                                       + std::to_string(geometricgraphs[h].polygon_id()) + ".svg");
                 } else {
                     EdgeMap edgemap = edgemap_from_json(json_opt.value());
-                    SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, h, g, gurobi_params, geomGMD_dist};
+                    SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, h, g, model_parameters, geomGMD_dist};
                     write_edge_mapping_svg(geometricgraphs[h], geometricgraphs[g], edgemap, svg_info,
                                       edgemap_output_path.string() + "/edgemap_" 
                                       + std::to_string(geometricgraphs[h].polygon_id()) + "_" 

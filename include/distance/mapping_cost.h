@@ -4,7 +4,7 @@
 // Cost of a given constrained edge map (paper, Eq. (2)-(4)), computed directly from the edge map
 // (independently of the BLP), weighted with the cost factors in params.
 
-#include "distance/geomGMDSolver.h"
+#include "distance/parameters.h"
 #include "utility/edgemap.h"
 #include "utility/geometric_graph.h"
 
@@ -23,6 +23,6 @@ MappingCost compute_mapping_cost(
         const GeometricGraph& G,
         const GeometricGraph& H,
         const EdgeMap& edgemap,
-        const GurobiParams &params);
+        const ModelParameters &params);
 
 #endif // GEOMGMD_DISTANCE_MAPPING_COST_H

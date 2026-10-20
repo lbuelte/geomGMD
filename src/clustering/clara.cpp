@@ -12,7 +12,8 @@
 #include <queue>
 CLARA_Clustering::CLARA_Clustering(const std::vector<const GeometricGraph*> &graphs_, Config const &config, OutputContext &out) 
     : _graphs(graphs_) 
-    , _gurobi_params(GurobiParams::from_config(config.gurobi))
+    , _model(config.model)
+    , _solver(config.solver)
     , _logging(config.logging)
     , _num_samples(config.clara.num_samples)
     , _output_context(out)
@@ -32,9 +33,7 @@ CLARA_Clustering::CLARA_Clustering(const std::vector<const GeometricGraph*> &gra
         _distance_matrix = std::vector<std::vector<IntervalDistance>>(_num_graphs, std::vector<IntervalDistance>(_num_graphs, {-1.0, -1.0}));
     }
 
-    std::ostringstream gurobi_params_text;
-    _gurobi_params.log(gurobi_params_text);
-    geomgmd::log::info(gurobi_params_text.str());
+    geomgmd::log::info(to_string(_model, _solver));
 }
 
 
@@ -308,7 +307,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
                 GeomGMDForiSolver solver(
                         *_graphs[g],
                         *medoids[order_of_centers[m]],
-                        _gurobi_params,
+                        _model, _solver,
                         min_dist.ub);
                 if (_logging.gurobi_log) solver.capture_gurobi_log();
                 auto res = solver.run_optimization();
@@ -415,7 +414,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
                         GeomGMDForiSolver solver(
                                 *_graphs[g],
                                 *medoids[order_of_centers[m]],
-                                _gurobi_params,
+                                _model, _solver,
                                 min_dist.ub);
                         if (_logging.gurobi_log) solver.capture_gurobi_log();
                         auto res = solver.run_optimization();

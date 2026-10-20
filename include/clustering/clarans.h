@@ -47,7 +47,8 @@ private:
     std::optional<IntervalDistance> compute_distance_matrix_entry(GraphID const g, GraphID const h);
 
     // Parameters for geomGMD objective function
-    const GurobiParams _gurobi_params;
+    const ModelParameters _model;
+    const SolverSettings _solver;
     const LoggingConfig _logging;
 
     //Output context for writing output

@@ -45,7 +45,8 @@ private:
     const size_t _BATCH_SIZE_MATRIX = 10;
 
     //Parameters for geomGMD objective function
-    const GurobiParams _gurobi_params;
+    const ModelParameters _model;
+    const SolverSettings _solver;
     const LoggingConfig _logging;
 
     //Output context for writing output

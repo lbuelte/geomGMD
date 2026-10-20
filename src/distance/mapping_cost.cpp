@@ -11,7 +11,7 @@ namespace {
 // Path (angle) mapping costs of all mapped paths of length two (body unchanged from
 // compute_total_angle_objective in sigspatial26)
 double path_angle_cost(
-        const GurobiParams &params,
+        const ModelParameters &params,
         const GeometricGraph& G,
         const GeometricGraph& H,
         const EdgeMap& edgemap)
@@ -103,7 +103,7 @@ MappingCost compute_mapping_cost(
         const GeometricGraph& G,
         const GeometricGraph& H,
         const EdgeMap& edgemap,
-        const GurobiParams &params)
+        const ModelParameters &params)
 {
     // Each sum receives the same additions in the same order as the former separate functions
     // (compute_length_deletion/insertion/diff_objective, compute_total_length_objective).

@@ -53,7 +53,8 @@ private:
     std::vector<std::vector<IntervalDistance>> _distance_matrix;
 
     //Parameters for geomGMD objective function
-    const GurobiParams _gurobi_params;
+    const ModelParameters _model;
+    const SolverSettings _solver;
     const LoggingConfig _logging;
 
     //Output context for writing output

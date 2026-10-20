@@ -13,7 +13,8 @@
 
 PAM_Clustering::PAM_Clustering(const std::vector<const GeometricGraph*> &graphs, Config const &config, OutputContext &out, const size_t BATCH_SIZE_MATRIX)
     : _graphs(graphs)
-    , _gurobi_params(GurobiParams::from_config(config.gurobi))
+    , _model(config.model)
+    , _solver(config.solver)
     , _logging(config.logging)
     , _output_context(out)
     , _BATCH_SIZE_MATRIX(BATCH_SIZE_MATRIX)
@@ -25,9 +26,7 @@ PAM_Clustering::PAM_Clustering(const std::vector<const GeometricGraph*> &graphs,
     if (config.cluster.parallel){
         _num_threads_distance_matrix = config.pam.num_threads_matrix;
     }
-    std::ostringstream gurobi_params_text;
-    _gurobi_params.log(gurobi_params_text);
-    geomgmd::log::info(gurobi_params_text.str());
+    geomgmd::log::info(to_string(_model, _solver));
 }
 
 PAM_Clustering::PAM_Clustering(
@@ -38,7 +37,8 @@ PAM_Clustering::PAM_Clustering(
         const size_t BATCH_SIZE_MATRIX)
     : _graphs(graphs)
     , _distance_matrix(distance_matrix)
-    , _gurobi_params(GurobiParams::from_config(config.gurobi))
+    , _model(config.model)
+    , _solver(config.solver)
     , _logging(config.logging)
     , _output_context(out)
     , _BATCH_SIZE_MATRIX(BATCH_SIZE_MATRIX)
@@ -55,9 +55,7 @@ PAM_Clustering::PAM_Clustering(
     if (config.cluster.parallel){
         _num_threads_distance_matrix = config.pam.num_threads_matrix;
     }
-    std::ostringstream gurobi_params_text;
-    _gurobi_params.log(gurobi_params_text);
-    geomgmd::log::info(gurobi_params_text.str());
+    geomgmd::log::info(to_string(_model, _solver));
 }
 
 
@@ -148,7 +146,7 @@ void PAM_Clustering::compute_distance_matrix_entry(GraphID const i, GraphID cons
         _distance_matrix[i][j] = ExactDistance{0.0};
         return;
     } 
-    GeomGMDForiSolver solver(*_graphs[i], *_graphs[j], _gurobi_params); 
+    GeomGMDForiSolver solver(*_graphs[i], *_graphs[j], _model, _solver); 
     if (_logging.gurobi_log) solver.capture_gurobi_log();
     auto const res = solver.run_optimization();
     report_gurobi_log(_logging, *_graphs[i], *_graphs[j], res, solver.gurobi_log());
@@ -277,7 +275,7 @@ void PAM_Clustering::computeEntireDistanceMatrixMultiThreaded() {
             }
 
             for (const auto& p : task.pairs) {
-                GeomGMDForiSolver solver(*_graphs[p.i], *_graphs[p.j], _gurobi_params);
+                GeomGMDForiSolver solver(*_graphs[p.i], *_graphs[p.j], _model, _solver);
                 if (_logging.gurobi_log) solver.capture_gurobi_log();
                 auto const res = solver.run_optimization();
                 report_gurobi_log(_logging, *_graphs[p.i], *_graphs[p.j], res, solver.gurobi_log());
