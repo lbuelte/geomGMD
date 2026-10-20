@@ -8,6 +8,7 @@
 #include "io/command_line.h"
 #include "io/config.h"
 #include "io/edgemap_io.h"
+#include "io/edgemap_svg.h"
 #include "io/solver_messages.h"
 
 #include "distance/geomGMDSolver.h"
