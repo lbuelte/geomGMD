@@ -105,15 +105,16 @@ int main(int argc, char* argv[]) {
     logger::close_file();
 
     // write geopackage with assigned cluster ids and information about medoids
+    // (cluster members and medoids are local indices into graphs; the vectors are indexed by graph id)
     std::vector<int> cluster_ids(geometricgraphs.size(), -1), is_medoid(geometricgraphs.size(), -1);
     for (ClusterID c = 0; c < clustering_result.clusters.size(); c++){
         for (const GraphID &g : clustering_result.clusters[c]) {
-            cluster_ids[geometricgraphs[g].graph_id()] = c;
+            cluster_ids[graphs[g]->graph_id()] = c;
         }
     }
     //mark medoid polygons
     for (int cluster_id = 0; cluster_id < clustering_result.medoid_indices.size(); cluster_id++) {
-        is_medoid[geometricgraphs[clustering_result.medoid_indices[cluster_id]].graph_id()] = cluster_id;
+        is_medoid[graphs[clustering_result.medoid_indices[cluster_id]]->graph_id()] = cluster_id;
     }
     std::filesystem::path input_gpkg =
             std::filesystem::path(config.io.input_path)
