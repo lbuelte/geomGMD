@@ -9,10 +9,10 @@
 #include "io/command_line.h"
 #include "io/plots_and_stats.h"
 #include "io/config.h"
-#include "io/csv_io.h"
 #include "io/output_context.h"
 
 #include "clustering/clustering_base.h"
+#include "clustering/clustering_output.h"
 #include "utility/log.h"
 
 
@@ -104,6 +104,12 @@ int main(int argc, char* argv[]) {
     
     logger::close_file();
 
+    // Result files (only the clustered graphs, with graph id and polygon id)
+    write_clustering_csv(output_path / "clustering.csv", clustering_result, graphs);
+    write_clustering_json(output_path / "clustering.json",
+                          clustering_to_json(clustering_result, graphs, config.io.dataset, config.io.run_name,
+                                             clusteringAlgoToStr(config.cluster.clustering_algo), config.cluster.k));
+
     // write geopackage with assigned cluster ids and information about medoids
     // (cluster members and medoids are local indices into graphs; the vectors are indexed by graph id)
     std::vector<int> cluster_ids(geometricgraphs.size(), -1), is_medoid(geometricgraphs.size(), -1);
@@ -123,9 +129,6 @@ int main(int argc, char* argv[]) {
     std::filesystem::path output_gpkg =
             output_path
             / (config.io.dataset + ".gpkg");
-    std::filesystem::path output_csv =
-            output_path
-            / (config.io.dataset + ".csv");
 
     std::unordered_map<PolygonID, GraphID> polygon_id_to_graph_id;
     for (auto const &graph : geometricgraphs){
@@ -133,9 +136,6 @@ int main(int argc, char* argv[]) {
     }
 
     assignClustersToPolygons(input_gpkg.string(), output_gpkg.string(), polygon_id_to_graph_id, cluster_ids, is_medoid);
-
-    //create csv with clustering info
-    CSVio::writeClustersToCsv(output_csv.string(), cluster_ids, is_medoid);
 
 
     return EXIT_SUCCESS;
