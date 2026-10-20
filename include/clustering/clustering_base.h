@@ -3,7 +3,7 @@
 
 #include "io/config.h"
 #include "io/output_context.h"
-#include "geomGMDSolver.h"
+#include "distance/geomGMDSolver.h"
 
 #include <thread>
 #include <vector>

@@ -5,7 +5,7 @@
 #include "io/command_line.h"
 #include "io/config.h"
 #include "io/edgemap_io.h"
-#include "geomGMDSolver.h"
+#include "distance/geomGMDSolver.h"
 #include "utility/log.h"
 
 namespace logger = geomgmd::log;

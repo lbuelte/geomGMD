@@ -1,7 +1,7 @@
 #ifndef GEOMGMD_IO_SOLVER_MESSAGES_H
 #define GEOMGMD_IO_SOLVER_MESSAGES_H
 
-#include "geomGMDSolver.h"
+#include "distance/geomGMDSolver.h"
 #include "io/config.h"
 
 #include <string>

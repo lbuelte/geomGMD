@@ -3,7 +3,7 @@
 
 #include "utility/geometric_graph.h"
 #include "utility/edgemap.h"
-#include "solver_config.h"
+#include "distance/solver_config.h"
 
 #include <gurobi_c++.h>
 #include <memory>

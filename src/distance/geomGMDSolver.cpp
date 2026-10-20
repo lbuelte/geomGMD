@@ -1,4 +1,4 @@
-#include "geomGMDSolver.h"
+#include "distance/geomGMDSolver.h"
 
 #include "utility/angle_computation.h"
 #include "utility/overloaded.h"

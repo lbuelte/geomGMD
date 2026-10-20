@@ -2,7 +2,7 @@
 #define POLYGONCLUSTERING_PAM_H
 
 #include "clustering_base.h"
-#include "geomGMDSolver.h"
+#include "distance/geomGMDSolver.h"
 
 class PAM_Clustering {
 public:

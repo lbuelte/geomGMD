@@ -3,7 +3,7 @@
 
 #include <gurobi_c++.h>
 
-#include "geomGMDSolver.h"
+#include "distance/geomGMDSolver.h"
 #include "utility/log.h"
 
 #include <filesystem>

@@ -5,9 +5,9 @@
 #include <cassert>
 #include <filesystem>
 
-#include "io/gpkg_io.h"
+#include "clustering/gpkg_io.h"
 #include "io/command_line.h"
-#include "io/plots_and_stats.h"
+#include "clustering/plots_and_stats.h"
 #include "io/config.h"
 #include "io/output_context.h"
 

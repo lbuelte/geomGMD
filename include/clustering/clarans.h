@@ -2,7 +2,7 @@
 #define POLYGONCLUSTERING_CLARANS_H
 
 #include "clustering_base.h"
-#include "geomGMDSolver.h"
+#include "distance/geomGMDSolver.h"
 
 #include <random>
 

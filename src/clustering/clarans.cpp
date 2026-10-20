@@ -1,6 +1,6 @@
 #include "clustering/clarans.h"
 
-#include "utility/sampling.h"
+#include "clustering/sampling.h"
 #include "utility/log.h"
 
 #include <sstream>

@@ -5,7 +5,7 @@
 
 #include "result_writer.h"
 #include "io/config.h"
-#include "geomGMDSolver.h"
+#include "distance/geomGMDSolver.h"
 #include "utility/log.h"
 
 inline std::filesystem::path create_path(const std::filesystem::path& base_path){

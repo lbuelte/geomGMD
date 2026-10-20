@@ -10,7 +10,7 @@
 #include <utility>
 
 #include "utility/geometry_base.h"
-#include "solver_config.h"
+#include "distance/solver_config.h"
 #include "utility/log.h"
 
 struct PAMConfig {

@@ -6,7 +6,7 @@
 #include "utility/geometric_graph.h"
 
 #include "config.h"
-#include "geomGMDSolver.h"
+#include "distance/geomGMDSolver.h"
 
 #include "json/json.hpp"
 #include <optional>

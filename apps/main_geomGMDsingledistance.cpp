@@ -10,7 +10,7 @@
 #include "io/edgemap_io.h"
 #include "io/solver_messages.h"
 
-#include "geomGMDSolver.h"
+#include "distance/geomGMDSolver.h"
 #include "utility/log.h"
 
 

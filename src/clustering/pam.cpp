@@ -1,6 +1,6 @@
 #include "clustering/pam.h"
 
-// #include "io/plots_and_stats.h"
+// #include "clustering/plots_and_stats.h"
 #include "utility/log.h"
 
 #include <sstream>
