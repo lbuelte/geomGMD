@@ -6,87 +6,11 @@
 #include <cmath>
 #include <vector>
 
-double compute_total_length_objective(
-        const GurobiParams &params,
-        const GeometricGraph& G,
-        const GeometricGraph& H,
-        const EdgeMap& edgemap)
-{
-    EdgeID num_seen_edges = 0;
+namespace {
 
-    double objective_value = 0;
-    for (auto const &edge_pair : edgemap.edge_pairs){
-        if (edge_pair.is_deletion()){
-            EdgeID g = edge_pair.g.value();
-            objective_value += params.cost_factor_deletion_insertion * G.edge(g).length;
-            ++num_seen_edges;
-        }
-        else if (edge_pair.is_insertion()){
-            EdgeID h = edge_pair.h.value();
-            objective_value += params.cost_factor_deletion_insertion * H.edge(h).length;
-            ++num_seen_edges;
-        }
-        else if (edge_pair.is_substitution()){
-            EdgeID g = edge_pair.g.value();
-            EdgeID h = edge_pair.h.value();
-            objective_value += params.cost_factor_length_difference * std::abs(G.edge(g).length - H.edge(h).length);
-            num_seen_edges += 2;
-        }
-    }
-    assert(num_seen_edges == G.num_edges() + H.num_edges());
-    return objective_value;
-}
-
-double compute_length_diff_objective(
-        const GurobiParams &params,
-        const GeometricGraph& G,
-        const GeometricGraph& H,
-        const EdgeMap& edgemap)
-{
-    double objective_value = 0;
-    for (auto const &edge_pair : edgemap.edge_pairs){
-        if (edge_pair.is_substitution()){
-            EdgeID g = edge_pair.g.value();
-            EdgeID h = edge_pair.h.value();
-            objective_value += params.cost_factor_length_difference * std::abs(G.edge(g).length - H.edge(h).length);
-        }
-    }
-    return objective_value;
-}
-
-double compute_length_insertion_objective(
-        const GurobiParams &params,
-        const GeometricGraph& G,
-        const GeometricGraph& H,
-        const EdgeMap& edgemap)
-{
-    double objective_value = 0;
-    for (auto const &edge_pair : edgemap.edge_pairs){
-        if (edge_pair.is_insertion()){
-            EdgeID h = edge_pair.h.value();
-            objective_value += params.cost_factor_deletion_insertion * H.edge(h).length;
-        }
-    }
-    return objective_value;
-}
-
-double compute_length_deletion_objective(
-        const GurobiParams &params,
-        const GeometricGraph& G,
-        const GeometricGraph& H,
-        const EdgeMap& edgemap)
-{
-    double objective_value = 0;
-    for (auto const &edge_pair : edgemap.edge_pairs){
-        if (edge_pair.is_deletion()){
-            EdgeID g = edge_pair.g.value();
-            objective_value += params.cost_factor_deletion_insertion * G.edge(g).length;
-        }
-    }
-    return objective_value;
-}
-
-double compute_total_angle_objective(
+// Path (angle) mapping costs of all mapped paths of length two (body unchanged from
+// compute_total_angle_objective in sigspatial26)
+double path_angle_cost(
         const GurobiParams &params,
         const GeometricGraph& G,
         const GeometricGraph& H,
@@ -170,4 +94,46 @@ double compute_total_angle_objective(
         }
     }
     return objective_value;
+}
+
+} // end of anonymous namespace
+
+
+MappingCost compute_mapping_cost(
+        const GeometricGraph& G,
+        const GeometricGraph& H,
+        const EdgeMap& edgemap,
+        const GurobiParams &params)
+{
+    // Each sum receives the same additions in the same order as the former separate functions
+    // (compute_length_deletion/insertion/diff_objective, compute_total_length_objective).
+    MappingCost cost;
+    EdgeID num_seen_edges = 0;
+    for (auto const &edge_pair : edgemap.edge_pairs){
+        if (edge_pair.is_deletion()){
+            EdgeID g = edge_pair.g.value();
+            const double c = params.cost_factor_deletion_insertion * G.edge(g).length;
+            cost.deletion += c;
+            cost.edge_total += c;
+            ++num_seen_edges;
+        }
+        else if (edge_pair.is_insertion()){
+            EdgeID h = edge_pair.h.value();
+            const double c = params.cost_factor_deletion_insertion * H.edge(h).length;
+            cost.insertion += c;
+            cost.edge_total += c;
+            ++num_seen_edges;
+        }
+        else if (edge_pair.is_substitution()){
+            EdgeID g = edge_pair.g.value();
+            EdgeID h = edge_pair.h.value();
+            const double c = params.cost_factor_length_difference * std::abs(G.edge(g).length - H.edge(h).length);
+            cost.length_difference += c;
+            cost.edge_total += c;
+            num_seen_edges += 2;
+        }
+    }
+    assert(num_seen_edges == G.num_edges() + H.num_edges());
+    cost.path_angle = path_angle_cost(params, G, H, edgemap);
+    return cost;
 }

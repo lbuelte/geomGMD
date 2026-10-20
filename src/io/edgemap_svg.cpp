@@ -199,27 +199,28 @@ void write_edge_mapping_svg(
         }
         return std::string("distance: /");
     }();
+    const MappingCost cost = compute_mapping_cost(G, H, edgemap, legend_info.params);
     std::string length_diff_obj_text = [&](){
         std::ostringstream ss;
-        ss << std::fixed << std::setprecision(3) << compute_length_diff_objective(legend_info.params, G, H, edgemap);
+        ss << std::fixed << std::setprecision(3) << cost.length_difference;
         std::string length_str = ss.str();
         return "edge length diff: " + length_str;
     }();
     std::string insertion_obj_text = [&](){
         std::ostringstream ss;
-        ss << std::fixed << std::setprecision(3) << compute_length_insertion_objective(legend_info.params, G, H, edgemap);
+        ss << std::fixed << std::setprecision(3) << cost.insertion;
         std::string length_str = ss.str();
         return "edge insertion: " + length_str;
     }();
     std::string deletion_obj_text = [&](){
         std::ostringstream ss;
-        ss << std::fixed << std::setprecision(3) << compute_length_deletion_objective(legend_info.params, G, H, edgemap);
+        ss << std::fixed << std::setprecision(3) << cost.deletion;
         std::string length_str = ss.str();
         return "edge deletion: " + length_str;
     }();
     std::string angle_obj_text = [&](){
         std::ostringstream ss;
-        ss << std::fixed << std::setprecision(3) << compute_total_angle_objective(legend_info.params, G, H, edgemap);
+        ss << std::fixed << std::setprecision(3) << cost.path_angle;
         std::string angle_str = ss.str();
         return "angle diff: " + angle_str;
     }();
