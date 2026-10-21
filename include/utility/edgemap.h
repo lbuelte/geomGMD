@@ -5,6 +5,7 @@
 
 #include "utility/graph_base.h"
 
+#include <algorithm>
 #include <optional>
 #include <stdexcept>
 #include <vector>
@@ -40,5 +41,23 @@ struct EdgeMap {
     int h_graph_id = -1;    // graph id of H (whose edges are the h entries); -1 if not set
     std::vector<EdgePair> edge_pairs;
 };
+
+// The same edge map with the roles of G and H exchanged (g and h swapped in every pair and in the graph ids).
+// Pairs are ordered as the solver returns them: mapped and deleted edges by their edge in the new G,
+// then inserted edges by their edge in the new H.
+inline EdgeMap transposed(EdgeMap const &edgemap)
+{
+    EdgeMap result{edgemap.h_graph_id, edgemap.g_graph_id, {}};
+    result.edge_pairs.reserve(edgemap.edge_pairs.size());
+    for (auto const &pair : edgemap.edge_pairs) {
+        result.edge_pairs.emplace_back(pair.h, pair.g);
+    }
+    std::sort(result.edge_pairs.begin(), result.edge_pairs.end(),
+              [](EdgeMap::EdgePair const &a, EdgeMap::EdgePair const &b) {
+                  if (a.g.has_value() != b.g.has_value()) return a.g.has_value();  // insertions last
+                  return a.g.has_value() ? *a.g < *b.g : *a.h < *b.h;
+              });
+    return result;
+}
 
 #endif // GEOMGMD_UTILITY_EDGEMAP_H

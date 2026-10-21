@@ -21,5 +21,12 @@ GeomGMDResult compute_geomGMD(GeometricGraph const &G,
     r.gurobi_log = solver.gurobi_log();
     r.runtime = std::chrono::milliseconds(solver.return_runtime_in_ms());
     r.instance = solver.return_run_info();
+
+    // The solver may exchange G and H internally (graph with more edges first); report in the caller's order
+    if (solver.graphs_swapped()) {
+        r.edge_map = transposed(r.edge_map);
+        auto const &i = r.instance;
+        r.instance = {.g = i.h, .h = i.g, .ng = i.nh, .nh = i.ng, .eg = i.eh, .eh = i.eg};
+    }
     return r;
 }

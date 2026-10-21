@@ -179,6 +179,7 @@ GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_,
     , use_path_variables(params.consider_angle_objective or params.enforce_cyclic_order)
     , G(std::max(G_, H_))
     , H(std::min(H_, G_))
+    , swapped(&G != &G_)
     , nh(H.num_vertices())
     , ng(G.num_vertices())
     , eh(H.num_edges())

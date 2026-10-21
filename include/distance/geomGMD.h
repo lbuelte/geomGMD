@@ -28,12 +28,11 @@ struct GeomGMDOptions {
 struct GeomGMDResult {
     DistanceResult result;                     // outcome of the solver (optimal, interval, cutoff, error, ...)
     std::optional<IntervalDistance> distance;  // = evaluate_distance_result(result); empty if no distance
-    EdgeMap edge_map;                          // constrained edge map of the solution (only if distance is set);
-                                               // refers to the solver's G and H (see edge_map.g_graph_id/h_graph_id)
+    EdgeMap edge_map;                          // constrained edge map from G to H (only if distance is set)
     SolveStatistics statistics;                // Gurobi status, MIP gap, node count
     std::vector<std::string> gurobi_log;       // only with GeomGMDOptions::capture_gurobi_log
     std::chrono::milliseconds runtime{0};      // time for building and solving the model
-    GeomGMDForiSolver::InstancePairInfo instance;  // polygon ids and sizes of the solver's G and H
+    GeomGMDForiSolver::InstancePairInfo instance;  // polygon ids and sizes of G and H
 };
 
 // Computes geomGMD between G and H. G and H only need to exist during the call.

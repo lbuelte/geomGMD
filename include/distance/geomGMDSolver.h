@@ -179,6 +179,9 @@ public:
     // Constrained edge map of the computed solution, between the solver's G and H (see g_graph_id/h_graph_id;
     // the solver uses the graph with more edges as G). Empty if no solution was computed.
     EdgeMap return_edge_map();
+    // True if the solver's G is the caller's second graph, i.e. the edge map and the run info refer to
+    // the graphs in swapped order (compute_geomGMD transposes them back).
+    bool graphs_swapped() const { return swapped; }
 
     struct InstancePairInfo {
         PolygonID g, h;
@@ -206,6 +209,8 @@ private:
     // References to the caller's graphs (G = the one with more edges, see constructor); not copied
     const GeometricGraph &G;
     const GeometricGraph &H;
+    // True if the solver's G is the caller's second graph (see graphs_swapped())
+    const bool swapped;
 
     const int nh;
     const int ng;

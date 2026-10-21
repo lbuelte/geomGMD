@@ -64,6 +64,8 @@ int main(int argc, char* argv[]) {
             auto geomGMD_dist = find_geomGMD_value_from_file(distance_matrix_input_file, g, h);
             if (json_opt.has_value()){
                 bool is_optimal_mapping = json_opt.value()["optimal"];
+                // Edge maps are stored in the computation's (g, h) order; files written before edge maps
+                // were reported in the caller's order may contain the pair as (h, g)
                 if (g_before_h){
                     EdgeMap edgemap = edgemap_from_json(json_opt.value());
                     SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, g, h, model_parameters, geomGMD_dist};

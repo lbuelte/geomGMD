@@ -90,29 +90,19 @@ int main(int argc, char* argv[])
     }
     std::filesystem::path edgemap_output_file = 
             output_path 
-            / ("edgemap_" + std::to_string(H.polygon_id()) + "_" + std::to_string(G.polygon_id()) + ".svg");
+            / ("edgemap_" + std::to_string(G.polygon_id()) + "_" + std::to_string(H.polygon_id()) + ".svg");
     
     auto mapping_json = edgemap_json(r);
     {
-        // Cost breakdown of the edge map (it refers to the solver's G and H, see g_graph_id/h_graph_id)
-        auto const cost = compute_mapping_cost(geometricgraphs[r.edge_map.g_graph_id],
-                                               geometricgraphs[r.edge_map.h_graph_id], r.edge_map, config.model);
+        // Cost breakdown of the edge map
+        auto const cost = compute_mapping_cost(G, H, r.edge_map, config.model);
         logger::info("Cost of the edge map: deletion ", cost.deletion, ", insertion ", cost.insertion,
                      ", length difference ", cost.length_difference, ", path angles ", cost.path_angle,
                      ", total ", cost.total());
     }
     bool is_optimal_mapping = mapping_json["optimal"];
-    if (H <= G){
-        assert(mapping_json["G_id"] == g and mapping_json["H_id"] == h);
-        EdgeMap edgemap = edgemap_from_json(mapping_json);
-        SVGLegendInfo svg_info{is_optimal_mapping, config.io.dataset, g, h, config.model, dist_result.value().ub};
-        write_edge_mapping_svg(G, H, edgemap, svg_info, edgemap_output_file);
-    } else {
-        assert(mapping_json["G_id"] == h and mapping_json["H_id"] == g);
-        EdgeMap edgemap = edgemap_from_json(mapping_json);
-        SVGLegendInfo svg_info{is_optimal_mapping, config.io.dataset, h, g, config.model, dist_result.value().ub};
-        write_edge_mapping_svg(H, G, edgemap, svg_info, edgemap_output_file);
-    }             
+    SVGLegendInfo svg_info{is_optimal_mapping, config.io.dataset, g, h, config.model, dist_result.value().ub};
+    write_edge_mapping_svg(G, H, r.edge_map, svg_info, edgemap_output_file);
 
     auto end = std::chrono::high_resolution_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
