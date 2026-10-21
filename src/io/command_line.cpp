@@ -46,6 +46,8 @@ CommandLine parse_command_line(int argc, char* argv[])
             command_line.file_log_level = parse_level_option(option, take_value());
         } else if (option == "--gurobi-log" and not value) {
             command_line.gurobi_log = true;
+        } else if (option == "--overwrite" and not value) {
+            command_line.overwrite = true;
         } else {
             throw std::runtime_error("Unknown option: " + option);
         }

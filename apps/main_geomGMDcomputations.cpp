@@ -32,7 +32,10 @@ int run(int argc, char* argv[]) {
     }
     auto config = load_dist_config(config_path);
 
+    if (command_line.overwrite) config.io.overwrite = true;
+
     std::filesystem::path output_path = run_output_path(config.io);
+    check_previous_results(output_path, config.io.overwrite);
     auto out = OutputContext(output_path, config.io);
 
     std::filesystem::path log_file = log_file_path(config.io, output_path);

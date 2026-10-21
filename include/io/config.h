@@ -52,6 +52,7 @@ struct IOConfig {
     bool generate_plots = true;
     bool write_distance_matrix = true;  // intervaldistance_matrix.csv and computation_info.csv
     bool write_edgemaps = true;         // edgemaps.json
+    bool overwrite = false;             // allow replacing the results of a previous run in the run folder
 
     std::optional<size_t> num_instances;
     size_t starting_instance = 0;

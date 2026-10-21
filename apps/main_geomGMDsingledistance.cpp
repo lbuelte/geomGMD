@@ -58,7 +58,9 @@ int run(int argc, char* argv[])
     }
     auto config = load_dist_config(config_path);
 
-    std::filesystem::path output_path = run_output_path(config.io);
+    // Own subfolder of the run folder, so that the files of a full dataset computation with the same
+    // run_name are not touched
+    std::filesystem::path output_path = run_output_path(config.io) / "single";
     std::filesystem::create_directories(output_path);
 
     // Console only: a log file in the output folder would overwrite the run.log of a full dataset computation
@@ -68,7 +70,7 @@ int run(int argc, char* argv[])
     logger::info(config);
 
     // Log config in extra file
-    copy_config(config_path, output_path);
+    copy_config(config_path, output_path, "config_" + std::to_string(g) + "_" + std::to_string(h) + ".toml");
 
     // Reading input graphs
     std::filesystem::path json_path = graphs_json_path(config.io);

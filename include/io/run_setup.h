@@ -7,6 +7,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <string>
 
 // Output folder of a run: <output_path>/<dataset>/<run_name>
 std::filesystem::path run_output_path(IOConfig const &io);
@@ -17,8 +18,13 @@ std::filesystem::path graphs_json_path(IOConfig const &io);
 // Log file of a run: global_log_file if set, otherwise <output folder>/run.log
 std::filesystem::path log_file_path(IOConfig const &io, std::filesystem::path const &output_path);
 
-// Copies the config file into the output folder as config_input.toml (replacing an existing copy).
-void copy_config(std::filesystem::path const &config_path, std::filesystem::path const &output_path);
+// Copies the config file into the output folder as file_name (replacing an existing copy).
+void copy_config(std::filesystem::path const &config_path, std::filesystem::path const &output_path,
+                 std::string const &file_name = "config_input.toml");
+
+// Throws if the run folder already contains results of a previous run (edge maps, distance matrix,
+// computation info, clustering), unless overwrite is set ([IO] overwrite or --overwrite).
+void check_previous_results(std::filesystem::path const &output_path, bool overwrite);
 
 // The graphs selected by starting_instance and num_instances: positions first, ..., first + count - 1
 // in the input file (num_instances is cut off at the end of the dataset). Throws if starting_instance

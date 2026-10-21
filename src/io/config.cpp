@@ -267,7 +267,7 @@ std::optional<std::string> read_io_section(const toml::table& tbl, IOConfig& io)
         throw std::runtime_error("Missing required [IO] section");
     }
     t->check_keys({"dataset", "input_path", "output_path", "global_log_file", "run_name", "generate_plots",
-                   "write_distance_matrix", "write_edgemaps", "num_instances", "starting_instance"});
+                   "write_distance_matrix", "write_edgemaps", "overwrite", "num_instances", "starting_instance"});
     std::optional<std::string> run_name;
     t->read_required("dataset", io.dataset);
     t->read_required("input_path", io.input_path);
@@ -277,6 +277,7 @@ std::optional<std::string> read_io_section(const toml::table& tbl, IOConfig& io)
     t->read("generate_plots", io.generate_plots);
     t->read("write_distance_matrix", io.write_distance_matrix);
     t->read("write_edgemaps", io.write_edgemaps);
+    t->read("overwrite", io.overwrite);
     t->read("num_instances", io.num_instances);
     t->read("starting_instance", io.starting_instance);
     require(not io.num_instances.has_value() or *io.num_instances > 0, t->key_name("num_instances") + " must be > 0");
@@ -488,6 +489,7 @@ std::ostream& operator<<(std::ostream& out, const IOConfig& io)
     print_entry(out, "generate_plots", tf(io.generate_plots));
     print_entry(out, "write_distance_matrix", tf(io.write_distance_matrix));
     print_entry(out, "write_edgemaps", tf(io.write_edgemaps));
+    print_entry(out, "overwrite", tf(io.overwrite));
     print_entry(out, "num_instances", io.num_instances ? std::to_string(*io.num_instances) : "all");
     print_entry(out, "starting_instance", io.starting_instance);
     return out;

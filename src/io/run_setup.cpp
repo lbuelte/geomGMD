@@ -23,10 +23,28 @@ std::filesystem::path log_file_path(IOConfig const &io, std::filesystem::path co
     return io.global_log_file ? std::filesystem::path(io.global_log_file.value()) : output_path / "run.log";
 }
 
-void copy_config(std::filesystem::path const &config_path, std::filesystem::path const &output_path)
+void copy_config(std::filesystem::path const &config_path, std::filesystem::path const &output_path,
+                 std::string const &file_name)
 {
-    std::filesystem::copy_file(config_path, output_path / "config_input.toml",
+    std::filesystem::copy_file(config_path, output_path / file_name,
                                std::filesystem::copy_options::overwrite_existing);
+}
+
+void check_previous_results(std::filesystem::path const &output_path, bool overwrite)
+{
+    if (overwrite) return;
+    std::string found;
+    for (auto const *name : {"edgemaps.json", "intervaldistance_matrix.csv", "computation_info.csv",
+                             "clustering.csv", "clustering.json"}) {
+        if (std::filesystem::exists(output_path / name)) {
+            found += (found.empty() ? "" : ", ") + std::string(name);
+        }
+    }
+    if (not found.empty()) {
+        throw std::runtime_error("The run folder " + output_path.string() + " already contains results ("
+                                 + found + "). Choose another [IO] run_name, or set [IO] overwrite = true "
+                                 "or use --overwrite to replace them.");
+    }
 }
 
 InstanceRange select_instances(IOConfig const &io, size_t num_graphs)
