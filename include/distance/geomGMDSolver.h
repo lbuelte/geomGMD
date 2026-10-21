@@ -179,15 +179,7 @@ public:
     // Constrained edge map of the computed solution, between the solver's G and H (see g_graph_id/h_graph_id;
     // the solver uses the graph with more edges as G). Empty if no solution was computed.
     EdgeMap return_edge_map();
-    void print_objective_breakdown();
 
-    struct SolverObjectives {
-        double total;
-        double edge_length_obj;
-        double angle_obj;        
-    };
-    SolverObjectives return_solver_objectives();
-    
     struct InstancePairInfo {
         PolygonID g, h;
         VertexID ng, nh;

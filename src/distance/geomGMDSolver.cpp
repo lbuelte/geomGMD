@@ -57,7 +57,10 @@ long double compute_gamma(const GeometricGraph &G, const GeometricGraph &H, doub
     return gamma;
 } 
 
-// Helper function to compute the edge length difference objective for FORI using GeometricGraph
+// Helper function to compute the edge length difference objective for FORI using GeometricGraph.
+// The edges of G are directed and for the edges of H we consider both directions: the variables z[ij][kl]
+// represent the mapping of directed edge ij in G to the directed edge kl in H and the variables z[ij][kl+1]
+// represent the mapping of directed edge ij in G to the directed edge lk in H.
 GRBLinExpr compute_edge_length_objective_FORI(GeometricGraph const &G, GeometricGraph const &H, 
         ModelParameters const &params, const std::vector<std::vector<GRBVar>> &z) {
 
@@ -101,54 +104,6 @@ GRBLinExpr compute_angle_diff_objective(ModelParameters const &params,
         ijh++;
     }
     return costsum;
-}
-
-
-// Computes the linear expression representing the objective cost based on the edge mapping variables z
-// and the path mapping variables p. Here, the edges of G are directed and the for the edges of H we consider both directions. 
-// The variables z[ij][kl] represent the mapping of directed edge ij in G to the directed edge kl in H and the variables z[ij][kl+1]
-// represent the mapping of directed edge ij in G to the directed edge lk in H.
-GRBLinExpr compute_objective_cost_FORI(GeometricGraph const &G, GeometricGraph const &H, 
-        ModelParameters const &params, const std::vector<std::vector<GRBVar>> &z, 
-        std::vector<DirectedPathLength2> paths2G, std::vector<DirectedPathLength2> paths2H, std::vector<std::vector<GRBVar>> p) 
-{
-    return compute_edge_length_objective_FORI(G, H, params, z) + compute_angle_diff_objective(params, paths2G, paths2H, p);
-}
-
-
-// Print the solution of the ILP model, i.e., all variables with non-zero value.
-void print_solution(GRBModel const &model, std::vector<std::vector<GRBVar>> const &x, 
-        std::vector<std::vector<GRBVar>> const &y, std::vector<std::vector<GRBVar>> const &p, double gamma){
-    std::cout << "Optimum geomGMD value: " << model.get(GRB_DoubleAttr_ObjVal) + gamma <<" with objective value " 
-                    << model.get(GRB_DoubleAttr_ObjVal) << " and constant " << gamma << std::endl;
-    auto n_g = x.size();
-    auto n_h = x.front().size();
-    auto m_g = y.size();
-    auto m_h = y.front().size();
-    auto p_g = p.size();
-    auto p_h = p.front().size();
-
-    for (int i = 0; i < n_g; i++) {
-        for (int k = 0; k < n_h; k++) {
-            if (x[i][k].get(GRB_DoubleAttr_X) > 0){
-                std::cout << x[i][k].get(GRB_StringAttr_VarName) << " = " << x[i][k].get(GRB_DoubleAttr_X) << std::endl;
-            }
-        }
-    }
-    for (int ij = 0; ij < m_g; ij++) {
-        for (int kl = 0; kl < m_h; kl++) {
-            if (y[ij][kl].get(GRB_DoubleAttr_X) > 0){
-                std::cout << y[ij][kl].get(GRB_StringAttr_VarName) << " = " << y[ij][kl].get(GRB_DoubleAttr_X) << std::endl;
-            }
-        }
-    }
-    for (int ijh = 0; ijh < p_g; ijh++) {
-        for (int klm = 0; klm < p_h; klm++) {
-            if (p[ijh][klm].get(GRB_DoubleAttr_X) > 0){
-                std::cout << p[ijh][klm].get(GRB_StringAttr_VarName) << " = " << p[ijh][klm].get(GRB_DoubleAttr_X) << std::endl;
-            }
-        }
-    }
 }
 
 // Since the paths do not care about orientation, we have to make sure that we get the edge in G in the right direction.
@@ -348,7 +303,6 @@ DistanceResult GeomGMDForiSolver::run_optimization()
             }
         } catch (GRBException &) {
         }
-        // auto result = [&]() -> DistanceResult {
         if (status == GRB_OPTIMAL) {
             return ExactDistance{ model.get(GRB_DoubleAttr_ObjVal)};
         } 
@@ -375,8 +329,7 @@ DistanceResult GeomGMDForiSolver::run_optimization()
                 return SolverError{ status };
             }        
         }
-        return SolverError{ status };    
-        // }();
+        return SolverError{ status };
 
     } catch (GRBException &e) {
         if (e.getErrorCode() == 10009 || e.getErrorCode() == 10032) {
@@ -424,26 +377,6 @@ EdgeMap GeomGMDForiSolver::return_edge_map()
         }
     }
     return EdgeMap{G.graph_id(), H.graph_id(), std::move(pairs)};
-}
-
-
-void GeomGMDForiSolver::print_objective_breakdown() {
-    GRBLinExpr edge_length_expr = compute_edge_length_objective_FORI(G, H, params, z);
-    GRBLinExpr angle_expr = compute_angle_diff_objective(params, directed_paths_G, directed_paths_H, p);
-    double gamma_val = compute_gamma(G, H, params.cost_factor_deletion_insertion);
-
-    std::cout << "Gamma (constant):    " << gamma_val << std::endl;
-    std::cout << "Edge length obj:     " << edge_length_expr.getValue() + gamma_val << std::endl;
-    std::cout << "Angle obj:           " << angle_expr.getValue() << std::endl;
-    std::cout << "Total ILP objective: " << model.get(GRB_DoubleAttr_ObjVal) << std::endl;
-}
-
-GeomGMDForiSolver::SolverObjectives GeomGMDForiSolver::return_solver_objectives(){
-    GRBLinExpr edge_length_expr = compute_edge_length_objective_FORI(G, H, params, z);
-    GRBLinExpr angle_expr = compute_angle_diff_objective(params, directed_paths_G, directed_paths_H, p);
-    double gamma_val = compute_gamma(G, H, params.cost_factor_deletion_insertion);
-
-    return {model.get(GRB_DoubleAttr_ObjVal), edge_length_expr.getValue() + gamma_val, angle_expr.getValue()};
 }
 
 void GeomGMDForiSolver::create_node_and_edge_variables()
