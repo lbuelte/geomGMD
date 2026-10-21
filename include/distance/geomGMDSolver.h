@@ -92,6 +92,10 @@ std::string distance_result_error_message(DistanceResult const &res);
 
 
 //manage one global Gurobi environment
+// One Gurobi environment shared by all solvers (also across threads), created once with OutputFlag = 0.
+// Gurobi recommends one environment per thread; a shared environment avoids the start-up cost of an
+// environment (and licence checks) for many short computations and has worked in practice. The shared
+// environment must not be modified after its creation (models copy its parameters when they are created).
 class GurobiEnvManager {
 public:
     static GRBEnv& getEnv() {

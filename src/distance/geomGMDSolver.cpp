@@ -231,7 +231,6 @@ GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_,
     , env(GurobiEnvManager::getEnv())
     , model(env)
 {
-    env.set("OutputFlag", "0");
     model.set(GRB_StringAttr_ModelName,  "geomGMD_FORI");
     model.set(GRB_IntParam_Threads, settings.threads);
     model.set(GRB_DoubleParam_TimeLimit, settings.timelimit_sec);
