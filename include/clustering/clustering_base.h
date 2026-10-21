@@ -18,9 +18,6 @@ struct ClusteringResult {
     std::vector<GraphID> medoid_indices = std::vector<GraphID>();
     double clustering_solution_value = 0;
     std::optional<std::vector<std::vector<IntervalDistance>>> _distance_matrix_opt = std::nullopt;
-
-    // void append_cluster_result_and_propagate_ids(ClusteringResult const &other, std::vector<GraphID> const &graph_ids);
-    void append_cluster_result(ClusteringResult const &other);
 };
 
 ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs, size_t const k, Config const &config, OutputContext &out);

@@ -55,7 +55,7 @@ private:
     //helper functions for PAM Clustering
 
     //find the initial cluster centers greedily (O(k * n²))
-    void build(IOConfig const &io_config);
+    void build();
 
     //helpers for building
 

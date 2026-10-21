@@ -27,8 +27,6 @@ struct OutputContext {
     std::optional<JSONWriter> edgemap_writer;
     std::optional<CSVWriter> intervaldistance_matrix_writer;
     std::optional<CSVWriter> pairwise_computation_info_writer;
-    // AnalysisWriters analysis;
-    // VisualizationWriters viz;
 
     OutputContext(const std::filesystem::path& base_path, IOConfig const& config)
         : output_path(create_path(base_path))
@@ -62,10 +60,6 @@ struct OutputContext {
 
     // One row of computation_info.csv for a computed pair (nothing is written if no distance was computed).
     void write_computation_info_row(const GeomGMDResult &result);
-
-    std::filesystem::path make_path(const std::string& name) const {
-        return output_path / name;
-    }
 };
 
 #endif // GEOMGMD_IO_OUTPUT_CONTEXT_H

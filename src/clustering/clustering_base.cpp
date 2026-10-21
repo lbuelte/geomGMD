@@ -4,21 +4,9 @@
 #include "clustering/clarans.h"
 #include "utility/log.h"
 
-#include <cassert>
 #include <sstream>
 #include <queue>
 
-
-void ClusteringResult::append_cluster_result(ClusteringResult const &other)
-{
-    assert(other.clusters.size() == other.medoid_indices.size());
-
-    clustering_solution_value += other.clustering_solution_value;    
-    for (ClusterID c = 0; c < other.clusters.size(); c++){
-        clusters.push_back(other.clusters[c]);
-        medoid_indices.push_back(other.medoid_indices[c]);
-    }
-}
 
 ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs, size_t const k, 
         Config const &config, OutputContext &out)

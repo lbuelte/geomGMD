@@ -67,8 +67,6 @@ private:
     //method to set a fixed sample size
     void set_sample_size(ClaraConfig::SampleSizeSpec const &s, std::optional<size_t> const &min_sample_size);
 
-    ClusteringResult compute_clustering_on_sample(const std::vector<const GeometricGraph*> &sample_graphs) const;
-
     bool _reuse_distances;
     void transfer_sample_distances_to_matrix(std::vector<std::vector<IntervalDistance>> const &sample_matrix, Sample const &sample);
     std::vector<std::vector<IntervalDistance>> init_sample_matrix_from_distances(Sample const &sample);

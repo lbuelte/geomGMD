@@ -103,20 +103,17 @@ void write_edge_mapping_svg(
     double scaleY = availH / std::max(heightG, heightH);
     double scale = std::min(scaleX, scaleY);
 
-    // Width of G and H scaled
+    // Width of G scaled
     double pixelWidthG = widthG * scale;
-    double pixelWidthH = widthH * scale;
 
     // Starting x-pos and staring y-pos
     double xG = margin;
     double xH = margin + pixelWidthG + gap;
-    double canvasBottom = canvas_size - margin;
 
     auto draw_graph = [&](const GeometricGraph& g,
                           const BBox& b,
                           double x_offset,
-                          const std::map<EdgeID, RGB>& edge_colors,
-                          const std::string& name)
+                          const std::map<EdgeID, RGB>& edge_colors)
     {
         auto sx = [&](double x) {
             return (x - b.min_x) * scale + x_offset;
@@ -180,8 +177,8 @@ void write_edge_mapping_svg(
         }
     }
 
-    draw_graph(G, bG, xG, colors_G, "G");
-    draw_graph(H, bH, xH, colors_H, "H");
+    draw_graph(G, bG, xG, colors_G);
+    draw_graph(H, bH, xH, colors_H);
 
 
     // -------- Legend ----------- //

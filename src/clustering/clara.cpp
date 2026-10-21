@@ -501,7 +501,6 @@ ClusteringResult CLARA_Clustering::build_clustering_result_from_sample_cluster_a
         }
     }
     // Store assignment of other graphs
-    size_t counter_sampled = 0;
     for (GraphID i = 0; i < _num_graphs; i++){
         auto sample_it = std::find(sample.sample_indices.begin(), sample.sample_indices.end(), i);
         if (sample_it != sample.sample_indices.end()) 

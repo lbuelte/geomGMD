@@ -1,6 +1,5 @@
 #include "clustering/pam.h"
 
-// #include "clustering/plots_and_stats.h"
 #include "io/edgemap_io.h"
 #include "distance/geomGMD.h"
 #include "utility/log.h"
@@ -68,7 +67,7 @@ ClusteringResult PAM_Clustering::cluster(Config const &config, int k)
     geomgmd::log::info("PAM Clustering on ", n, " graphs with k = ", k);
 
     //building phase: choose init cluster centers greedily
-    build(config.io);
+    build();
 
     //swap phase: swap cluster centers until convergence
     swap();
@@ -85,16 +84,9 @@ ClusteringResult PAM_Clustering::cluster(Config const &config, int k)
 }
 
 //find the initial cluster centers greedily (O(k * n²))
-void PAM_Clustering::build(IOConfig const &config) {
+void PAM_Clustering::build() {
     //first fill up entire distance matrix (I guess we need to for the naive PAM)
     computeEntireDistanceMatrix();
-
-    // std::filesystem::path dist_matrix_path =
-    //         std::filesystem::path(config.output_path)
-    //         / config.dataset
-    //         / config.run_name
-    //         / "distance_matrix.csv";
-    // _distance_matrix = read_interval_distance_matrix(dist_matrix_path.string());
 
     //make sure no medoid is set yet
     _medoids.clear();
