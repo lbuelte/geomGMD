@@ -22,6 +22,5 @@ run_name = "testing"
 # starting_instance = 0
 
 [Parallel]
-# run_parallel = false
 num_threads = 12
 # batch_size = 20

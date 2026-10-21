@@ -444,8 +444,7 @@ DistanceConfig load_dist_config(const std::string& filename)
 
     /* ==================== Parallel ======================= */
     if (auto par = get_section(tbl, "Parallel")) {
-        par->check_keys({"run_parallel", "num_threads", "batch_size"});
-        par->read("run_parallel", cfg.parallel.run_parallel);
+        par->check_keys({"num_threads", "batch_size"});
         par->read("num_threads", cfg.parallel.num_threads_matrix);
         par->read("batch_size", cfg.parallel.default_batch_size);
         require(cfg.parallel.num_threads_matrix > 0, par->key_name("num_threads") + " must be > 0");
@@ -525,7 +524,6 @@ std::ostream& operator<<(std::ostream& out, const ClusteringConfig& cluster)
 std::ostream& operator<<(std::ostream& out, const ParallelConfig& parallel)
 {
     out << "\n[Parallel]\n";
-    print_entry(out, "run_parallel", tf(parallel.run_parallel));
     print_entry(out, "num_threads", parallel.num_threads_matrix);
     print_entry(out, "batch_size", parallel.default_batch_size);
     return out;

@@ -111,7 +111,6 @@ Config load_config(const std::string& filename);
 std::ostream& operator<<(std::ostream& out, const Config& cfg);
 
 struct ParallelConfig {
-    bool run_parallel = true;
     size_t num_threads_matrix = 4;
     size_t default_batch_size = 10;
 };
