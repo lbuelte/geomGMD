@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     config.logging = resolve_logging(config.logging, command_line);
     configure_logging(config.logging, log_file);
     logger::info("Writing log file to ", log_file, "\n");
-    logger::info(config_to_string(config));
+    logger::info(config);
 
     // Log config in extra file
     std::filesystem::copy_file(

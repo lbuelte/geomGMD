@@ -34,7 +34,7 @@ CLARANS_Clustering::CLARANS_Clustering(const std::vector<const GeometricGraph*> 
     if (config.cluster.parallel){
         _num_threads = config.clarans.num_threads;
     }
-    geomgmd::log::info(to_string(_model, _solver));
+    geomgmd::log::info("Model parameters\n", _model, "Solver settings\n", _solver);
 }
 
 ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config) 

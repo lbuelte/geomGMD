@@ -83,6 +83,15 @@ struct LoggingConfig {
     std::optional<double> gurobi_log_min_gap;
 };
 
+// Listings of the sections for the log: section header and one "  key = value" line per key
+// (keys as in the TOML file)
+std::ostream& operator<<(std::ostream& out, const PAMConfig& pam);
+std::ostream& operator<<(std::ostream& out, const ClaraConfig& clara);
+std::ostream& operator<<(std::ostream& out, const ClaransConfig& clarans);
+std::ostream& operator<<(std::ostream& out, const IOConfig& io);
+std::ostream& operator<<(std::ostream& out, const ClusteringConfig& cluster);
+std::ostream& operator<<(std::ostream& out, const LoggingConfig& logging);
+
 struct Config {
     ModelParameters model;     // [Gurobi] section in the TOML file
     SolverSettings solver;     // [Gurobi] section in the TOML file
@@ -95,14 +104,16 @@ struct Config {
 };
 
 Config load_config(const std::string& filename);
-void log_config(const Config& cfg, std::ostream& out);
-std::string config_to_string(const Config& cfg);
+// Listing of the whole configuration in TOML layout (for the log)
+std::ostream& operator<<(std::ostream& out, const Config& cfg);
 
 struct ParallelConfig {
     bool run_parallel = true;
     size_t num_threads_matrix = 4;
     size_t default_batch_size = 10;
 };
+
+std::ostream& operator<<(std::ostream& out, const ParallelConfig& parallel);
 
 struct DistanceConfig {
     ModelParameters model;     // [Gurobi] section in the TOML file
@@ -113,8 +124,8 @@ struct DistanceConfig {
 };
 
 DistanceConfig load_dist_config(const std::string& filename);
-void log_config(const DistanceConfig& cfg, std::ostream& out);
-std::string config_to_string(const DistanceConfig& cfg);
+// Listing of the whole configuration in TOML layout (for the log)
+std::ostream& operator<<(std::ostream& out, const DistanceConfig& cfg);
 
 
 // Helper to print ClusteringAlgorithm enum

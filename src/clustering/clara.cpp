@@ -34,7 +34,7 @@ CLARA_Clustering::CLARA_Clustering(const std::vector<const GeometricGraph*> &gra
         _distance_matrix = std::vector<std::vector<IntervalDistance>>(_num_graphs, std::vector<IntervalDistance>(_num_graphs, {-1.0, -1.0}));
     }
 
-    geomgmd::log::info(to_string(_model, _solver));
+    geomgmd::log::info("Model parameters\n", _model, "Solver settings\n", _solver);
 }
 
 

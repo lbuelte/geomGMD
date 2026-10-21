@@ -1,4 +1,5 @@
 #include "io/config.h"
+#include "utility/listing.h"
 #include "utility/overloaded.h"
 
 #include "toml++/toml.h"
@@ -10,6 +11,9 @@
 #include <iomanip>
 
 namespace {
+
+using geomgmd::listing::print_entry;
+using geomgmd::listing::tf;
 
 void require(bool cond, const std::string& msg)
 {
@@ -118,26 +122,73 @@ void read_logging_section(const toml::table& tbl, LoggingConfig& logging)
     }
 }
 
-void log_logging_section(const LoggingConfig& logging, std::ostream& out)
+// Reads the [Gurobi] section (model parameters and solver settings); missing keys keep their defaults.
+void read_gurobi_section(const toml::table& tbl, ModelParameters& model, SolverSettings& solver)
 {
-    out << "\n[Logging]\n";
-    out << "  level      = " << to_string(logging.level) << '\n';
-    out << "  file_level = " << to_string(logging.file_level) << '\n';
-    out << "  gurobi_log = " << (logging.gurobi_log ? "true" : "false") << '\n';
-    if (logging.gurobi_log) {
-        out << "  gurobi_log_pairs   = [";
-        for (size_t i = 0; i < logging.gurobi_log_pairs.size(); ++i) {
-            out << (i > 0 ? ", " : "") << "[" << logging.gurobi_log_pairs[i].first << ", "
-                << logging.gurobi_log_pairs[i].second << "]";
-        }
-        out << "]\n";
-        out << "  gurobi_log_min_gap = "
-            << (logging.gurobi_log_min_gap ? std::to_string(*logging.gurobi_log_min_gap) : "not set") << '\n';
+    if (auto g = tbl["Gurobi"].as_table()) {
+        read_value_if(*g, "timelimit_sec", solver.timelimit_sec);
+        read_value_if(*g, "threads", solver.threads);
+        read_value_if(*g, "seed", solver.seed);
+        read_value_if(*g, "enforce_cyclic_order", model.enforce_cyclic_order);
+        read_value_if(*g, "consider_angle_objective", model.consider_angle_objective);
+        read_value_if(*g, "cost_factor_deletion_insertion", model.cost_factor_deletion_insertion);
+        read_value_if(*g, "cost_factor_length_difference", model.cost_factor_length_difference);
+        read_value_if(*g, "cost_factor_angle_difference", model.cost_factor_angle_difference);
+        read_enum_if(*g, "angle_type", model.angle_type, parse_angle_type);
     }
 }
 
-// Helper to print booleans as true/false
-const char* tf(bool b) { return b ? "true" : "false"; }
+// Reads the required [IO] section and returns the run name, if given. write_distance_matrix and
+// write_edgemaps are only read if read_output_flags is set (load_dist_config does not read them).
+std::optional<std::string> read_io_section(const toml::table& tbl, IOConfig& io, bool read_output_flags)
+{
+    auto t = tbl["IO"].as_table();
+    if (not t) {
+        throw std::runtime_error("Missing required [IO] section");
+    }
+    std::optional<std::string> run_name;
+    read_required(*t, "dataset", io.dataset);
+    read_required(*t, "input_path", io.input_path);
+    read_required(*t, "output_path", io.output_path);
+    read_optional_if(*t, "global_log_file", io.global_log_file);
+    read_optional_if(*t, "run_name", run_name);
+    read_value_if(*t, "generate_plots", io.generate_plots);
+    if (read_output_flags) {
+        read_value_if(*t, "write_distance_matrix", io.write_distance_matrix);
+        read_value_if(*t, "write_edgemaps", io.write_edgemaps);
+    }
+    read_optional_if(*t, "num_instances", io.num_instances);
+    read_value_if(*t, "starting_instance", io.starting_instance);
+    require(io.num_instances.has_value() or io.starting_instance == 0,
+            "Processing the whole dataset, but starting_instance is set to "
+            + std::to_string(io.starting_instance));
+    return run_name;
+}
+
+// Reads an array of seeds (key may be missing: the vector is kept).
+void read_seeds(const toml::table& t, const char* key, std::vector<uint32_t>& seeds)
+{
+    if (auto arr = t.get(key)->as_array()) {
+        seeds.clear();
+        for (const auto& v : *arr) {
+            require(v.is_integer(), "Random_seeds must be integers");
+            seeds.push_back(static_cast<uint32_t>(*v.value<int64_t>()));
+        }
+    }
+}
+
+
+/* ===================== Configuration listing (for the log) ===================== */
+
+std::string seeds_to_string(const std::vector<uint32_t>& seeds)
+{
+    if (seeds.empty()) return "none";
+    std::ostringstream oss;
+    oss << "[ ";
+    for (auto s : seeds) oss << s << " ";
+    oss << "]";
+    return oss.str();
+}
 
 std::string format_percentage(double fraction)
 {
@@ -145,7 +196,6 @@ std::string format_percentage(double fraction)
     oss << std::fixed << std::setprecision(1) << (fraction * 100.0) << "%";
     return oss.str();
 }
-
 
 std::string sampleSizetoStr(const ClaraConfig::SampleSizeSpec& s) {
     return std::visit(overloaded{
@@ -169,25 +219,8 @@ Config load_config(const std::string& filename)
     toml::table tbl = toml::parse_file(filename);
     Config cfg;  // defaults are set here
 
-    std::optional<std::string> run_name_opt = std::nullopt;
-
     /* ===================== Gurobi ===================== */
-    if (auto g = tbl["Gurobi"].as_table()) {
-        read_value_if(*g, "timelimit_sec", cfg.solver.timelimit_sec);
-        read_value_if(*g, "threads", cfg.solver.threads);
-        read_value_if(*g, "seed", cfg.solver.seed);
-        read_value_if(*g, "enforce_cyclic_order", 
-                      cfg.model.enforce_cyclic_order);
-        read_value_if(*g, "consider_angle_objective", 
-                      cfg.model.consider_angle_objective);
-        read_value_if(*g, "cost_factor_deletion_insertion",
-                      cfg.model.cost_factor_deletion_insertion);
-        read_value_if(*g, "cost_factor_length_difference",
-                      cfg.model.cost_factor_length_difference);
-        read_value_if(*g, "cost_factor_angle_difference",
-                      cfg.model.cost_factor_angle_difference);
-        read_enum_if(*g, "angle_type", cfg.model.angle_type, parse_angle_type);
-    }
+    read_gurobi_section(tbl, cfg.model, cfg.solver);
 
     /* ===================== PAM ===================== */
     if (auto p = tbl["PAM"].as_table()) {
@@ -217,14 +250,7 @@ Config load_config(const std::string& filename)
         read_value_if(*c, "num_samples", cfg.clara.num_samples);
         read_value_if(*c, "reuse_distances", cfg.clara.reuse_distances);
         read_value_if(*c, "num_threads_assignment", cfg.clara.num_threads_assignment);
-        if (auto arr = c->get("random_seeds")->as_array()) {
-            cfg.clara.random_seeds.clear();
-            for (const auto& v : *arr) {
-                require(v.is_integer(), "Random_seeds must be integers");
-                cfg.clara.random_seeds.push_back(
-                    static_cast<uint32_t>(*v.value<int64_t>()));
-            }
-        }
+        read_seeds(*c, "random_seeds", cfg.clara.random_seeds);
         require(cfg.clara.random_seeds.size() <= cfg.clara.num_samples, 
                 "Number of random_seeds exceeds num_samples");
         std::random_device rd;
@@ -240,14 +266,7 @@ Config load_config(const std::string& filename)
         read_value_if(*cr, "num_threads", cfg.clarans.num_threads);
         read_optional_if(*cr, "random_seed_local_search", 
             cfg.clarans.random_seed_local_search);
-        if (auto arr = cr->get("random_seeds_initialization")->as_array()) {
-            cfg.clarans.random_seeds_initialization.clear();
-            for (const auto& v : *arr) {
-                require(v.is_integer(), "Random_seeds must be integers");
-                cfg.clarans.random_seeds_initialization.push_back(
-                    static_cast<uint32_t>(*v.value<int64_t>()));
-            }
-        }
+        read_seeds(*cr, "random_seeds_initialization", cfg.clarans.random_seeds_initialization);
         require(cfg.clarans.random_seeds_initialization.size() <= cfg.clarans.num_local, 
                 "Number of random_seeds exceeds num_samples");
         std::random_device rd;
@@ -257,24 +276,7 @@ Config load_config(const std::string& filename)
     }
 
     /* ===================== IO ===================== */
-    if (auto io = tbl["IO"].as_table()) {
-        read_required(*io, "dataset", cfg.io.dataset);
-        read_required(*io, "input_path", cfg.io.input_path);
-        read_required(*io, "output_path", cfg.io.output_path);
-        read_optional_if(*io, "global_log_file", cfg.io.global_log_file);
-        read_optional_if(*io, "run_name", run_name_opt);
-        read_value_if(*io, "generate_plots", cfg.io.generate_plots);
-        read_value_if(*io, "write_distance_matrix", cfg.io.write_distance_matrix);
-        read_value_if(*io, "write_edgemaps", cfg.io.write_edgemaps);
-        read_optional_if(*io, "num_instances", cfg.io.num_instances);
-        read_value_if(*io, "starting_instance", cfg.io.starting_instance);
-        require(cfg.io.num_instances.has_value() or cfg.io.starting_instance == 0,
-                "Processing the whole dataset, but starting_instance is set to " 
-                + cfg.io.starting_instance);
-    }
-    else {
-        throw std::runtime_error("Missing required [IO] section");
-    }
+    auto run_name_opt = read_io_section(tbl, cfg.io, true);
 
     /* ===================== Clustering ===================== */
     if (auto cl = tbl["Clustering"].as_table()) {
@@ -303,152 +305,16 @@ Config load_config(const std::string& filename)
 }
 
 
-// Main logging function
-void log_config(const Config& cfg, std::ostream& out)
-{
-    out << "================ Configuration ================\n";
-
-    /* ===================== IO ===================== */
-    out << "\n[IO]\n";
-    out << "  dataset                 = " << cfg.io.dataset << '\n';
-    out << "  input_path              = " << cfg.io.input_path << '\n';
-    out << "  output_path             = " << cfg.io.output_path << '\n';
-    out << "  run_name                = " << cfg.io.run_name << '\n';
-    out << "  global_log_file         = " 
-        << (cfg.io.global_log_file ? *cfg.io.global_log_file
-                                   : "log file will be generated in run output") << '\n';
-    out << "  plots generated         = " << tf(cfg.io.generate_plots) << '\n';
-    out << "  writing distance matrix = " << tf(cfg.io.write_distance_matrix) << '\n';
-    out << "  writing edgemaps = " << tf(cfg.io.write_edgemaps) << '\n';
-    out << "  num_instances           = "
-        << (cfg.io.num_instances ? std::to_string(*cfg.io.num_instances)
-                                 : "all") << '\n';
-    out << "  starting_instance       = " << cfg.io.starting_instance << '\n';
-
-    /* ===================== Clustering ===================== */
-    out << "\n[Clustering]\n";
-    out << "  k                  = " << cfg.cluster.k << '\n';
-    out << "  clustering_algo    = "
-        << clusteringAlgoToStr(cfg.cluster.clustering_algo) << '\n';
-    out << "  parallel           = " << tf(cfg.cluster.parallel) << '\n';
-
-    /* ===================== Clara ===================== */
-    out << "\n[Clara]\n";
-    out << "  sample_size            = " 
-        << sampleSizetoStr(cfg.clara.sample_size) << '\n';
-    if (cfg.clara.min_sample_size.has_value())
-    out << "  min_sample_size        = " << cfg.clara.min_sample_size.value() << '\n';
-    out << "  num_samples            = " << cfg.clara.num_samples << '\n';
-    out << "  reuse_distances        = " << tf(cfg.clara.reuse_distances) << '\n';
-    out << "  num_threads_assignment = " << cfg.clara.num_threads_assignment << '\n';    
-    out << "  random_seeds           = ";
-    if (cfg.clara.random_seeds.empty()) {
-        out << "none";
-    } else {
-        out << "[ ";
-        for (auto s : cfg.clara.random_seeds)
-            out << s << " ";
-        out << "]";
-    }
-    out << '\n';
-
-    /* ===================== Clarans ===================== */
-    out << "\n[Clarans]\n";
-    out << "  num_local                  = "
-        << cfg.clarans.num_local << '\n';
-    out << "  max_neighbors              = "
-        << cfg.clarans.max_neighbors << '\n';
-    out << "  num_threads                = "
-        << cfg.clarans.num_threads << '\n';
-    out << "  random_seed_initialization = ";
-    if (cfg.clarans.random_seeds_initialization.empty()) {
-        out << "none";
-    } else {
-        out << "[ ";
-        for (auto s : cfg.clarans.random_seeds_initialization)
-            out << s << " ";
-        out << "]";
-    }
-    out << '\n';
-    out << "  random_seed_local_search   = "
-        << (cfg.clarans.random_seed_local_search
-                ? std::to_string(*cfg.clarans.random_seed_local_search)
-                : "nondeterministic") << '\n';
-
-
-    /* ===================== PAM ===================== */   
-    out << "\n[PAM]\n";
-    out << "  num_threads_matrix = " << cfg.pam.num_threads_matrix << '\n';                       
-
-    /* ===================== Gurobi ===================== */
-    out << "\n[Gurobi]\n";
-    out << "  timelimit_sec                  = "
-        << cfg.solver.timelimit_sec << '\n';
-    out << "  threads                        = "
-        << cfg.solver.threads << '\n';
-    out << "  seed                           = "
-        << cfg.solver.seed << '\n';
-    out << "  enforce_cyclic_order           = "
-        << cfg.model.enforce_cyclic_order << '\n';
-    out << "  consider_angle_objective       = "
-        << cfg.model.consider_angle_objective << '\n';
-    out << "  cost_factor_deletion_insertion = "
-        << cfg.model.cost_factor_deletion_insertion << '\n';
-    out << "  cost_factor_length_difference  = "
-        << cfg.model.cost_factor_length_difference << '\n';
-    out << "  cost_factor_angle_difference   = "
-        << cfg.model.cost_factor_angle_difference << '\n';
-    out << "  angle_type                     = "
-        << cfg.model.angle_type << '\n';
-
-    log_logging_section(cfg.logging, out);
-
-    out << "\n================================================\n\n";
-}
-
-
 DistanceConfig load_dist_config(const std::string& filename)
 {
     toml::table tbl = toml::parse_file(filename);
     DistanceConfig cfg;  // defaults are set here
 
-    std::optional<std::string> run_name_opt = std::nullopt;
-
     /* ===================== Gurobi ===================== */
-    if (auto g = tbl["Gurobi"].as_table()) {
-        read_value_if(*g, "timelimit_sec", cfg.solver.timelimit_sec);
-        read_value_if(*g, "threads", cfg.solver.threads);
-        read_value_if(*g, "seed", cfg.solver.seed);
-        read_value_if(*g, "enforce_cyclic_order", 
-                      cfg.model.enforce_cyclic_order);
-        read_value_if(*g, "consider_angle_objective", 
-                      cfg.model.consider_angle_objective);
-        read_value_if(*g, "cost_factor_deletion_insertion",
-                      cfg.model.cost_factor_deletion_insertion);
-        read_value_if(*g, "cost_factor_length_difference",
-                      cfg.model.cost_factor_length_difference);
-        read_value_if(*g, "cost_factor_angle_difference",
-                      cfg.model.cost_factor_angle_difference);
-        read_enum_if(*g, "angle_type", cfg.model.angle_type, parse_angle_type);
-    }
+    read_gurobi_section(tbl, cfg.model, cfg.solver);
 
     /* ===================== IO ===================== */
-    if (auto io = tbl["IO"].as_table()) {
-        read_required(*io, "dataset", cfg.io.dataset);
-        read_required(*io, "input_path", cfg.io.input_path);
-        read_required(*io, "output_path", cfg.io.output_path);
-        read_optional_if(*io, "global_log_file", cfg.io.global_log_file);
-        read_optional_if(*io, "run_name", run_name_opt);
-        read_value_if(*io, "generate_plots", cfg.io.generate_plots);
-        read_optional_if(*io, "num_instances", cfg.io.num_instances);
-        read_value_if(*io, "starting_instance", cfg.io.starting_instance);
-        require(cfg.io.num_instances.has_value() or cfg.io.starting_instance == 0,
-                "Processing the whole dataset, but starting_instance is set to " 
-                + cfg.io.starting_instance);
-    }
-    else {
-        throw std::runtime_error("Missing required [IO] section");
-    }
+    auto run_name_opt = read_io_section(tbl, cfg.io, false);
 
     /* ==================== Parallel ======================= */
     if (auto par = tbl["Parallel"].as_table()) {
@@ -461,78 +327,116 @@ DistanceConfig load_dist_config(const std::string& filename)
     read_logging_section(tbl, cfg.logging);
 
     // Generate default run_name from config if there was no run_name specified
-    if (not run_name_opt.has_value()) {
-        cfg.io.run_name = "default_run";                          
-    }
-    else {
-        cfg.io.run_name = run_name_opt.value();
-    }
+    cfg.io.run_name = run_name_opt.value_or("default_run");
 
     return cfg;
 }
 
 
-void log_config(const DistanceConfig& cfg, std::ostream& out)
+std::ostream& operator<<(std::ostream& out, const IOConfig& io)
+{
+    out << "\n[IO]\n";
+    print_entry(out, "dataset", io.dataset);
+    print_entry(out, "input_path", io.input_path);
+    print_entry(out, "output_path", io.output_path);
+    print_entry(out, "run_name", io.run_name);
+    print_entry(out, "global_log_file",
+                io.global_log_file ? *io.global_log_file : "log file will be generated in run output");
+    print_entry(out, "generate_plots", tf(io.generate_plots));
+    print_entry(out, "write_distance_matrix", tf(io.write_distance_matrix));
+    print_entry(out, "write_edgemaps", tf(io.write_edgemaps));
+    print_entry(out, "num_instances", io.num_instances ? std::to_string(*io.num_instances) : "all");
+    print_entry(out, "starting_instance", io.starting_instance);
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const PAMConfig& pam)
+{
+    out << "\n[PAM]\n";
+    print_entry(out, "num_threads_matrix", pam.num_threads_matrix);
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const ClaraConfig& clara)
+{
+    out << "\n[Clara]\n";
+    print_entry(out, "sample_size", sampleSizetoStr(clara.sample_size));
+    if (clara.min_sample_size.has_value()) {
+        print_entry(out, "min_sample_size", clara.min_sample_size.value());
+    }
+    print_entry(out, "num_samples", clara.num_samples);
+    print_entry(out, "reuse_distances", tf(clara.reuse_distances));
+    print_entry(out, "num_threads_assignment", clara.num_threads_assignment);
+    print_entry(out, "random_seeds", seeds_to_string(clara.random_seeds));
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const ClaransConfig& clarans)
+{
+    out << "\n[Clarans]\n";
+    print_entry(out, "num_local", clarans.num_local);
+    print_entry(out, "max_neighbors", clarans.max_neighbors);
+    print_entry(out, "num_threads", clarans.num_threads);
+    print_entry(out, "random_seeds_initialization", seeds_to_string(clarans.random_seeds_initialization));
+    print_entry(out, "random_seed_local_search",
+                clarans.random_seed_local_search ? std::to_string(*clarans.random_seed_local_search)
+                                                 : "nondeterministic");
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const ClusteringConfig& cluster)
+{
+    out << "\n[Clustering]\n";
+    print_entry(out, "k", cluster.k);
+    print_entry(out, "clustering_algo", clusteringAlgoToStr(cluster.clustering_algo));
+    print_entry(out, "parallel", tf(cluster.parallel));
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const ParallelConfig& parallel)
+{
+    out << "\n[Parallel]\n";
+    print_entry(out, "run_parallel", tf(parallel.run_parallel));
+    print_entry(out, "num_threads", parallel.num_threads_matrix);
+    print_entry(out, "batch_size", parallel.default_batch_size);
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const LoggingConfig& logging)
+{
+    out << "\n[Logging]\n";
+    print_entry(out, "level", to_string(logging.level));
+    print_entry(out, "file_level", to_string(logging.file_level));
+    print_entry(out, "gurobi_log", tf(logging.gurobi_log));
+    if (logging.gurobi_log) {
+        std::ostringstream pairs;
+        pairs << "[";
+        for (size_t i = 0; i < logging.gurobi_log_pairs.size(); ++i) {
+            pairs << (i > 0 ? ", " : "") << "[" << logging.gurobi_log_pairs[i].first << ", "
+                  << logging.gurobi_log_pairs[i].second << "]";
+        }
+        pairs << "]";
+        print_entry(out, "gurobi_log_pairs", pairs.str());
+        print_entry(out, "gurobi_log_min_gap",
+                    logging.gurobi_log_min_gap ? std::to_string(*logging.gurobi_log_min_gap) : "not set");
+    }
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const Config& cfg)
 {
     out << "================ Configuration ================\n";
-
-    /* ===================== IO ===================== */
-    out << "\n[IO]\n";
-    out << "  dataset           = " << cfg.io.dataset << '\n';
-    out << "  input_path        = " << cfg.io.input_path << '\n';
-    out << "  output_path       = " << cfg.io.output_path << '\n';
-    out << "  run_name          = " << cfg.io.run_name << '\n';
-    out << "  global_log_file   = " 
-        << (cfg.io.global_log_file ? *cfg.io.global_log_file
-                                   : "log file will be generated in run output") << '\n';
-    out << "  plots generated   = " << tf(cfg.io.generate_plots) << '\n';
-    out << "  num_instances     = "
-        << (cfg.io.num_instances ? std::to_string(*cfg.io.num_instances)
-                                 : "all") << '\n';
-    out << "  starting_instance = " << cfg.io.starting_instance << '\n';
-
-    /* ===================== Gurobi ===================== */
-    out << "\n[Gurobi]\n";
-    out << "  timelimit_sec                  = "
-        << cfg.solver.timelimit_sec << '\n';
-    out << "  threads                        = "
-        << cfg.solver.threads << '\n';
-    out << "  seed                           = "
-        << cfg.solver.seed << '\n';
-    out << "  enforce_cyclic_order           = "
-        << cfg.model.enforce_cyclic_order << '\n';
-    out << "  consider_angle_objective       = "
-        << cfg.model.consider_angle_objective << '\n';
-    out << "  cost_factor_deletion_insertion = "
-        << cfg.model.cost_factor_deletion_insertion << '\n';
-    out << "  cost_factor_length_difference  = "
-        << cfg.model.cost_factor_length_difference << '\n';
-    out << "  cost_factor_angle_difference   = "
-        << cfg.model.cost_factor_angle_difference << '\n';
-    out << "  angle_type                     = "
-        << cfg.model.angle_type << '\n';
-
-    /* ===================== Parallel ===================== */
-    out << "\n[Parallel]\n";
-    out << "  run_parallel       = " << tf(cfg.parallel.run_parallel) << '\n';
-    out << "  num_threads_matrix = " << cfg.parallel.num_threads_matrix << '\n';
-    out << "  default_batch_size = " << cfg.parallel.default_batch_size << '\n';
-
-    log_logging_section(cfg.logging, out);
-
+    out << "\n[Gurobi]\n" << cfg.solver << cfg.model;
+    out << cfg.pam << cfg.clara << cfg.clarans << cfg.io << cfg.cluster << cfg.logging;
     out << "\n================================================\n\n";
+    return out;
 }
 
-std::string config_to_string(const Config& cfg)
+std::ostream& operator<<(std::ostream& out, const DistanceConfig& cfg)
 {
-    std::ostringstream oss;
-    log_config(cfg, oss);
-    return oss.str();
-}
-
-std::string config_to_string(const DistanceConfig& cfg)
-{
-    std::ostringstream oss;
-    log_config(cfg, oss);
-    return oss.str();
+    out << "================ Configuration ================\n";
+    out << "\n[Gurobi]\n" << cfg.solver << cfg.model;
+    out << cfg.io << cfg.parallel << cfg.logging;
+    out << "\n================================================\n\n";
+    return out;
 }

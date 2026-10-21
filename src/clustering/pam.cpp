@@ -26,7 +26,7 @@ PAM_Clustering::PAM_Clustering(const std::vector<const GeometricGraph*> &graphs,
     if (config.cluster.parallel){
         _num_threads_distance_matrix = config.pam.num_threads_matrix;
     }
-    geomgmd::log::info(to_string(_model, _solver));
+    geomgmd::log::info("Model parameters\n", _model, "Solver settings\n", _solver);
 }
 
 PAM_Clustering::PAM_Clustering(
@@ -55,7 +55,7 @@ PAM_Clustering::PAM_Clustering(
     if (config.cluster.parallel){
         _num_threads_distance_matrix = config.pam.num_threads_matrix;
     }
-    geomgmd::log::info(to_string(_model, _solver));
+    geomgmd::log::info("Model parameters\n", _model, "Solver settings\n", _solver);
 }
 
 

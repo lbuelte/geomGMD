@@ -3,7 +3,7 @@
 
 #include "utility/geometry_base.h"
 
-#include <string>
+#include <ostream>
 
 // What is computed: parameters of the geomGMD model (paper: c_id, c_m, c_r).
 struct ModelParameters {
@@ -23,7 +23,9 @@ struct SolverSettings {
     int seed = 1;
 };
 
-// Text block with all parameters and settings (for the log).
-std::string to_string(ModelParameters const &model, SolverSettings const &solver);
+// Listing of the parameters / settings for the log, one "  key = value" line each (keys as in the
+// config file, without section header).
+std::ostream& operator<<(std::ostream& out, ModelParameters const &model);
+std::ostream& operator<<(std::ostream& out, SolverSettings const &solver);
 
 #endif // GEOMGMD_DISTANCE_PARAMETERS_H

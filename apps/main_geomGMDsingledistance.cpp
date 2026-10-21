@@ -54,9 +54,7 @@ int main(int argc, char* argv[])
     // Console only: a log file in the output folder would overwrite the run.log of a full dataset computation
     config.logging = resolve_logging(config.logging, command_line);
     configure_logging(config.logging, std::nullopt);
-    logger::info(config_to_string(config));
-
-    logger::info(to_string(config.model, config.solver));
+    logger::info(config);
 
     // Log config in extra file
     std::filesystem::copy_file(
