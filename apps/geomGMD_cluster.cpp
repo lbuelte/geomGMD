@@ -66,7 +66,7 @@ int run(int argc, char* argv[]) {
     ClusteringResult clustering_result = 
         run_clustering(graphs, config.cluster.k, config, out);
     if (clustering_result._distance_matrix_opt.has_value()){
-        out.write_interval_distance_matrix(clustering_result._distance_matrix_opt.value());                 
+        out.write_interval_distance_matrix(clustering_result._distance_matrix_opt.value(), starting_instance);                 
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);

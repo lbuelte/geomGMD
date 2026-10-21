@@ -43,7 +43,8 @@ bool is_optimal(double lb, double ub) {
 
 
 // We assume that matrix is symmetric
-void OutputContext::write_interval_distance_matrix(const std::vector<std::vector<IntervalDistance>>& matrix)
+void OutputContext::write_interval_distance_matrix(const std::vector<std::vector<IntervalDistance>>& matrix,
+                                                   GraphID first_graph_id)
 {
     if (not intervaldistance_matrix_writer.has_value()){
         return;
@@ -55,8 +56,8 @@ void OutputContext::write_interval_distance_matrix(const std::vector<std::vector
             const auto& d = matrix[i][j];
 
             intervaldistance_matrix_writer.value().write_row({
-                    std::to_string(i),
-                    std::to_string(j),
+                    std::to_string(first_graph_id + i),
+                    std::to_string(first_graph_id + j),
                     format_double(d.lb),
                     format_double(d.ub),
                     is_optimal(d.lb, d.ub) ? "true" : "false"

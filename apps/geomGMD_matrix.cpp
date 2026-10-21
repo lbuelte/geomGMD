@@ -149,14 +149,18 @@ int run(int argc, char* argv[]) {
                 }
 
                 for (const auto& p : task.pairs) {
-                    auto const r = compute_geomGMD(geometricgraphs[p.i], geometricgraphs[p.j], config.model, config.solver,
+                    // p.i, p.j are positions in the selected range; the graphs are first + p.i, first + p.j
+                    GeometricGraph const &G = geometricgraphs[starting_instance + p.i];
+                    GeometricGraph const &H = geometricgraphs[starting_instance + p.j];
+                    auto const r = compute_geomGMD(G, H, config.model, config.solver,
                                                    {.capture_gurobi_log = config.logging.gurobi_log});
-                    report_gurobi_log(config.logging, geometricgraphs[p.i], geometricgraphs[p.j], r);
+                    report_gurobi_log(config.logging, G, H, r);
                     auto dist_result = r.distance;
 
                     if (!dist_result.has_value()) {
                         report_solver_failure(r.result);
-                        logger::error("Error! Distance between graphs ", p.i, " and ", p.j, " could not be computed!");
+                        logger::error("Error! Distance between graphs ", starting_instance + p.i, " and ",
+                                      starting_instance + p.j, " could not be computed!");
                         continue;
                     }
                     out.write_computation_info_row(r);
@@ -196,7 +200,7 @@ int run(int argc, char* argv[]) {
     logger::info("Overall computation took ", (double)dur.count() / 1000.0, " [s].");
 
     logger::debug("Writing distance matrix to ", out.output_path);
-    out.write_interval_distance_matrix(distance_matrix);                 
+    out.write_interval_distance_matrix(distance_matrix, starting_instance);                 
 
     logger::close_file();
 
