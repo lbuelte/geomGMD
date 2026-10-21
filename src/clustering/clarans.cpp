@@ -2,6 +2,7 @@
 
 #include "clustering/sampling.h"
 #include "io/edgemap_io.h"
+#include "distance/geomGMD.h"
 #include "utility/log.h"
 
 #include <sstream>
@@ -156,19 +157,18 @@ std::optional<IntervalDistance> CLARANS_Clustering::compute_distance_matrix_entr
         _distance_matrix[i][j] = ExactDistance{0.0};
         return _distance_matrix[i][j];
     }    
-    GeomGMDForiSolver solver(*_graphs[i], *_graphs[j], _model, _solver);  
-    if (_logging.gurobi_log) solver.capture_gurobi_log();
-    auto const res = solver.run_optimization();
-    report_gurobi_log(_logging, *_graphs[i], *_graphs[j], res, solver.gurobi_log());
-    auto dist_result = evaluate_distance_result(res);
+    auto const r = compute_geomGMD(*_graphs[i], *_graphs[j], _model, _solver,
+                                   {.capture_gurobi_log = _logging.gurobi_log});
+    report_gurobi_log(_logging, *_graphs[i], *_graphs[j], r);
+    auto dist_result = r.distance;
     if (!dist_result.has_value()) {
-        report_solver_failure(res);
+        report_solver_failure(r.result);
         geomgmd::log::error("Error! Distance between graphs ", i, " and ", j, " could not be computed!");
         return std::nullopt;
     }
     _distance_matrix[i][j] = dist_result.value();
     _distance_matrix[j][i] = dist_result.value();
-    _output_context.write_edgemap(edgemap_json(solver));
+    _output_context.write_edgemap(edgemap_json(r));
     return _distance_matrix[i][j];
 }
 

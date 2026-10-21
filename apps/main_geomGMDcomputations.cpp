@@ -11,6 +11,7 @@
 #include "io/config.h"
 #include "io/output_context.h"
 #include "io/edgemap_io.h"
+#include "distance/geomGMD.h"
 #include "io/solver_messages.h"
 
 #include "distance/geomGMDSolver.h"
@@ -157,19 +158,18 @@ int main(int argc, char* argv[]) {
                 }
 
                 for (const auto& p : task.pairs) {
-                    GeomGMDForiSolver solver(geometricgraphs[p.i], geometricgraphs[p.j], config.model, config.solver);
-                    if (config.logging.gurobi_log) solver.capture_gurobi_log();
-                    auto const res = solver.run_optimization();
-                    report_gurobi_log(config.logging, geometricgraphs[p.i], geometricgraphs[p.j], res, solver.gurobi_log());
-                    auto dist_result = evaluate_distance_result(res);
+                    auto const r = compute_geomGMD(geometricgraphs[p.i], geometricgraphs[p.j], config.model, config.solver,
+                                                   {.capture_gurobi_log = config.logging.gurobi_log});
+                    report_gurobi_log(config.logging, geometricgraphs[p.i], geometricgraphs[p.j], r);
+                    auto dist_result = r.distance;
 
                     if (!dist_result.has_value()) {
-                        report_solver_failure(res);
+                        report_solver_failure(r.result);
                         logger::error("Error! Distance between graphs ", p.i, " and ", p.j, " could not be computed!");
                         continue;
                     }
-                    out.write_computation_info_row(solver, dist_result.value());
-                    out.write_edgemap(edgemap_json(solver));
+                    out.write_computation_info_row(r);
+                    out.write_edgemap(edgemap_json(r));
 
                     distance_matrix[p.i][p.j] = dist_result.value();
                     distance_matrix[p.j][p.i] = dist_result.value();

@@ -1,7 +1,7 @@
 #ifndef GEOMGMD_IO_SOLVER_MESSAGES_H
 #define GEOMGMD_IO_SOLVER_MESSAGES_H
 
-#include "distance/geomGMDSolver.h"
+#include "distance/geomGMD.h"
 #include "io/config.h"
 
 #include <string>
@@ -20,5 +20,9 @@ bool gurobi_log_wanted(LoggingConfig const &logging, GeometricGraph const &G, Ge
 // (graph ids), if gurobi_log_wanted(...) is true.
 void report_gurobi_log(LoggingConfig const &logging, GeometricGraph const &G, GeometricGraph const &H,
                        DistanceResult const &res, std::vector<std::string> const &lines);
+
+// Same for the result of compute_geomGMD (uses its result and captured Gurobi log).
+void report_gurobi_log(LoggingConfig const &logging, GeometricGraph const &G, GeometricGraph const &H,
+                       GeomGMDResult const &result);
 
 #endif // GEOMGMD_IO_SOLVER_MESSAGES_H

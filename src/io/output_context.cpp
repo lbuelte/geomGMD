@@ -67,15 +67,19 @@ void OutputContext::write_interval_distance_matrix(const std::vector<std::vector
     }    
 }
 
-void OutputContext::write_computation_info_row(const GeomGMDForiSolver &solver, IntervalDistance dist)
+void OutputContext::write_computation_info_row(const GeomGMDResult &result)
 {
     if (not pairwise_computation_info_writer.has_value()){
         geomgmd::log::error("Error: write_interval_matrix is not set in config, but function write_interval_distance_matrix was called. Ignoring this call.");
         return;
     }
     
-    auto run_info = solver.return_run_info();
-    auto statistics = solver.solve_statistics();
+    if (not result.distance.has_value()){
+        return;
+    }
+    const IntervalDistance dist = result.distance.value();
+    auto const &run_info = result.instance;
+    auto const &statistics = result.statistics;
     pairwise_computation_info_writer.value().write_row({
         std::to_string(run_info.g),
         std::to_string(run_info.h),
@@ -86,7 +90,7 @@ void OutputContext::write_computation_info_row(const GeomGMDForiSolver &solver, 
         format_double(dist.lb),
         format_double(dist.ub),
         is_optimal(dist.lb, dist.ub) ? "true" : "false",
-        std::to_string(solver.return_runtime_in_ms()),
+        std::to_string(result.runtime.count()),
         statistics.status ? gurobi_status_name(*statistics.status) : "",
         format_gap(statistics.mip_gap),
         std::to_string(static_cast<long long>(statistics.node_count))

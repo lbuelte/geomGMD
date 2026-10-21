@@ -6,7 +6,7 @@
 #include "utility/geometric_graph.h"
 
 #include "config.h"
-#include "distance/geomGMDSolver.h"
+#include "distance/geomGMD.h"
 
 #include "json/json.hpp"
 #include <optional>
@@ -19,8 +19,8 @@ using json = nlohmann::json;
 json edgemap_to_json(EdgeMap const &edgemap, bool optimal);
 EdgeMap edgemap_from_json(json const &j);
 
-// JSON of the edge map computed by the solver, with the optimality of that run.
-json edgemap_json(GeomGMDForiSolver &solver);
+// JSON of the edge map of a computed pair, with the optimality of that run.
+json edgemap_json(GeomGMDResult const &result);
 
 
 std::optional<json> find_graph_mapping_from_file(

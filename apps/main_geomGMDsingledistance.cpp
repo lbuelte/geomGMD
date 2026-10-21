@@ -8,6 +8,8 @@
 #include "io/command_line.h"
 #include "io/config.h"
 #include "io/edgemap_io.h"
+#include "distance/geomGMD.h"
+#include "distance/mapping_cost.h"
 #include "io/edgemap_svg.h"
 #include "io/solver_messages.h"
 
@@ -75,14 +77,13 @@ int main(int argc, char* argv[])
 
     auto begin = std::chrono::high_resolution_clock::now();
     
-    GeomGMDForiSolver solver(geometricgraphs[g], geometricgraphs[h], config.model, config.solver);
-    if (config.logging.gurobi_log) solver.capture_gurobi_log();
-    auto const res = solver.run_optimization();
-    report_gurobi_log(config.logging, geometricgraphs[g], geometricgraphs[h], res, solver.gurobi_log());
-    auto dist_result = evaluate_distance_result(res);
+    auto const r = compute_geomGMD(geometricgraphs[g], geometricgraphs[h], config.model, config.solver,
+                                   {.capture_gurobi_log = config.logging.gurobi_log});
+    report_gurobi_log(config.logging, geometricgraphs[g], geometricgraphs[h], r);
+    auto dist_result = r.distance;
 
     if (!dist_result.has_value()) {
-        report_solver_failure(res);
+        report_solver_failure(r.result);
         throw std::runtime_error ("Error! Distance between graphs " + std::to_string(g) +
                                   " and " + std::to_string(h) + " could not be computed!");
     }
@@ -90,8 +91,15 @@ int main(int argc, char* argv[])
             output_path 
             / ("edgemap_" + std::to_string(H.polygon_id()) + "_" + std::to_string(G.polygon_id()) + ".svg");
     
-    auto mapping_json = edgemap_json(solver);
-    solver.print_objective_breakdown();
+    auto mapping_json = edgemap_json(r);
+    {
+        // Cost breakdown of the edge map (it refers to the solver's G and H, see g_graph_id/h_graph_id)
+        auto const cost = compute_mapping_cost(geometricgraphs[r.edge_map.g_graph_id],
+                                               geometricgraphs[r.edge_map.h_graph_id], r.edge_map, config.model);
+        logger::info("Cost of the edge map: deletion ", cost.deletion, ", insertion ", cost.insertion,
+                     ", length difference ", cost.length_difference, ", path angles ", cost.path_angle,
+                     ", total ", cost.total());
+    }
     bool is_optimal_mapping = mapping_json["optimal"];
     if (H <= G){
         assert(mapping_json["G_id"] == g and mapping_json["H_id"] == h);

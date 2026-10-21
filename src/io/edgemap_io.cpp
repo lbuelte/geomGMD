@@ -127,7 +127,7 @@ EdgeMap edgemap_from_json(json const &j)
     return edgemap;
 }
 
-json edgemap_json(GeomGMDForiSolver &solver)
+json edgemap_json(GeomGMDResult const &result)
 {
-    return edgemap_to_json(solver.return_edge_map(), solver.solve_statistics().is_optimal());
+    return edgemap_to_json(result.edge_map, result.statistics.is_optimal());
 }

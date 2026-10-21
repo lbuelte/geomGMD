@@ -2,6 +2,7 @@
 
 // #include "clustering/plots_and_stats.h"
 #include "io/edgemap_io.h"
+#include "distance/geomGMD.h"
 #include "utility/log.h"
 
 #include <sstream>
@@ -146,18 +147,17 @@ void PAM_Clustering::compute_distance_matrix_entry(GraphID const i, GraphID cons
         _distance_matrix[i][j] = ExactDistance{0.0};
         return;
     } 
-    GeomGMDForiSolver solver(*_graphs[i], *_graphs[j], _model, _solver); 
-    if (_logging.gurobi_log) solver.capture_gurobi_log();
-    auto const res = solver.run_optimization();
-    report_gurobi_log(_logging, *_graphs[i], *_graphs[j], res, solver.gurobi_log());
-    auto dist_result = evaluate_distance_result(res);
+    auto const r = compute_geomGMD(*_graphs[i], *_graphs[j], _model, _solver,
+                                   {.capture_gurobi_log = _logging.gurobi_log});
+    report_gurobi_log(_logging, *_graphs[i], *_graphs[j], r);
+    auto dist_result = r.distance;
     if (!dist_result.has_value()) {
-        report_solver_failure(res);
+        report_solver_failure(r.result);
         geomgmd::log::error("Error! Distance between graphs ", i, " and ", j, " could not be computed!");
         return;
     }
-    _output_context.write_edgemap(edgemap_json(solver));
-    _output_context.write_computation_info_row(solver, dist_result.value());
+    _output_context.write_edgemap(edgemap_json(r));
+    _output_context.write_computation_info_row(r);
     _distance_matrix[i][j] = dist_result.value();
     _distance_matrix[j][i] = dist_result.value();
     return;
@@ -275,19 +275,18 @@ void PAM_Clustering::computeEntireDistanceMatrixMultiThreaded() {
             }
 
             for (const auto& p : task.pairs) {
-                GeomGMDForiSolver solver(*_graphs[p.i], *_graphs[p.j], _model, _solver);
-                if (_logging.gurobi_log) solver.capture_gurobi_log();
-                auto const res = solver.run_optimization();
-                report_gurobi_log(_logging, *_graphs[p.i], *_graphs[p.j], res, solver.gurobi_log());
-                auto dist_result = evaluate_distance_result(res);
+                auto const r = compute_geomGMD(*_graphs[p.i], *_graphs[p.j], _model, _solver,
+                                               {.capture_gurobi_log = _logging.gurobi_log});
+                report_gurobi_log(_logging, *_graphs[p.i], *_graphs[p.j], r);
+                auto dist_result = r.distance;
 
                 if (!dist_result.has_value()) {
-                    report_solver_failure(res);
+                    report_solver_failure(r.result);
                     geomgmd::log::error("Error! Distance between graphs ", p.i, " and ", p.j, " could not be computed!");
                     continue;
                 }
-                _output_context.write_edgemap(edgemap_json(solver));
-                _output_context.write_computation_info_row(solver, dist_result.value());
+                _output_context.write_edgemap(edgemap_json(r));
+                _output_context.write_computation_info_row(r);
 
                 _distance_matrix[p.i][p.j] = dist_result.value();
                 _distance_matrix[p.j][p.i] = dist_result.value();

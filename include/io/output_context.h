@@ -5,7 +5,7 @@
 
 #include "result_writer.h"
 #include "io/config.h"
-#include "distance/geomGMDSolver.h"
+#include "distance/geomGMD.h"
 #include "utility/log.h"
 
 inline std::filesystem::path create_path(const std::filesystem::path& base_path){
@@ -60,7 +60,8 @@ struct OutputContext {
 
     void write_interval_distance_matrix(const std::vector<std::vector<IntervalDistance>>& matrix);
 
-    void write_computation_info_row(const GeomGMDForiSolver &solver, IntervalDistance dist);
+    // One row of computation_info.csv for a computed pair (nothing is written if no distance was computed).
+    void write_computation_info_row(const GeomGMDResult &result);
 
     std::filesystem::path make_path(const std::string& name) const {
         return output_path / name;

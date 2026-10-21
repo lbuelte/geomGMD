@@ -2,6 +2,7 @@
 
 #include "clustering/sampling.h"
 #include "io/edgemap_io.h"
+#include "distance/geomGMD.h"
 #include "utility/log.h"
 
 #include <sstream>
@@ -304,25 +305,20 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
                 // assert(_distance_matrix[medoid_indices[order_of_centers[m]]][g].ub > -1.0);
                 dist_result = _distance_matrix[g][medoid_indices[order_of_centers[m]]];
             } else {
-                GeomGMDForiSolver solver(
-                        *_graphs[g],
-                        *medoids[order_of_centers[m]],
-                        _model, _solver,
-                        min_dist.ub);
-                if (_logging.gurobi_log) solver.capture_gurobi_log();
-                auto res = solver.run_optimization();
-                report_gurobi_log(_logging, *_graphs[g], *medoids[order_of_centers[m]], res, solver.gurobi_log());
+                auto const r = compute_geomGMD(*_graphs[g], *medoids[order_of_centers[m]], _model, _solver,
+                                               {.cutoff = min_dist.ub, .capture_gurobi_log = _logging.gurobi_log});
+                report_gurobi_log(_logging, *_graphs[g], *medoids[order_of_centers[m]], r);
 
-                dist_result = evaluate_distance_result(res);
+                dist_result = r.distance;
                 if (!dist_result.has_value()) {
-                    report_solver_failure(res);
+                    report_solver_failure(r.result);
                     continue;
                 }
                 if (not _distance_matrix.empty()){
                     _distance_matrix[g][medoid_indices[order_of_centers[m]]] = dist_result.value();
                     _distance_matrix[medoid_indices[order_of_centers[m]]][g] = dist_result.value();
                 }
-                _output_context.write_edgemap(edgemap_json(solver));
+                _output_context.write_edgemap(edgemap_json(r));
             }            
 
             if (dist_result.value() < min_dist) {
@@ -411,25 +407,20 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
                         dist_result = _distance_matrix[g][medoid_indices[order_of_centers[m]]];
                     } 
                     else {
-                        GeomGMDForiSolver solver(
-                                *_graphs[g],
-                                *medoids[order_of_centers[m]],
-                                _model, _solver,
-                                min_dist.ub);
-                        if (_logging.gurobi_log) solver.capture_gurobi_log();
-                        auto res = solver.run_optimization();
-                        report_gurobi_log(_logging, *_graphs[g], *medoids[order_of_centers[m]], res, solver.gurobi_log());
+                        auto const r = compute_geomGMD(*_graphs[g], *medoids[order_of_centers[m]], _model, _solver,
+                                                       {.cutoff = min_dist.ub, .capture_gurobi_log = _logging.gurobi_log});
+                        report_gurobi_log(_logging, *_graphs[g], *medoids[order_of_centers[m]], r);
 
-                        dist_result = evaluate_distance_result(res);
+                        dist_result = r.distance;
                         if (!dist_result.has_value()) {
-                            report_solver_failure(res);
+                            report_solver_failure(r.result);
                             continue;
                         }
                         if (not _distance_matrix.empty()){
                             _distance_matrix[g][medoid_indices[order_of_centers[m]]] = dist_result.value();
                             _distance_matrix[medoid_indices[order_of_centers[m]]][g] = dist_result.value();
                         }
-                        _output_context.write_edgemap(edgemap_json(solver));
+                        _output_context.write_edgemap(edgemap_json(r));
                     }
 
                     if (dist_result.value() < min_dist) {

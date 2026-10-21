@@ -67,3 +67,9 @@ void report_gurobi_log(LoggingConfig const &logging, GeometricGraph const &G, Ge
     // One message for the whole log of the pair, so that lines of different pairs do not interleave
     geomgmd::log::debug(block);
 }
+
+void report_gurobi_log(LoggingConfig const &logging, GeometricGraph const &G, GeometricGraph const &H,
+                       GeomGMDResult const &result)
+{
+    report_gurobi_log(logging, G, H, result.result, result.gurobi_log);
+}
