@@ -10,6 +10,7 @@
 #include "io/command_line.h"
 #include "io/config.h"
 #include "io/output_context.h"
+#include "io/run_setup.h"
 #include "io/edgemap_io.h"
 #include "io/graph_io.h"
 #include "distance/geomGMD.h"
@@ -30,15 +31,10 @@ int main(int argc, char* argv[]) {
     }
     auto config = load_dist_config(config_path);
 
-    std::filesystem::path output_path = 
-            std::filesystem::path(config.io.output_path)
-            / config.io.dataset
-            / config.io.run_name;
+    std::filesystem::path output_path = run_output_path(config.io);
     auto out = OutputContext(output_path, config.io);
 
-    std::filesystem::path log_file = config.io.global_log_file
-            ? std::filesystem::path(config.io.global_log_file.value())
-            : output_path / "run.log";
+    std::filesystem::path log_file = log_file_path(config.io, output_path);
 
     config.logging = resolve_logging(config.logging, command_line);
     configure_logging(config.logging, log_file);
@@ -47,26 +43,15 @@ int main(int argc, char* argv[]) {
     logger::info(config);
 
     // Log config in extra file
-    std::filesystem::copy_file(
-            config_path,
-            output_path / "config_input.toml",
-            std::filesystem::copy_options::overwrite_existing);
+    copy_config(config_path, output_path);
 
     // Reading input graphs
-    std::filesystem::path json_path =
-            std::filesystem::path(config.io.input_path)
-            / config.io.dataset
-            / (config.io.dataset + "_graphs.json");
+    std::filesystem::path json_path = graphs_json_path(config.io);
 
     std::vector<GeometricGraph> geometricgraphs;
     read_graph_vector_from_json(geometricgraphs, json_path.string());
 
-    size_t starting_instance = config.io.starting_instance;
-    size_t num_instances = config.io.num_instances.has_value() ? std::min(config.io.num_instances.value(),
-                                                                          geometricgraphs.size() - starting_instance)
-                                                               : geometricgraphs.size() - starting_instance;
-    
-    assert(starting_instance + num_instances <= geometricgraphs.size());
+    auto const [starting_instance, num_instances] = select_instances(config.io, geometricgraphs.size());
     logger::debug("Reduced dataset: ", num_instances, " graphs starting at index ", starting_instance);
 
     std::vector<std::vector<IntervalDistance>> distance_matrix(num_instances, std::vector<IntervalDistance>(num_instances, {-1.0, -1.0}));

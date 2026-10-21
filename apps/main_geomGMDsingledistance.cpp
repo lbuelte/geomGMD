@@ -9,6 +9,7 @@
 #include "io/config.h"
 #include "io/edgemap_io.h"
 #include "io/graph_io.h"
+#include "io/run_setup.h"
 #include "distance/geomGMD.h"
 #include "distance/mapping_cost.h"
 #include "io/edgemap_svg.h"
@@ -45,10 +46,7 @@ int main(int argc, char* argv[])
     }
     auto config = load_dist_config(config_path);
 
-    std::filesystem::path output_path = 
-            std::filesystem::path(config.io.output_path)
-            / config.io.dataset
-            / config.io.run_name;
+    std::filesystem::path output_path = run_output_path(config.io);
     std::filesystem::create_directories(output_path);
 
     // Console only: a log file in the output folder would overwrite the run.log of a full dataset computation
@@ -58,16 +56,10 @@ int main(int argc, char* argv[])
     logger::info(config);
 
     // Log config in extra file
-    std::filesystem::copy_file(
-            config_path,
-            output_path / "config_input.toml",
-            std::filesystem::copy_options::overwrite_existing);
+    copy_config(config_path, output_path);
 
     // Reading input graphs
-    std::filesystem::path json_path =
-            std::filesystem::path(config.io.input_path)
-            / config.io.dataset
-            / (config.io.dataset + "_graphs.json");
+    std::filesystem::path json_path = graphs_json_path(config.io);
     std::vector<GeometricGraph> geometricgraphs;
     read_graph_vector_from_json(geometricgraphs, json_path.string());
 

@@ -1,0 +1,34 @@
+#include "io/run_setup.h"
+
+#include <algorithm>
+#include <cassert>
+
+std::filesystem::path run_output_path(IOConfig const &io)
+{
+    return std::filesystem::path(io.output_path) / io.dataset / io.run_name;
+}
+
+std::filesystem::path graphs_json_path(IOConfig const &io)
+{
+    return std::filesystem::path(io.input_path) / io.dataset / (io.dataset + "_graphs.json");
+}
+
+std::filesystem::path log_file_path(IOConfig const &io, std::filesystem::path const &output_path)
+{
+    return io.global_log_file ? std::filesystem::path(io.global_log_file.value()) : output_path / "run.log";
+}
+
+void copy_config(std::filesystem::path const &config_path, std::filesystem::path const &output_path)
+{
+    std::filesystem::copy_file(config_path, output_path / "config_input.toml",
+                               std::filesystem::copy_options::overwrite_existing);
+}
+
+InstanceRange select_instances(IOConfig const &io, size_t num_graphs)
+{
+    size_t const first = io.starting_instance;
+    size_t const count = io.num_instances.has_value() ? std::min(io.num_instances.value(), num_graphs - first)
+                                                      : num_graphs - first;
+    assert(first + count <= num_graphs);
+    return {first, count};
+}

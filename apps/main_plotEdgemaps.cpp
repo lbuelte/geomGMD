@@ -6,6 +6,7 @@
 #include "io/config.h"
 #include "io/edgemap_io.h"
 #include "io/graph_io.h"
+#include "io/run_setup.h"
 #include "io/edgemap_svg.h"
 #include "distance/geomGMDSolver.h"
 #include "utility/log.h"
@@ -25,16 +26,10 @@ int main(int argc, char* argv[]) {
     for (auto const &warning : config.warnings) logger::warning(warning);
     logger::info(config);
 
-    std::filesystem::path input_path = 
-            std::filesystem::path(config.io.output_path)
-            / config.io.dataset
-            / config.io.run_name;
+    std::filesystem::path input_path = run_output_path(config.io);
 
     // Reading input graphs
-    std::filesystem::path json_path =
-            std::filesystem::path(config.io.input_path)
-            / config.io.dataset
-            / (config.io.dataset + "_graphs.json");
+    std::filesystem::path json_path = graphs_json_path(config.io);
 
     std::vector<GeometricGraph> geometricgraphs;
     read_graph_vector_from_json(geometricgraphs, json_path.string());
@@ -45,11 +40,7 @@ int main(int argc, char* argv[]) {
     const ModelParameters model_parameters = original_config.model;
 
     // Get reduced dataset (depending on io parameters)
-    size_t starting_instance = config.io.starting_instance;
-    size_t num_instances = config.io.num_instances.has_value() ? std::min(config.io.num_instances.value(),
-                                                                          geometricgraphs.size() - starting_instance)
-                                                               : geometricgraphs.size() - starting_instance;    
-    assert(starting_instance + num_instances <= geometricgraphs.size());
+    auto const [starting_instance, num_instances] = select_instances(config.io, geometricgraphs.size());
     logger::info("Reduced dataset: ", num_instances, " graphs starting at index ", starting_instance);
     
     std::filesystem::path distance_matrix_input_file = input_path / "intervaldistance_matrix.csv";
