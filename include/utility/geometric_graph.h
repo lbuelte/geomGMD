@@ -32,9 +32,7 @@ public:
         const double length;
     };
 
-    GeometricGraph(const nlohmann::json& j, 
-                   std::optional<GraphID> graph_id_ = std::nullopt);
-    GeometricGraph(const std::string& json_filename,
+    GeometricGraph(const nlohmann::json& j,
                    std::optional<GraphID> graph_id_ = std::nullopt);
 
     GeometricGraph(std::vector<Vertex> vertices_, 
@@ -55,16 +53,6 @@ public:
     bool operator<=(const GeometricGraph &other) const {
         return this->num_edges() <= other.num_edges();
     }
-
-    void write_svg(const std::string& filename = "geometric_graph.svg",
-                   double padding = 10, double canvas_size = 1000.0) const;
-
-    // Deletes egdes with idx in edges_to_remove and resulting singletons.
-    // Edge endpoint ids and adjacency lists are rebuild accordingly
-    void prune_edges(const std::vector<EdgeID>& edges_to_remove);
-    // Deletes egdes with remove_mask[edge idx]=true and resulting singletons.
-    // Edge endpoint ids and adjacency lists are rebuild accordingly
-    void prune_edges(const std::vector<bool>& remove_mask);
 
     void set_graph_id(GraphID id_){
         _graph_id = id_;
@@ -129,13 +117,5 @@ private :
 
 void read_graph_vector_from_json(std::vector<GeometricGraph>& graphs,
                                 const std::string& filepath);
-
-void read_graph_vector_from_jsons(std::vector<GeometricGraph>& graphs, const std::string& filepath);
-
-
-double get_mean_edge_length(std::vector<GeometricGraph> const &graphs);
-double get_mean_edge_length(std::vector<const GeometricGraph *> const &graphs);
-double get_mean_edge_length(std::vector<GeometricGraph>::iterator begin, std::vector<GeometricGraph>::iterator end);
-double get_mean_edge_length(std::span<GeometricGraph> const &graphs);
 
 #endif // GEOMGMD_UTILITY_GEOMETRIC_GRAPH_H
