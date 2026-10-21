@@ -9,7 +9,6 @@
 #include <string>    // std::string
 #include <cassert>   // assert
 
-#include "../external/json/json.hpp"
 #include "utility/geometry_base.h"
 #include "utility/graph_base.h"
 
@@ -32,9 +31,7 @@ public:
         const double length;
     };
 
-    GeometricGraph(const nlohmann::json& j,
-                   std::optional<GraphID> graph_id_ = std::nullopt);
-
+    // Reading a graph from JSON: see io/graph_io.h.
     GeometricGraph(std::vector<Vertex> vertices_, 
                    std::vector<Edge> edges_, 
                    std::optional<PolygonID> polygon_id_ = std::nullopt, 
@@ -114,8 +111,5 @@ private :
     std::vector<std::vector<VertexID>> _ordered_adjacency_list; 
     std::vector<std::vector<EdgeID>> _adjacency_list_edge_association;
 };
-
-void read_graph_vector_from_json(std::vector<GeometricGraph>& graphs,
-                                const std::string& filepath);
 
 #endif // GEOMGMD_UTILITY_GEOMETRIC_GRAPH_H

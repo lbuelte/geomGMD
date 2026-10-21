@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 #include <filesystem>
+#include <unordered_map>
 
 #include "utility/geometric_graph.h"
 

@@ -9,6 +9,7 @@
 #include "io/command_line.h"
 #include "clustering/plots_and_stats.h"
 #include "io/config.h"
+#include "io/graph_io.h"
 #include "io/output_context.h"
 
 #include "clustering/clustering_base.h"

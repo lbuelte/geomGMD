@@ -8,6 +8,7 @@
 #include "io/command_line.h"
 #include "io/config.h"
 #include "io/edgemap_io.h"
+#include "io/graph_io.h"
 #include "distance/geomGMD.h"
 #include "distance/mapping_cost.h"
 #include "io/edgemap_svg.h"

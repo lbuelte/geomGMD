@@ -11,6 +11,7 @@
 #include "io/config.h"
 #include "io/output_context.h"
 #include "io/edgemap_io.h"
+#include "io/graph_io.h"
 #include "distance/geomGMD.h"
 #include "io/solver_messages.h"
 
