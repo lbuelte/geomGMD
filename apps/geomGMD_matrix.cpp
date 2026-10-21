@@ -62,6 +62,8 @@ int run(int argc, char* argv[]) {
     size_t num_threads = config.parallel.num_threads_matrix;
 
     logger::info("Computing distance matrix with ", num_threads, " threads ...");
+    size_t failed_pairs = 0;  // pairs whose distance could not be computed (guarded by progress_mutex)
+    std::mutex progress_mutex;
     auto begin = std::chrono::high_resolution_clock::now();
     { 
         struct Pair {
@@ -84,7 +86,6 @@ int run(int argc, char* argv[]) {
     }();
 
         int computedPairs = 0;
-        std::mutex progress_mutex;
 
         std::queue<Task> tasks;
         std::mutex queue_mutex;
@@ -161,6 +162,8 @@ int run(int argc, char* argv[]) {
                         report_solver_failure(r.result);
                         logger::error("Error! Distance between graphs ", starting_instance + p.i, " and ",
                                       starting_instance + p.j, " could not be computed!");
+                        std::lock_guard<std::mutex> lock(progress_mutex);
+                        ++failed_pairs;
                         continue;
                     }
                     out.write_computation_info_row(r);
@@ -202,6 +205,12 @@ int run(int argc, char* argv[]) {
     logger::debug("Writing distance matrix to ", out.output_path);
     out.write_interval_distance_matrix(distance_matrix, starting_instance);                 
 
+    if (failed_pairs > 0) {
+        logger::error(failed_pairs, " of ", num_instances * (num_instances - 1) / 2, " distances could not be computed",
+                      " (lb = ub = nan in intervaldistance_matrix.csv, see the errors above).");
+        logger::close_file();
+        return EXIT_FAILURE;
+    }
     logger::close_file();
 
     return EXIT_SUCCESS;

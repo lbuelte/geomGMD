@@ -54,13 +54,15 @@ void OutputContext::write_interval_distance_matrix(const std::vector<std::vector
     for (size_t i = 0; i < matrix.size(); ++i) {
         for (size_t j = i+1; j < matrix[i].size(); ++j) {
             const auto& d = matrix[i][j];
+            // Cells of pairs that were not computed (or failed) keep the placeholder {-1, -1}
+            const bool computed = d.ub >= 0;
 
             intervaldistance_matrix_writer.value().write_row({
                     std::to_string(first_graph_id + i),
                     std::to_string(first_graph_id + j),
-                    format_double(d.lb),
-                    format_double(d.ub),
-                    is_optimal(d.lb, d.ub) ? "true" : "false"
+                    computed ? format_double(d.lb) : "nan",
+                    computed ? format_double(d.ub) : "nan",
+                    computed and is_optimal(d.lb, d.ub) ? "true" : "false"
             });
         }
         intervaldistance_matrix_writer.value().flush();

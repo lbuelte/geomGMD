@@ -59,6 +59,7 @@ struct OutputContext {
 
     // intervaldistance_matrix.csv (if write_distance_matrix). matrix[i][j] is the distance between the graphs
     // with ids first_graph_id + i and first_graph_id + j; row and col in the file are these graph ids.
+    // Pairs without a distance (placeholder {-1, -1}: failed or not computed) are written as nan,nan,false.
     void write_interval_distance_matrix(const std::vector<std::vector<IntervalDistance>>& matrix,
                                         GraphID first_graph_id);
 
