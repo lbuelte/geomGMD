@@ -359,8 +359,6 @@ DistanceResult GeomGMDForiSolver::run_optimization()
             return IntervalDistance( model.get(GRB_DoubleAttr_ObjBound), 
                                         model.get(GRB_DoubleAttr_ObjVal) );
         } else if (status == GRB_INFEASIBLE) {
-            model.computeIIS();
-            model.write("infeasible.ilp");
             return Infeasible{};
         } else if (status == GRB_NUMERIC) {
             if (model.get(GRB_IntAttr_SolCount) > 0) {
