@@ -244,9 +244,8 @@ void read_gurobi_section(const toml::table& tbl, ModelParameters& model, SolverS
     }
 }
 
-// Reads the required [IO] section and returns the run name, if given. write_distance_matrix and
-// write_edgemaps are only read if read_output_flags is set (load_dist_config does not read them).
-std::optional<std::string> read_io_section(const toml::table& tbl, IOConfig& io, bool read_output_flags)
+// Reads the required [IO] section and returns the run name, if given.
+std::optional<std::string> read_io_section(const toml::table& tbl, IOConfig& io)
 {
     auto t = get_section(tbl, "IO");
     if (not t) {
@@ -261,10 +260,8 @@ std::optional<std::string> read_io_section(const toml::table& tbl, IOConfig& io,
     t->read("global_log_file", io.global_log_file);
     t->read("run_name", run_name);
     t->read("generate_plots", io.generate_plots);
-    if (read_output_flags) {
-        t->read("write_distance_matrix", io.write_distance_matrix);
-        t->read("write_edgemaps", io.write_edgemaps);
-    }
+    t->read("write_distance_matrix", io.write_distance_matrix);
+    t->read("write_edgemaps", io.write_edgemaps);
     t->read("num_instances", io.num_instances);
     t->read("starting_instance", io.starting_instance);
     require(not io.num_instances.has_value() or *io.num_instances > 0, t->key_name("num_instances") + " must be > 0");
@@ -402,7 +399,7 @@ Config load_config(const std::string& filename)
     }
 
     /* ===================== IO ===================== */
-    auto run_name_opt = read_io_section(tbl, cfg.io, true);
+    auto run_name_opt = read_io_section(tbl, cfg.io);
 
     /* ===================== Clustering ===================== */
     if (auto cl = get_section(tbl, "Clustering")) {
@@ -443,7 +440,7 @@ DistanceConfig load_dist_config(const std::string& filename)
     read_gurobi_section(tbl, cfg.model, cfg.solver);
 
     /* ===================== IO ===================== */
-    auto run_name_opt = read_io_section(tbl, cfg.io, false);
+    auto run_name_opt = read_io_section(tbl, cfg.io);
 
     /* ==================== Parallel ======================= */
     if (auto par = get_section(tbl, "Parallel")) {

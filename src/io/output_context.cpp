@@ -46,7 +46,6 @@ bool is_optimal(double lb, double ub) {
 void OutputContext::write_interval_distance_matrix(const std::vector<std::vector<IntervalDistance>>& matrix)
 {
     if (not intervaldistance_matrix_writer.has_value()){
-        geomgmd::log::error("Error: write_interval_matrix is not set in config, but function write_interval_distance_matrix was called. Ignoring this call.");
         return;
     }
     intervaldistance_matrix_writer.value().write_row({"row", "col", "lb", "ub", "optimal"});
@@ -70,7 +69,6 @@ void OutputContext::write_interval_distance_matrix(const std::vector<std::vector
 void OutputContext::write_computation_info_row(const GeomGMDResult &result)
 {
     if (not pairwise_computation_info_writer.has_value()){
-        geomgmd::log::error("Error: write_interval_matrix is not set in config, but function write_interval_distance_matrix was called. Ignoring this call.");
         return;
     }
     

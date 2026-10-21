@@ -20,6 +20,8 @@ inline std::filesystem::path prepare_file(const std::filesystem::path& dir,
     return file;
 }
 
+// Output files of a run. Files that are disabled in the config ([IO] write_edgemaps,
+// write_distance_matrix) are not created, and the corresponding write functions do nothing.
 struct OutputContext {
 
     const std::filesystem::path output_path;
@@ -48,17 +50,18 @@ struct OutputContext {
         }
     }
     
+    // One line of edgemaps.json (if write_edgemaps)
     void write_edgemap(const nlohmann::json& j) {
-        if (not edgemap_writer.has_value()){
-            geomgmd::log::error("Error: write_edgemaps is not set in config, but function write_edgemap was called. Ignoring this call.");
-            return;
+        if (edgemap_writer.has_value()){
+            edgemap_writer.value().write(j);
         }
-        edgemap_writer.value().write(j);
     }
 
+    // intervaldistance_matrix.csv (if write_distance_matrix)
     void write_interval_distance_matrix(const std::vector<std::vector<IntervalDistance>>& matrix);
 
-    // One row of computation_info.csv for a computed pair (nothing is written if no distance was computed).
+    // One row of computation_info.csv for a computed pair (if write_distance_matrix; nothing is written
+    // if no distance was computed).
     void write_computation_info_row(const GeomGMDResult &result);
 };
 

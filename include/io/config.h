@@ -50,8 +50,8 @@ struct IOConfig {
     std::optional<std::string> global_log_file;
     std::string run_name;
     bool generate_plots = true;
-    bool write_distance_matrix = true;
-    bool write_edgemaps = true;
+    bool write_distance_matrix = true;  // intervaldistance_matrix.csv and computation_info.csv
+    bool write_edgemaps = true;         // edgemaps.json
 
     std::optional<size_t> num_instances;
     size_t starting_instance = 0;
