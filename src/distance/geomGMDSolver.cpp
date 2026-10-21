@@ -359,6 +359,13 @@ DistanceResult GeomGMDForiSolver::run_optimization()
             return IntervalDistance( model.get(GRB_DoubleAttr_ObjBound), 
                                         model.get(GRB_DoubleAttr_ObjVal) );
         } else if (status == GRB_INFEASIBLE) {
+            // Without a cutoff the model is always feasible (deleting all edges is a valid constrained
+            // edge map). With a cutoff, Gurobi may report INFEASIBLE instead of CUTOFF if no solution
+            // better than the cutoff exists; this is a cutoff hit, not an error.
+            const double cutoff_value = model.get(GRB_DoubleParam_Cutoff);
+            if (cutoff_value < GRB_INFINITY) {
+                return CutoffHit{ cutoff_value };
+            }
             return Infeasible{};
         } else if (status == GRB_NUMERIC) {
             if (model.get(GRB_IntAttr_SolCount) > 0) {
