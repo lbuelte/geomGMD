@@ -1,7 +1,12 @@
 #include "io/run_setup.h"
 
+#include "utility/log.h"
+
 #include <algorithm>
-#include <cassert>
+#include <cstdlib>
+#include <exception>
+#include <stdexcept>
+#include <string>
 
 std::filesystem::path run_output_path(IOConfig const &io)
 {
@@ -27,8 +32,22 @@ void copy_config(std::filesystem::path const &config_path, std::filesystem::path
 InstanceRange select_instances(IOConfig const &io, size_t num_graphs)
 {
     size_t const first = io.starting_instance;
+    if (first >= num_graphs) {
+        throw std::runtime_error("[IO] starting_instance = " + std::to_string(first)
+                                 + " is not a position in the dataset (" + std::to_string(num_graphs) + " graphs)");
+    }
     size_t const count = io.num_instances.has_value() ? std::min(io.num_instances.value(), num_graphs - first)
                                                       : num_graphs - first;
-    assert(first + count <= num_graphs);
     return {first, count};
+}
+
+int run_main(int (*body)(int, char*[]), int argc, char* argv[])
+{
+    try {
+        return body(argc, argv);
+    } catch (std::exception const &e) {
+        geomgmd::log::error(e.what());
+        geomgmd::log::close_file();
+        return EXIT_FAILURE;
+    }
 }

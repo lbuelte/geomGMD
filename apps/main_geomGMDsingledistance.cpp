@@ -1,7 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <chrono>
-#include <cassert>
+#include <cctype>
 #include <filesystem>
 #include <sstream>
 
@@ -21,24 +21,36 @@
 
 namespace logger = geomgmd::log;
 
-int main(int argc, char* argv[]) 
+namespace {
+
+// Graph id = position in the input file (non-negative integer)
+GraphID parse_graph_id(std::string const &s)
+{
+    size_t pos = 0;
+    GraphID id = 0;
+    bool valid = not s.empty() and std::isdigit(static_cast<unsigned char>(s[0]));
+    if (valid) {
+        try {
+            id = std::stoull(s, &pos);
+        } catch (std::exception const &) {
+            valid = false;
+        }
+    }
+    if (not valid or pos != s.size()) {
+        throw std::runtime_error("Invalid graph id: " + s + " (expected a non-negative integer)");
+    }
+    return id;
+}
+
+int run(int argc, char* argv[]) 
 {  
     auto const command_line = parse_command_line(argc, argv);
     auto const &args = command_line.positional;
     if (args.size() < 2){
-        throw std::runtime_error("Error: Need graph IDs as input arguments");
+        throw std::runtime_error("Usage: " + std::string(argv[0]) + " <graph id> <graph id> [config file] [options]");
     }
-    GraphID g,h;
-    try {
-        g = std::stoi(args[0]);
-    } catch (const std::exception& e) {
-        logger::error("Invalid integer: ", args[0]);
-    }
-    try {
-        h = std::stoi(args[1]);
-    } catch (const std::exception& e) {
-        logger::error("Invalid integer: ", args[1]);
-    }    
+    GraphID const g = parse_graph_id(args[0]);
+    GraphID const h = parse_graph_id(args[1]);
 
     std::string config_path = "config_dist.toml";
     if (args.size() >= 3) {
@@ -63,7 +75,13 @@ int main(int argc, char* argv[])
     std::vector<GeometricGraph> geometricgraphs;
     read_graph_vector_from_json(geometricgraphs, json_path.string());
 
-    assert(g < geometricgraphs.size() and h < geometricgraphs.size());
+    for (GraphID id : {g, h}) {
+        if (id >= geometricgraphs.size()) {
+            throw std::runtime_error("Graph id " + std::to_string(id) + " is not in the dataset ("
+                                     + std::to_string(geometricgraphs.size()) + " graphs, ids 0 to "
+                                     + std::to_string(geometricgraphs.size() - 1) + ")");
+        }
+    }
     GeometricGraph &G = geometricgraphs[g];
     GeometricGraph &H = geometricgraphs[h];
 
@@ -102,4 +120,12 @@ int main(int argc, char* argv[])
     logger::close_file();
 
     return EXIT_SUCCESS;
+}
+
+} // end of anonymous namespace
+
+
+int main(int argc, char* argv[])
+{
+    return run_main(run, argc, argv);
 }

@@ -2,7 +2,6 @@
 #include <fstream>
 #include <chrono>
 #include <numeric>
-#include <cassert>
 #include <filesystem>
 
 #include "clustering/gpkg_io.h"
@@ -20,7 +19,9 @@
 
 namespace logger = geomgmd::log;
 
-int main(int argc, char* argv[]) {   
+namespace {
+
+int run(int argc, char* argv[]) {   
 
     auto const command_line = parse_command_line(argc, argv);
     std::string config_path = "config_clustering.toml";
@@ -127,4 +128,12 @@ int main(int argc, char* argv[]) {
 
 
     return EXIT_SUCCESS;
+}
+
+} // end of anonymous namespace
+
+
+int main(int argc, char* argv[])
+{
+    return run_main(run, argc, argv);
 }

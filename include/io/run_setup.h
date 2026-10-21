@@ -21,11 +21,16 @@ std::filesystem::path log_file_path(IOConfig const &io, std::filesystem::path co
 void copy_config(std::filesystem::path const &config_path, std::filesystem::path const &output_path);
 
 // The graphs selected by starting_instance and num_instances: positions first, ..., first + count - 1
-// in the input file (num_instances is cut off at the end of the dataset).
+// in the input file (num_instances is cut off at the end of the dataset). Throws if starting_instance
+// is not a position in the dataset.
 struct InstanceRange {
     size_t first;
     size_t count;
 };
 InstanceRange select_instances(IOConfig const &io, size_t num_graphs);
+
+// Runs the body of a program's main function: an exception ends the program with its message as an
+// error (console and log file) and exit code EXIT_FAILURE, instead of std::terminate and a core dump.
+int run_main(int (*body)(int, char*[]), int argc, char* argv[]);
 
 #endif // GEOMGMD_IO_RUN_SETUP_H

@@ -176,6 +176,21 @@ std::vector<std::string> check_sections(const toml::table& tbl, std::initializer
     return warnings;
 }
 
+// Parses the config file; syntax errors and unreadable files give an error with file name and position.
+toml::table parse_config_file(const std::string& filename)
+{
+    try {
+        return toml::parse_file(filename);
+    } catch (const toml::parse_error& e) {
+        std::ostringstream msg;
+        msg << "Config error: could not read " << filename << ": " << e.description();
+        if (e.source().begin) {
+            msg << " (line " << e.source().begin.line << ", column " << e.source().begin.column << ")";
+        }
+        throw std::runtime_error(msg.str());
+    }
+}
+
 void require_positive(const Section& s, std::string_view key, double value)
 {
     require(value > 0, s.key_name(key) + " must be > 0");
@@ -327,7 +342,7 @@ std::string sampleSizetoStr(const ClaraConfig::SampleSizeSpec& s) {
 
 Config load_config(const std::string& filename)
 {
-    toml::table tbl = toml::parse_file(filename);
+    toml::table tbl = parse_config_file(filename);
     Config cfg;  // defaults are set here
     cfg.warnings = check_sections(tbl, {"Gurobi", "PAM", "Clara", "Clarans", "IO", "Clustering", "Logging"});
 
@@ -432,7 +447,7 @@ Config load_config(const std::string& filename)
 
 DistanceConfig load_dist_config(const std::string& filename)
 {
-    toml::table tbl = toml::parse_file(filename);
+    toml::table tbl = parse_config_file(filename);
     DistanceConfig cfg;  // defaults are set here
     cfg.warnings = check_sections(tbl, {"Gurobi", "IO", "Parallel", "Logging"});
 
