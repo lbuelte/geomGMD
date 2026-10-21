@@ -56,8 +56,6 @@ void write_graph_svg(const GeometricGraph& G, const std::string &filename, doubl
         svg << "<line x1='" << sx(p1.x) << "' y1='" << sy(p1.y)
             << "' x2='" << sx(p2.x) << "' y2='" << sy(p2.y)
             << "' style='stroke:green;stroke-width:2'/>\n";
-        svg << "'/>\n";
-
     }
 
     // ---- draw medial axis vertices ----
