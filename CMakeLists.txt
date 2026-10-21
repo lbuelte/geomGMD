@@ -11,7 +11,7 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-option(GEOMGMD_BUILD_CLUSTERING "Build the clustering library and PolygonClustering (requires GDAL)" ON)
+option(GEOMGMD_BUILD_CLUSTERING "Build the clustering library and geomGMD_cluster (requires GDAL)" ON)
 
 find_package(GUROBI REQUIRED)
 if(GEOMGMD_BUILD_CLUSTERING)
@@ -52,14 +52,14 @@ target_include_directories(geomGMD_io PRIVATE ${PROJECT_SOURCE_DIR}/external/tom
 
 # Executables for single distance computations, full dataset computations (distance matrix)
 # and plotting of computed edge maps
-add_executable(geomGMD_SingleDistanceComputation apps/main_geomGMDsingledistance.cpp)
-target_link_libraries(geomGMD_SingleDistanceComputation PRIVATE geomGMD_io)
+add_executable(geomGMD_pair apps/geomGMD_pair.cpp)
+target_link_libraries(geomGMD_pair PRIVATE geomGMD_io)
 
-add_executable(geomGMD_FullDatasetComputations apps/main_geomGMDcomputations.cpp)
-target_link_libraries(geomGMD_FullDatasetComputations PRIVATE geomGMD_io)
+add_executable(geomGMD_matrix apps/geomGMD_matrix.cpp)
+target_link_libraries(geomGMD_matrix PRIVATE geomGMD_io)
 
-add_executable(PlotEdgemaps apps/main_plotEdgemaps.cpp)
-target_link_libraries(PlotEdgemaps PRIVATE geomGMD_io)
+add_executable(geomGMD_plot_edgemaps apps/geomGMD_plot_edgemaps.cpp)
+target_link_libraries(geomGMD_plot_edgemaps PRIVATE geomGMD_io)
 
 # Clustering (optional): PAM, CLARA, CLARANS and the clustering application
 if(GEOMGMD_BUILD_CLUSTERING)
@@ -70,8 +70,8 @@ if(GEOMGMD_BUILD_CLUSTERING)
       GDAL::GDAL
   )
 
-  add_executable(PolygonClustering apps/main_polygonclustering.cpp)
-  target_link_libraries(PolygonClustering PRIVATE geomGMD_clustering)
+  add_executable(geomGMD_cluster apps/geomGMD_cluster.cpp)
+  target_link_libraries(geomGMD_cluster PRIVATE geomGMD_clustering)
 endif()
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)

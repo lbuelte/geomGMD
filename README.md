@@ -42,7 +42,7 @@ cmake --build build/release -j 4
 
 For a debug build, use `-DCMAKE_BUILD_TYPE=Debug` and e.g. `build/debug`.
 
-This creates the executables `geomGMD_SingleDistanceComputation`, `geomGMD_FullDatasetComputations`, `PolygonClustering` and `PlotEdgemaps` in the build folder.
+This creates the executables `geomGMD_pair`, `geomGMD_matrix`, `geomGMD_plot_edgemaps` and `geomGMD_cluster` in the build folder.
 
 ## Input format
 
@@ -78,9 +78,9 @@ Graphs are referred to by their index in this array.
 ## Configuration
 
 All executables read their parameters from a TOML file, given as an optional command line argument.
-If it is omitted, `config_dist.toml` (resp. `config.toml` for `PolygonClustering`) in the **current working directory** is used.
+If it is omitted, `config_dist.toml` (resp. `config_clustering.toml` for `geomGMD_cluster`) in the **current working directory** is used.
 
-Start from `config_dist.toml.example` (distance computations) or `config.toml.example` (clustering) and set at least
+Start from `config_dist.toml.example` (distance computations) or `config_clustering.toml.example` (clustering) and set at least
 * `dataset`: name of the dataset folder (and file prefix), see [Input format](#input-format),
 * `input_path`: directory containing the dataset folder,
 * `output_path`: directory for the results. Output is written to `<output_path>/<dataset>/<run_name>/`.
@@ -93,15 +93,15 @@ All parameters and their defaults are defined in `include/io/config.h`.
 ### Single geomGMD computation
 
 ```
-./build/release/geomGMD_SingleDistanceComputation <g> <h> [config_dist.toml]
+./build/release/geomGMD_pair <g> <h> [config_dist.toml]
 ```
 
-Computes geomGMD between the graphs with indices `g` and `h` and prints the objective to the console.
+Computes geomGMD between the graphs with indices `g` and `h`, prints the result to the console and writes an SVG of the edge map to `<output_path>/<dataset>/<run_name>/pair/`.
 
 ### Distance matrix
 
 ```
-./build/release/geomGMD_FullDatasetComputations [config_dist.toml]
+./build/release/geomGMD_matrix [config_dist.toml]
 ```
 
 Computes geomGMD for all pairs of graphs in the dataset (or the subset given by `starting_instance` and `num_instances`), in parallel with `num_threads` threads. The output folder contains:
@@ -113,18 +113,18 @@ Computes geomGMD for all pairs of graphs in the dataset (or the subset given by 
 ### Plotting edge maps
 
 ```
-./build/release/PlotEdgemaps [config_dist.toml]
+./build/release/geomGMD_plot_edgemaps [config_dist.toml]
 ```
 
-Reads the output of a `geomGMD_FullDatasetComputations` run (same `dataset`, `output_path` and `run_name`) and writes an SVG of each mapping to the `edgemaps/` subfolder.
+Reads the output of a `geomGMD_matrix` run (same `dataset`, `output_path` and `run_name`) and writes an SVG of each mapping to the `edgemaps/` subfolder.
 
 ### Clustering
 
 ```
-./build/release/PolygonClustering [config.toml]
+./build/release/geomGMD_cluster [config_clustering.toml]
 ```
 
-Clusters the graphs of a dataset using geomGMD (PAM, CLARA or CLARANS; see `config.toml.example`). It additionally expects the polygons as `<input_path>/<dataset>/<dataset>.gpkg` and writes a copy with the assigned cluster IDs.
+Clusters the graphs of a dataset using geomGMD (PAM, CLARA or CLARANS; see `config_clustering.toml.example`). It additionally expects the polygons as `<input_path>/<dataset>/<dataset>.gpkg` and writes a copy with the assigned cluster IDs.
 
 ## Citation
 

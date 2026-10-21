@@ -60,7 +60,7 @@ int run(int argc, char* argv[])
 
     // Own subfolder of the run folder, so that the files of a full dataset computation with the same
     // run_name are not touched
-    std::filesystem::path output_path = run_output_path(config.io) / "single";
+    std::filesystem::path output_path = run_output_path(config.io) / "pair";
     std::filesystem::create_directories(output_path);
 
     // Console only: a log file in the output folder would overwrite the run.log of a full dataset computation
