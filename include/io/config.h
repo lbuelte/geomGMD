@@ -101,6 +101,9 @@ struct Config {
     IOConfig io;
     ClusteringConfig cluster;
     LoggingConfig logging;
+
+    // Warnings while reading the file (e.g. ignored sections), to be logged once logging is set up
+    std::vector<std::string> warnings;
 };
 
 Config load_config(const std::string& filename);
@@ -121,6 +124,9 @@ struct DistanceConfig {
     IOConfig io;
     ParallelConfig parallel;
     LoggingConfig logging;
+
+    // Warnings while reading the file (e.g. ignored sections), to be logged once logging is set up
+    std::vector<std::string> warnings;
 };
 
 DistanceConfig load_dist_config(const std::string& filename);

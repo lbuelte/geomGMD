@@ -22,6 +22,7 @@ int main(int argc, char* argv[]) {
     auto config = load_dist_config(config_path);
     config.logging = resolve_logging(config.logging, command_line);
     configure_logging(config.logging, std::nullopt);
+    for (auto const &warning : config.warnings) logger::warning(warning);
     logger::info(config);
 
     std::filesystem::path input_path = 

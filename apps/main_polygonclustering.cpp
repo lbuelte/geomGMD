@@ -40,6 +40,7 @@ int main(int argc, char* argv[]) {
 
     config.logging = resolve_logging(config.logging, command_line);
     configure_logging(config.logging, log_file);
+    for (auto const &warning : config.warnings) logger::warning(warning);
     logger::info("Writing log file to ", log_file, "\n");
     logger::info(config);
 

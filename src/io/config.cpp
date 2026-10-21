@@ -6,9 +6,14 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <cmath>
+#include <initializer_list>
+#include <limits>
 #include <random>
 #include <sstream>
 #include <iomanip>
+#include <string_view>
+#include <type_traits>
 
 namespace {
 
@@ -50,42 +55,6 @@ parse_angle_type(const std::string& s_in)
     throw std::runtime_error("Unknown angle_type: " + s);
 }
 
-template<typename T>
-void read_required(const toml::table& t, const char* key, T& out)
-{
-    if (auto v = t[key].value<T>())
-        out = *v;
-    else
-        throw std::runtime_error(
-            std::string("Missing required key: ") + key);
-}
-
-template<typename T>
-void read_value_if(const toml::table& t, const char* key, T& out)
-{
-    if (auto v = t[key].value<T>())
-        out = *v;
-    // else: do nothing → keep struct default
-}
-
-template<typename T>
-void read_optional_if(const toml::table& t, const char* key, std::optional<T>& out)
-{
-    if (auto v = t[key].value<T>())
-        out = *v;
-    // else: remains std::nullopt
-}
-
-template<typename Enum, typename Parser>
-void read_enum_if(const toml::table& t,
-                  const char* key,
-                  Enum& out,
-                  Parser parse_fn)
-{
-    if (auto s = t[key].value<std::string>())
-        out = parse_fn(*s);
-}
-
 LogLevel
 parse_log_level_or_throw(const std::string& s)
 {
@@ -93,13 +62,140 @@ parse_log_level_or_throw(const std::string& s)
     throw std::runtime_error("Unknown log level: " + s + " (expected error, warning, info or debug)");
 }
 
+
+// Description of the values accepted for a key of type T (for error messages)
+template<typename T>
+std::string expected_value()
+{
+    if constexpr (std::is_same_v<T, bool>)                             return "true or false";
+    else if constexpr (std::is_same_v<T, std::string>)                 return "a string";
+    else if constexpr (std::is_integral_v<T> and std::is_unsigned_v<T>) return "a non-negative integer";
+    else if constexpr (std::is_integral_v<T>)                          return "an integer";
+    else                                                               return "a number";
+}
+
+// A section [name] of the config file. Reading a key checks its type: booleans and strings must be
+// given as such; for numbers, integers and floating-point values are interchangeable as long as the
+// value is represented exactly (e.g. timelimit_sec = 300.0 is fine, 300.5 is not).
+class Section {
+public:
+    Section(const toml::table& table, std::string name) : _table(table), _name(std::move(name)) {}
+
+    const std::string& name() const { return _name; }
+    std::string key_name(std::string_view key) const { return "[" + _name + "] " + std::string(key); }
+
+    const toml::node* get(std::string_view key) const { return _table.get(key); }
+
+    // Throws for keys that are not in valid_keys (e.g. typos, which would otherwise be ignored silently)
+    void check_keys(std::initializer_list<std::string_view> valid_keys) const
+    {
+        for (auto const& [key, node] : _table) {
+            if (std::find(valid_keys.begin(), valid_keys.end(), key.str()) != valid_keys.end()) continue;
+            std::string valid;
+            for (auto k : valid_keys) valid += (valid.empty() ? "" : ", ") + std::string(k);
+            throw std::runtime_error("Config error: unknown key " + key_name(key.str())
+                                     + " (valid keys: " + valid + ")");
+        }
+    }
+
+    // Missing key: out keeps its value (the default)
+    template<typename T>
+    void read(std::string_view key, T& out) const
+    {
+        if (auto node = get(key)) out = value<T>(*node, key);
+    }
+
+    // Missing key: out remains std::nullopt
+    template<typename T>
+    void read(std::string_view key, std::optional<T>& out) const
+    {
+        if (auto node = get(key)) out = value<T>(*node, key);
+    }
+
+    template<typename T>
+    void read_required(std::string_view key, T& out) const
+    {
+        auto node = get(key);
+        if (not node) throw std::runtime_error("Config error: missing required key " + key_name(key));
+        out = value<T>(*node, key);
+    }
+
+    template<typename Enum, typename Parser>
+    void read_enum(std::string_view key, Enum& out, Parser parse_fn) const
+    {
+        if (auto node = get(key)) out = parse_fn(value<std::string>(*node, key));
+    }
+
+private:
+    template<typename T>
+    T value(const toml::node& node, std::string_view key) const
+    {
+        std::optional<T> v;
+        if constexpr (std::is_same_v<T, bool>) {
+            if (node.is_boolean()) v = node.value<bool>();
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            if (node.is_string()) v = node.value<std::string>();
+        } else {
+            if (node.is_number()) v = node.value<T>();
+        }
+        if (not v) throw std::runtime_error("Config error: " + key_name(key) + " must be " + expected_value<T>());
+        return *v;
+    }
+
+    const toml::table& _table;
+    std::string _name;
+};
+
+// The section [name] of the file, if present (error if name is not a table)
+std::optional<Section> get_section(const toml::table& tbl, const std::string& name)
+{
+    auto node = tbl.get(name);
+    if (not node) return std::nullopt;
+    if (not node->is_table()) throw std::runtime_error("Config error: " + name + " must be a section [" + name + "]");
+    return Section(*node->as_table(), name);
+}
+
+// Sections that any geomGMD program reads; a program ignores the ones it does not need (with a warning).
+const std::vector<std::string> all_sections = {"Gurobi", "PAM", "Clara", "Clarans", "IO", "Clustering", "Parallel", "Logging"};
+
+// Throws for unknown sections (e.g. typos) and returns warnings for known sections that this program ignores.
+std::vector<std::string> check_sections(const toml::table& tbl, std::initializer_list<std::string_view> used)
+{
+    std::vector<std::string> warnings;
+    for (auto const& [key, node] : tbl) {
+        const std::string name(key.str());
+        if (std::find(used.begin(), used.end(), name) != used.end()) continue;
+        if (std::find(all_sections.begin(), all_sections.end(), name) == all_sections.end()) {
+            std::string valid;
+            for (auto k : used) valid += (valid.empty() ? "" : ", ") + std::string(k);
+            throw std::runtime_error("Config error: unknown section or key " + name
+                                     + " (sections of this program: " + valid + ")");
+        }
+        warnings.push_back("Config: section [" + name + "] is not used by this program and is ignored");
+    }
+    return warnings;
+}
+
+void require_positive(const Section& s, std::string_view key, double value)
+{
+    require(value > 0, s.key_name(key) + " must be > 0");
+}
+
+void require_non_negative(const Section& s, std::string_view key, double value)
+{
+    require(value >= 0 and std::isfinite(value), s.key_name(key) + " must be >= 0");
+}
+
+
 void read_logging_section(const toml::table& tbl, LoggingConfig& logging)
 {
-    if (auto lg = tbl["Logging"].as_table()) {
-        read_enum_if(*lg, "level", logging.level, parse_log_level_or_throw);
-        read_enum_if(*lg, "file_level", logging.file_level, parse_log_level_or_throw);
-        read_value_if(*lg, "gurobi_log", logging.gurobi_log);
-        read_optional_if(*lg, "gurobi_log_min_gap", logging.gurobi_log_min_gap);
+    if (auto lg = get_section(tbl, "Logging")) {
+        lg->check_keys({"level", "file_level", "gurobi_log", "gurobi_log_pairs", "gurobi_log_min_gap"});
+        lg->read_enum("level", logging.level, parse_log_level_or_throw);
+        lg->read_enum("file_level", logging.file_level, parse_log_level_or_throw);
+        lg->read("gurobi_log", logging.gurobi_log);
+        lg->read("gurobi_log_min_gap", logging.gurobi_log_min_gap);
+        if (logging.gurobi_log_min_gap) require_non_negative(*lg, "gurobi_log_min_gap", *logging.gurobi_log_min_gap);
         if (auto node = lg->get("gurobi_log_pairs")) {
             const auto error = std::string("gurobi_log_pairs must be a list of pairs of graph ids, e.g. [[3, 19], [5, 7]]");
             auto pairs = node->as_array();
@@ -125,16 +221,26 @@ void read_logging_section(const toml::table& tbl, LoggingConfig& logging)
 // Reads the [Gurobi] section (model parameters and solver settings); missing keys keep their defaults.
 void read_gurobi_section(const toml::table& tbl, ModelParameters& model, SolverSettings& solver)
 {
-    if (auto g = tbl["Gurobi"].as_table()) {
-        read_value_if(*g, "timelimit_sec", solver.timelimit_sec);
-        read_value_if(*g, "threads", solver.threads);
-        read_value_if(*g, "seed", solver.seed);
-        read_value_if(*g, "enforce_cyclic_order", model.enforce_cyclic_order);
-        read_value_if(*g, "consider_angle_objective", model.consider_angle_objective);
-        read_value_if(*g, "cost_factor_deletion_insertion", model.cost_factor_deletion_insertion);
-        read_value_if(*g, "cost_factor_length_difference", model.cost_factor_length_difference);
-        read_value_if(*g, "cost_factor_angle_difference", model.cost_factor_angle_difference);
-        read_enum_if(*g, "angle_type", model.angle_type, parse_angle_type);
+    if (auto g = get_section(tbl, "Gurobi")) {
+        g->check_keys({"timelimit_sec", "threads", "seed", "enforce_cyclic_order", "consider_angle_objective",
+                       "cost_factor_deletion_insertion", "cost_factor_length_difference",
+                       "cost_factor_angle_difference", "angle_type"});
+        g->read("timelimit_sec", solver.timelimit_sec);
+        g->read("threads", solver.threads);
+        g->read("seed", solver.seed);
+        g->read("enforce_cyclic_order", model.enforce_cyclic_order);
+        g->read("consider_angle_objective", model.consider_angle_objective);
+        g->read("cost_factor_deletion_insertion", model.cost_factor_deletion_insertion);
+        g->read("cost_factor_length_difference", model.cost_factor_length_difference);
+        g->read("cost_factor_angle_difference", model.cost_factor_angle_difference);
+        g->read_enum("angle_type", model.angle_type, parse_angle_type);
+
+        require_positive(*g, "timelimit_sec", solver.timelimit_sec);
+        require(solver.threads >= 0, g->key_name("threads") + " must be >= 0 (0: chosen by Gurobi)");
+        require(solver.seed >= 0, g->key_name("seed") + " must be >= 0");
+        require_non_negative(*g, "cost_factor_deletion_insertion", model.cost_factor_deletion_insertion);
+        require_non_negative(*g, "cost_factor_length_difference", model.cost_factor_length_difference);
+        require_non_negative(*g, "cost_factor_angle_difference", model.cost_factor_angle_difference);
     }
 }
 
@@ -142,23 +248,26 @@ void read_gurobi_section(const toml::table& tbl, ModelParameters& model, SolverS
 // write_edgemaps are only read if read_output_flags is set (load_dist_config does not read them).
 std::optional<std::string> read_io_section(const toml::table& tbl, IOConfig& io, bool read_output_flags)
 {
-    auto t = tbl["IO"].as_table();
+    auto t = get_section(tbl, "IO");
     if (not t) {
         throw std::runtime_error("Missing required [IO] section");
     }
+    t->check_keys({"dataset", "input_path", "output_path", "global_log_file", "run_name", "generate_plots",
+                   "write_distance_matrix", "write_edgemaps", "num_instances", "starting_instance"});
     std::optional<std::string> run_name;
-    read_required(*t, "dataset", io.dataset);
-    read_required(*t, "input_path", io.input_path);
-    read_required(*t, "output_path", io.output_path);
-    read_optional_if(*t, "global_log_file", io.global_log_file);
-    read_optional_if(*t, "run_name", run_name);
-    read_value_if(*t, "generate_plots", io.generate_plots);
+    t->read_required("dataset", io.dataset);
+    t->read_required("input_path", io.input_path);
+    t->read_required("output_path", io.output_path);
+    t->read("global_log_file", io.global_log_file);
+    t->read("run_name", run_name);
+    t->read("generate_plots", io.generate_plots);
     if (read_output_flags) {
-        read_value_if(*t, "write_distance_matrix", io.write_distance_matrix);
-        read_value_if(*t, "write_edgemaps", io.write_edgemaps);
+        t->read("write_distance_matrix", io.write_distance_matrix);
+        t->read("write_edgemaps", io.write_edgemaps);
     }
-    read_optional_if(*t, "num_instances", io.num_instances);
-    read_value_if(*t, "starting_instance", io.starting_instance);
+    t->read("num_instances", io.num_instances);
+    t->read("starting_instance", io.starting_instance);
+    require(not io.num_instances.has_value() or *io.num_instances > 0, t->key_name("num_instances") + " must be > 0");
     require(io.num_instances.has_value() or io.starting_instance == 0,
             "Processing the whole dataset, but starting_instance is set to "
             + std::to_string(io.starting_instance));
@@ -166,14 +275,19 @@ std::optional<std::string> read_io_section(const toml::table& tbl, IOConfig& io,
 }
 
 // Reads an array of seeds (key may be missing: the vector is kept).
-void read_seeds(const toml::table& t, const char* key, std::vector<uint32_t>& seeds)
+void read_seeds(const Section& s, std::string_view key, std::vector<uint32_t>& seeds)
 {
-    if (auto arr = t.get(key)->as_array()) {
-        seeds.clear();
-        for (const auto& v : *arr) {
-            require(v.is_integer(), "Random_seeds must be integers");
-            seeds.push_back(static_cast<uint32_t>(*v.value<int64_t>()));
-        }
+    auto node = s.get(key);
+    if (not node) return;
+    auto arr = node->as_array();
+    require(arr != nullptr, s.key_name(key) + " must be a list of integers, e.g. [1, 2, 3]");
+    seeds.clear();
+    for (const auto& v : *arr) {
+        auto seed = v.is_integer() ? v.value<int64_t>() : std::nullopt;
+        require(seed and *seed >= 0 and *seed <= std::numeric_limits<uint32_t>::max(),
+                s.key_name(key) + " must be a list of integers between 0 and "
+                + std::to_string(std::numeric_limits<uint32_t>::max()));
+        seeds.push_back(static_cast<uint32_t>(*seed));
     }
 }
 
@@ -218,21 +332,26 @@ Config load_config(const std::string& filename)
 {
     toml::table tbl = toml::parse_file(filename);
     Config cfg;  // defaults are set here
+    cfg.warnings = check_sections(tbl, {"Gurobi", "PAM", "Clara", "Clarans", "IO", "Clustering", "Logging"});
 
     /* ===================== Gurobi ===================== */
     read_gurobi_section(tbl, cfg.model, cfg.solver);
 
     /* ===================== PAM ===================== */
-    if (auto p = tbl["PAM"].as_table()) {
-        read_value_if(*p, "num_threads_matrix", cfg.pam.num_threads_matrix);
+    if (auto p = get_section(tbl, "PAM")) {
+        p->check_keys({"num_threads_matrix"});
+        p->read("num_threads_matrix", cfg.pam.num_threads_matrix);
+        require(cfg.pam.num_threads_matrix > 0, p->key_name("num_threads_matrix") + " must be > 0");
     }
 
     /* ===================== Clara ===================== */
-    if (auto c = tbl["Clara"].as_table()) {
+    if (auto c = get_section(tbl, "Clara")) {
+        c->check_keys({"sample_size", "sample_fraction", "min_sample_size", "num_samples", "reuse_distances",
+                       "num_threads_assignment", "random_seeds"});
         size_t sample_size = 0;
-        read_value_if(*c, "sample_size", sample_size);
+        c->read("sample_size", sample_size);
         double sample_fraction = 0.0;
-        read_value_if(*c, "sample_fraction", sample_fraction);
+        c->read("sample_fraction", sample_fraction);
         if (sample_size > 0) {
             require(sample_fraction == 0, 
                     "Both a sample size and a sample fraction were set");
@@ -244,12 +363,15 @@ Config load_config(const std::string& filename)
             cfg.clara.sample_size = ClaraConfig::PercentageSample(sample_fraction);
         }
         else {
+            require(sample_fraction == 0, "Clara.sample_fraction must be in (0, 1]");
             cfg.clara.sample_size = std::monostate{};
         }
-        read_optional_if(*c, "min_sample_size", cfg.clara.min_sample_size);
-        read_value_if(*c, "num_samples", cfg.clara.num_samples);
-        read_value_if(*c, "reuse_distances", cfg.clara.reuse_distances);
-        read_value_if(*c, "num_threads_assignment", cfg.clara.num_threads_assignment);
+        c->read("min_sample_size", cfg.clara.min_sample_size);
+        c->read("num_samples", cfg.clara.num_samples);
+        c->read("reuse_distances", cfg.clara.reuse_distances);
+        c->read("num_threads_assignment", cfg.clara.num_threads_assignment);
+        require(cfg.clara.num_samples > 0, c->key_name("num_samples") + " must be > 0");
+        require(cfg.clara.num_threads_assignment > 0, c->key_name("num_threads_assignment") + " must be > 0");
         read_seeds(*c, "random_seeds", cfg.clara.random_seeds);
         require(cfg.clara.random_seeds.size() <= cfg.clara.num_samples, 
                 "Number of random_seeds exceeds num_samples");
@@ -260,12 +382,16 @@ Config load_config(const std::string& filename)
     }
 
     /* ===================== Clarans ===================== */
-    if (auto cr = tbl["Clarans"].as_table()) {
-        read_value_if(*cr, "num_local", cfg.clarans.num_local);
-        read_value_if(*cr, "max_neighbors", cfg.clarans.max_neighbors);    
-        read_value_if(*cr, "num_threads", cfg.clarans.num_threads);
-        read_optional_if(*cr, "random_seed_local_search", 
-            cfg.clarans.random_seed_local_search);
+    if (auto cr = get_section(tbl, "Clarans")) {
+        cr->check_keys({"num_local", "max_neighbors", "num_threads", "random_seed_local_search",
+                        "random_seeds_initialization"});
+        cr->read("num_local", cfg.clarans.num_local);
+        cr->read("max_neighbors", cfg.clarans.max_neighbors);    
+        cr->read("num_threads", cfg.clarans.num_threads);
+        cr->read("random_seed_local_search", cfg.clarans.random_seed_local_search);
+        require(cfg.clarans.num_local > 0, cr->key_name("num_local") + " must be > 0");
+        require(cfg.clarans.max_neighbors > 0, cr->key_name("max_neighbors") + " must be > 0");
+        require(cfg.clarans.num_threads > 0, cr->key_name("num_threads") + " must be > 0");
         read_seeds(*cr, "random_seeds_initialization", cfg.clarans.random_seeds_initialization);
         require(cfg.clarans.random_seeds_initialization.size() <= cfg.clarans.num_local, 
                 "Number of random_seeds exceeds num_samples");
@@ -279,10 +405,12 @@ Config load_config(const std::string& filename)
     auto run_name_opt = read_io_section(tbl, cfg.io, true);
 
     /* ===================== Clustering ===================== */
-    if (auto cl = tbl["Clustering"].as_table()) {
-        read_required(*cl, "k", cfg.cluster.k);
-        read_value_if(*cl, "parallel", cfg.cluster.parallel);
-        read_enum_if(*cl, "clustering_algo", cfg.cluster.clustering_algo, parse_clustering_algo);
+    if (auto cl = get_section(tbl, "Clustering")) {
+        cl->check_keys({"k", "parallel", "clustering_algo"});
+        cl->read_required("k", cfg.cluster.k);
+        cl->read("parallel", cfg.cluster.parallel);
+        cl->read_enum("clustering_algo", cfg.cluster.clustering_algo, parse_clustering_algo);
+        require(cfg.cluster.k > 0, cl->key_name("k") + " must be > 0");
     }
     else {
         throw std::runtime_error("Missing required [Clustering] section");
@@ -309,6 +437,7 @@ DistanceConfig load_dist_config(const std::string& filename)
 {
     toml::table tbl = toml::parse_file(filename);
     DistanceConfig cfg;  // defaults are set here
+    cfg.warnings = check_sections(tbl, {"Gurobi", "IO", "Parallel", "Logging"});
 
     /* ===================== Gurobi ===================== */
     read_gurobi_section(tbl, cfg.model, cfg.solver);
@@ -317,10 +446,13 @@ DistanceConfig load_dist_config(const std::string& filename)
     auto run_name_opt = read_io_section(tbl, cfg.io, false);
 
     /* ==================== Parallel ======================= */
-    if (auto par = tbl["Parallel"].as_table()) {
-        read_value_if(*par, "run_parallel", cfg.parallel.run_parallel);
-        read_value_if(*par, "num_threads", cfg.parallel.num_threads_matrix);
-        read_value_if(*par, "batch_size", cfg.parallel.default_batch_size);
+    if (auto par = get_section(tbl, "Parallel")) {
+        par->check_keys({"run_parallel", "num_threads", "batch_size"});
+        par->read("run_parallel", cfg.parallel.run_parallel);
+        par->read("num_threads", cfg.parallel.num_threads_matrix);
+        par->read("batch_size", cfg.parallel.default_batch_size);
+        require(cfg.parallel.num_threads_matrix > 0, par->key_name("num_threads") + " must be > 0");
+        require(cfg.parallel.default_batch_size > 0, par->key_name("batch_size") + " must be > 0");
     }
 
     /* ===================== Logging ===================== */
