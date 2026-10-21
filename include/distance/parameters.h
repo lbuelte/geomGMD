@@ -6,19 +6,20 @@
 #include <ostream>
 
 // What is computed: parameters of the geomGMD model (paper: c_id, c_m, c_r).
+// Defaults: the settings of the paper (SIGSPATIAL '26).
 struct ModelParameters {
     double cost_factor_deletion_insertion = 1.0;   // c_id
     double cost_factor_length_difference = 1.0;    // c_m
-    double cost_factor_angle_difference = 2.0;     // c_r
+    double cost_factor_angle_difference = 1.0;     // c_r
 
     AngleType angle_type = AngleType::Signed;
     bool consider_angle_objective = true;
     bool enforce_cyclic_order = false;
 };
 
-// How it is computed: settings of the Gurobi solver.
+// How it is computed: settings of the Gurobi solver. Defaults: the settings of the paper.
 struct SolverSettings {
-    int timelimit_sec = 60;
+    int timelimit_sec = 300;
     int threads = 1;
     int seed = 1;
 };

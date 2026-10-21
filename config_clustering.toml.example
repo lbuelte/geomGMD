@@ -6,7 +6,7 @@ timelimit_sec = 10
 # consider_angle_objective = false
 # cost_factor_deletion_insertion = 1.0
 # cost_factor_length_difference = 1.0
-# cost_factor_angle_difference = 2.0
+# cost_factor_angle_difference = 1.0
 # angle_type = "signed"
 
 [PAM]
