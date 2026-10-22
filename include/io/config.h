@@ -68,6 +68,11 @@ struct ClusteringConfig {
     ClusteringAlgorithm clustering_algo = ClusteringAlgorithm::CLARA;
 
     bool parallel = true;
+
+    // Precomputed distances (intervaldistance_matrix.csv of a geomGMD_matrix run), PAM only. Pairs missing
+    // there are computed if compute_missing_distances, otherwise the run aborts.
+    std::optional<std::string> distance_matrix;
+    bool compute_missing_distances = true;
 };
 
 // Log levels of console and log file (see utility/log.h); can be overridden on the command line.
@@ -130,6 +135,15 @@ struct DistanceConfig {
 };
 
 DistanceConfig load_dist_config(const std::string& filename);
+
+// Only the model parameters of the [Gurobi] section of a config file (all other keys and sections are ignored),
+// e.g. of the config_input.toml of an earlier run. missing_keys: model parameters not set in the file (their
+// defaults may have changed since the file was written).
+struct ModelParametersFromFile {
+    ModelParameters model;
+    std::vector<std::string> missing_keys;
+};
+ModelParametersFromFile load_model_parameters(const std::string& filename);
 // Listing of the whole configuration in TOML layout (for the log)
 std::ostream& operator<<(std::ostream& out, const DistanceConfig& cfg);
 

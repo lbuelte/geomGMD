@@ -15,6 +15,8 @@ struct ModelParameters {
     AngleType angle_type = AngleType::Signed;
     bool consider_angle_objective = true;
     bool enforce_cyclic_order = false;
+
+    bool operator==(ModelParameters const &) const = default;
 };
 
 // How it is computed: settings of the Gurobi solver. Defaults: the settings of the paper.

@@ -421,11 +421,15 @@ Config load_config(const std::string& filename)
 
     /* ===================== Clustering ===================== */
     if (auto cl = get_section(tbl, "Clustering")) {
-        cl->check_keys({"k", "parallel", "clustering_algo"});
+        cl->check_keys({"k", "parallel", "clustering_algo", "distance_matrix", "compute_missing_distances"});
         cl->read_required("k", cfg.cluster.k);
         cl->read("parallel", cfg.cluster.parallel);
         cl->read_enum("clustering_algo", cfg.cluster.clustering_algo, parse_clustering_algo);
+        cl->read("distance_matrix", cfg.cluster.distance_matrix);
+        cl->read("compute_missing_distances", cfg.cluster.compute_missing_distances);
         require(cfg.cluster.k > 0, cl->key_name("k") + " must be > 0");
+        require(not cfg.cluster.distance_matrix or cfg.cluster.clustering_algo == ClusteringConfig::ClusteringAlgorithm::PAM,
+                cl->key_name("distance_matrix") + " is only supported with clustering_algo = \"PAM\"");
     }
     else {
         throw std::runtime_error("Missing required [Clustering] section");
@@ -476,6 +480,28 @@ DistanceConfig load_dist_config(const std::string& filename)
     cfg.io.run_name = run_name_opt.value_or("default_run");
 
     return cfg;
+}
+
+
+ModelParametersFromFile load_model_parameters(const std::string& filename)
+{
+    toml::table tbl = parse_config_file(filename);
+    ModelParametersFromFile result;
+    auto& model = result.model;
+    auto g = get_section(tbl, "Gurobi");
+    for (auto key : {"enforce_cyclic_order", "consider_angle_objective", "cost_factor_deletion_insertion",
+                     "cost_factor_length_difference", "cost_factor_angle_difference", "angle_type"}) {
+        if (not g or not g->get(key)) result.missing_keys.emplace_back(key);
+    }
+    if (g) {
+        g->read("enforce_cyclic_order", model.enforce_cyclic_order);
+        g->read("consider_angle_objective", model.consider_angle_objective);
+        g->read("cost_factor_deletion_insertion", model.cost_factor_deletion_insertion);
+        g->read("cost_factor_length_difference", model.cost_factor_length_difference);
+        g->read("cost_factor_angle_difference", model.cost_factor_angle_difference);
+        g->read_enum("angle_type", model.angle_type, parse_angle_type);
+    }
+    return result;
 }
 
 
@@ -537,6 +563,10 @@ std::ostream& operator<<(std::ostream& out, const ClusteringConfig& cluster)
     print_entry(out, "k", cluster.k);
     print_entry(out, "clustering_algo", clusteringAlgoToStr(cluster.clustering_algo));
     print_entry(out, "parallel", tf(cluster.parallel));
+    print_entry(out, "distance_matrix", cluster.distance_matrix.value_or("not set (all distances are computed)"));
+    if (cluster.distance_matrix) {
+        print_entry(out, "compute_missing_distances", tf(cluster.compute_missing_distances));
+    }
     return out;
 }
 
