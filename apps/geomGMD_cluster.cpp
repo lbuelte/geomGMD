@@ -85,7 +85,7 @@ int run(int argc, char* argv[]) {
             for(const GraphID &g : clustering_result.clusters[c]) {
                 auto const &graph = *graphs[g];
                 std::filesystem::path graph_path =
-                        plot_path / ("graph_" + std::to_string(graph.polygon_id()) + ".svg");
+                        plot_path / ("graph_" + std::to_string(graph.graph_id()) + ".svg");
                 write_instance_and_cluster_svg(graph, c, graph_path);
             }
         }

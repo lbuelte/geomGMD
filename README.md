@@ -73,7 +73,7 @@ graphs :
         medial_axis : ...
 ```
 
-Graphs are referred to by their index in this array.
+Graphs are referred to by their index in this array (graph id) in all outputs; the optional entry `id` of a graph (polygon id) only appears in the clustering results.
 
 ## Configuration
 
@@ -106,7 +106,7 @@ Computes geomGMD between the graphs with indices `g` and `h`, prints the result 
 
 Computes geomGMD for all pairs of graphs in the dataset (or the subset given by `starting_instance` and `num_instances`), in parallel with `num_threads` threads. The output folder contains:
 * `intervaldistance_matrix.csv`: for each pair, a lower and an upper bound (`lb`, `ub`, 6 decimals) and whether the solution is `optimal` (`lb = ub`). If the Gurobi time limit is reached, the bounds may differ. "Optimal" means optimal within Gurobi's relative MIP gap (`[Gurobi] mip_gap`, default 10⁻⁴): then `lb = ub` is the value of the computed edge map, which is at most 0.01 % above the true minimum. Pairs that could not be computed are written as `nan,nan,false`.
-* `computation_info.csv`: graph sizes, bounds, running time, Gurobi status, final MIP gap and number of branch-and-bound nodes per pair,
+* `computation_info.csv`: graph ids `G`, `H`, graph sizes, bounds, running time, Gurobi status, final MIP gap and number of branch-and-bound nodes per pair,
 * `edgemaps.json`: the computed edge maps,
 * `config_input.toml` (copy of the config) and `run.log`.
 

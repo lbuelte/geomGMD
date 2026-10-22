@@ -101,7 +101,7 @@ int run(int argc, char* argv[])
     }
     std::filesystem::path edgemap_output_file = 
             output_path 
-            / ("edgemap_" + std::to_string(G.polygon_id()) + "_" + std::to_string(H.polygon_id()) + ".svg");
+            / ("edgemap_" + std::to_string(g) + "_" + std::to_string(h) + ".svg");
     
     auto mapping_json = edgemap_json(r);
     {

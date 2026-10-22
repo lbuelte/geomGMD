@@ -184,14 +184,14 @@ public:
     bool graphs_swapped() const { return swapped; }
 
     struct InstancePairInfo {
-        PolygonID g, h;
+        GraphID g, h;    // graph ids (positions in the input file)
         VertexID ng, nh;
         EdgeID eg, eh;
     };
     InstancePairInfo return_run_info() const {
         return {
-            .g  = G.polygon_id(),
-            .h  = H.polygon_id(),
+            .g  = static_cast<GraphID>(G.graph_id()),  // graph_id() still returns int (phase 5)
+            .h  = static_cast<GraphID>(H.graph_id()),
             .ng = G.num_vertices(),
             .nh = H.num_vertices(),
             .eg = G.num_edges(),

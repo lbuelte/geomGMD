@@ -32,7 +32,7 @@ struct GeomGMDResult {
     SolveStatistics statistics;                // Gurobi status, MIP gap, node count
     std::vector<std::string> gurobi_log;       // only with GeomGMDOptions::capture_gurobi_log
     std::chrono::milliseconds runtime{0};      // time for building and solving the model
-    GeomGMDForiSolver::InstancePairInfo instance;  // polygon ids and sizes of G and H
+    GeomGMDForiSolver::InstancePairInfo instance;  // graph ids and sizes of G and H
 };
 
 // Computes geomGMD between G and H. G and H only need to exist during the call.
