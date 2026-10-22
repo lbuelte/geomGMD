@@ -23,16 +23,4 @@ EdgeMap edgemap_from_json(json const &j);
 json edgemap_json(GeomGMDResult const &result);
 
 
-std::optional<json> find_graph_mapping_from_file(
-        const std::string& filename,
-        GraphID g_id,
-        GraphID h_id,
-        bool &g_before_h);
-
-std::optional<double> find_geomGMD_value_from_file(
-        const std::string& filename,
-        GraphID g_id,
-        GraphID h_id);
-
-
 #endif // GEOMGMD_IO_EDGEMAP_IO_H

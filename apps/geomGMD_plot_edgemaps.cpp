@@ -5,6 +5,7 @@
 #include "io/command_line.h"
 #include "io/config.h"
 #include "io/edgemap_io.h"
+#include "io/read_run_results.h"
 #include "io/graph_io.h"
 #include "io/run_setup.h"
 #include "io/edgemap_svg.h"
@@ -45,38 +46,43 @@ int run(int argc, char* argv[]) {
     auto const [starting_instance, num_instances] = select_instances(config.io, geometricgraphs.size());
     logger::info("Reduced dataset: ", num_instances, " graphs starting at index ", starting_instance);
     
-    std::filesystem::path distance_matrix_input_file = input_path / "intervaldistance_matrix.csv";
-    std::filesystem::path edgemap_input_file = input_path / "edgemaps.json";
+    auto const edgemaps = read_edgemaps_file(input_path / "edgemaps.json");
+    auto const distances = read_distance_matrix_file(input_path / "intervaldistance_matrix.csv");
     std::filesystem::path edgemap_output_path = input_path / "edgemaps";
     std::filesystem::create_directories(edgemap_output_path);
 
+    size_t num_plots = 0;
     for (GraphID g = starting_instance; g < starting_instance + num_instances; ++g){
         for (GraphID h = g + 1; h < starting_instance + num_instances; ++h){
-
-            bool g_before_h;
-            auto json_opt = find_graph_mapping_from_file(edgemap_input_file, g, h, g_before_h);
-            auto geomGMD_dist = find_geomGMD_value_from_file(distance_matrix_input_file, g, h);
-            if (json_opt.has_value()){
-                bool is_optimal_mapping = json_opt.value()["optimal"];
-                // Edge maps are stored in the computation's (g, h) order; files written before edge maps
-                // were reported in the caller's order may contain the pair as (h, g)
-                if (g_before_h){
-                    EdgeMap edgemap = edgemap_from_json(json_opt.value());
-                    SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, g, h, model_parameters, geomGMD_dist};
-                    write_edge_mapping_svg(geometricgraphs[g], geometricgraphs[h], edgemap, svg_info,
-                                      edgemap_output_path.string() + "/edgemap_" 
-                                      + std::to_string(g) + "_" + std::to_string(h) + ".svg");
-                } else {
-                    EdgeMap edgemap = edgemap_from_json(json_opt.value());
-                    SVGLegendInfo svg_info {is_optimal_mapping, config.io.dataset, h, g, model_parameters, geomGMD_dist};
-                    write_edge_mapping_svg(geometricgraphs[h], geometricgraphs[g], edgemap, svg_info,
-                                      edgemap_output_path.string() + "/edgemap_" 
-                                      + std::to_string(h) + "_" + std::to_string(g) + ".svg");
-                }        
+            auto const stored = edgemaps.find(graph_pair(g, h));
+            if (stored == edgemaps.end()) continue;
+            EdgeMap const &edgemap = stored->second.edge_map;
+            std::optional<double> geomGMD_dist;
+            if (auto const d = distances.find(graph_pair(g, h)); d != distances.end()) {
+                geomGMD_dist = d->second.ub;
             }
+
+            // Edge maps are stored in the computation's (g, h) order; files written before edge maps
+            // were reported in the caller's order may contain the pair as (h, g)
+            GraphID const first = static_cast<GraphID>(edgemap.g_graph_id);
+            GraphID const second = static_cast<GraphID>(edgemap.h_graph_id);
+            if (first >= geometricgraphs.size() or second >= geometricgraphs.size()) {
+                throw std::runtime_error("Edge map between graphs " + std::to_string(first) + " and "
+                                         + std::to_string(second) + " does not fit the dataset ("
+                                         + std::to_string(geometricgraphs.size()) + " graphs)");
+            }
+            SVGLegendInfo svg_info {stored->second.optimal, config.io.dataset, first, second, model_parameters, geomGMD_dist};
+            write_edge_mapping_svg(geometricgraphs[first], geometricgraphs[second], edgemap, svg_info,
+                                   edgemap_output_path.string() + "/edgemap_"
+                                   + std::to_string(first) + "_" + std::to_string(second) + ".svg");
+            ++num_plots;
         }
     }
-    
+    logger::info("Wrote ", num_plots, " edge map plots to ", edgemap_output_path);
+    if (num_plots == 0) {
+        logger::warning("No edge maps of the selected graphs found in ", input_path / "edgemaps.json");
+    }
+
     return EXIT_SUCCESS;
 }
 
