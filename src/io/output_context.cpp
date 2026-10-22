@@ -13,16 +13,13 @@ namespace  {
 
 static constexpr double EPS = 1e-8;
 
+// Distances (lb, ub) with 6 decimals, never in scientific notation
 std::string format_double(double value) {
     if (std::isinf(value)) return value > 0 ? "inf" : "-inf";
     if (std::isnan(value)) return "nan";
 
     std::ostringstream oss;
-    if (std::abs(value) >= 1e4) {
-        oss << std::scientific << std::setprecision(3) << value;
-    } else {
-        oss << std::fixed << std::setprecision(3) << value;
-    }
+    oss << std::fixed << std::setprecision(6) << value;
     return oss.str();
 }
 
