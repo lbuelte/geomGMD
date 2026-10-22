@@ -22,6 +22,7 @@ struct SolverSettings {
     int timelimit_sec = 300;
     int threads = 1;
     int seed = 1;
+    double mip_gap = 1e-4;  // relative MIP gap at which Gurobi reports a solution as optimal (Gurobi's default)
 };
 
 // Listing of the parameters / settings for the log, one "  key = value" line each (keys as in the

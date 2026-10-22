@@ -237,12 +237,13 @@ void read_logging_section(const toml::table& tbl, LoggingConfig& logging)
 void read_gurobi_section(const toml::table& tbl, ModelParameters& model, SolverSettings& solver)
 {
     if (auto g = get_section(tbl, "Gurobi")) {
-        g->check_keys({"timelimit_sec", "threads", "seed", "enforce_cyclic_order", "consider_angle_objective",
+        g->check_keys({"timelimit_sec", "threads", "seed", "mip_gap", "enforce_cyclic_order", "consider_angle_objective",
                        "cost_factor_deletion_insertion", "cost_factor_length_difference",
                        "cost_factor_angle_difference", "angle_type"});
         g->read("timelimit_sec", solver.timelimit_sec);
         g->read("threads", solver.threads);
         g->read("seed", solver.seed);
+        g->read("mip_gap", solver.mip_gap);
         g->read("enforce_cyclic_order", model.enforce_cyclic_order);
         g->read("consider_angle_objective", model.consider_angle_objective);
         g->read("cost_factor_deletion_insertion", model.cost_factor_deletion_insertion);
@@ -253,6 +254,7 @@ void read_gurobi_section(const toml::table& tbl, ModelParameters& model, SolverS
         require_positive(*g, "timelimit_sec", solver.timelimit_sec);
         require(solver.threads >= 0, g->key_name("threads") + " must be >= 0 (0: chosen by Gurobi)");
         require(solver.seed >= 0, g->key_name("seed") + " must be >= 0");
+        require_non_negative(*g, "mip_gap", solver.mip_gap);
         require_non_negative(*g, "cost_factor_deletion_insertion", model.cost_factor_deletion_insertion);
         require_non_negative(*g, "cost_factor_length_difference", model.cost_factor_length_difference);
         require_non_negative(*g, "cost_factor_angle_difference", model.cost_factor_angle_difference);

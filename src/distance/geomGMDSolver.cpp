@@ -192,6 +192,7 @@ GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_,
     model.set(GRB_IntParam_Threads, settings.threads);
     model.set(GRB_DoubleParam_TimeLimit, settings.timelimit_sec);
     model.set(GRB_IntParam_Seed, settings.seed);
+    model.set(GRB_DoubleParam_MIPGap, settings.mip_gap);
     model.set(GRB_IntAttr_ModelSense, GRB_MINIMIZE);
     model.set(GRB_DoubleParam_Cutoff, GRB_INFINITY);
     if (cutoff.has_value()) {

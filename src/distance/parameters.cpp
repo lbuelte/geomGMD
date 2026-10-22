@@ -21,5 +21,6 @@ std::ostream& operator<<(std::ostream& out, SolverSettings const &solver)
     print_entry(out, "timelimit_sec", solver.timelimit_sec);
     print_entry(out, "threads", solver.threads);
     print_entry(out, "seed", solver.seed);
+    print_entry(out, "mip_gap", solver.mip_gap);
     return out;
 }
