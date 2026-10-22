@@ -7,7 +7,6 @@
 #include "utility/log.h"
 
 #include <filesystem>
-#include <regex>
 #include <cmath>
 
 using ClusterID = size_t;
@@ -138,110 +137,6 @@ void write_instance_and_cluster_svg(GeometricGraph const &g, ClusterID c,
 
         svg << "</svg>\n";
         svg.close();
-}
-
-
-void write_interval_distance_matrix(
-        std::vector<std::vector<IntervalDistance>> const &distance_matrix, 
-        std::string const &filename){
-
-    std::ofstream ofs(filename);
-    if (!ofs.is_open()) {
-        geomgmd::log::error("Error: Could not open ", filename);
-        return;
-    }
-
-    const int width = 10;        // column width
-    const int precision = 2;    // decimal precision
-
-    const size_t n = distance_matrix.size();
-
-    ofs << std::fixed << std::setprecision(precision);
-
-    // Header row
-    ofs << std::setw(5) << " ";
-    for (size_t j = 0; j < n; ++j)
-        ofs << std::setw(width + 1) << j;
-    ofs << "\n";
-
-    // Top border
-    ofs << std::setw(6) << " " << "+";
-    for (size_t j = 0; j < n; ++j)
-        ofs << std::string(width, '-') << "+";
-    ofs << "\n";
-
-    // Each row with left index and vertical separators
-    for (size_t i = 0; i < n; ++i) {
-        ofs << std::setw(5) << i << " |";
-        for (size_t j = 0; j < n; ++j)
-            ofs << std::setw(width - 1) << distance_matrix[i][j].lb << " - " << distance_matrix[i][j].ub << " |";
-        ofs << "\n";
-    }
-
-    // Bottom border
-    ofs << std::setw(6) << " " << "+";
-    for (size_t j = 0; j < n; ++j)
-        ofs << std::string(width, '-') << "+";
-    ofs << "\n";
-
-    ofs.close();
-    geomgmd::log::info("Wrote matrix to ", filename);            
-}
-
-
-std::vector<std::vector<IntervalDistance>> read_interval_distance_matrix(
-        std::string const &filename)
-{
-    std::ifstream ifs(filename);
-    if (!ifs.is_open()) {
-        geomgmd::log::error("Error: Could not open ", filename, " for reading");
-        return {};
-    }
-    
-    std::string line;
-
-    // Skip header row
-    std::getline(ifs, line);
-
-    // Skip top border
-    std::getline(ifs, line);
-
-    std::vector<std::vector<IntervalDistance>> matrix;
-
-    while (std::getline(ifs, line)) {
-
-        // Stop if bottom border reached
-        if (line.find('+') != std::string::npos && line.find('-') != std::string::npos)
-            break;
-
-        std::stringstream ss(line);
-
-        size_t row_index;
-        char pipe;
-
-        ss >> row_index >> pipe; // read "i |"
-
-        std::vector<IntervalDistance> row;
-
-        while (ss) {
-            IntervalDistance d {-1, -1};
-            char dash;
-
-            ss >> d.lb;
-            if (!ss) break;
-
-            ss >> dash; // '-'
-            ss >> d.ub;
-            ss >> pipe; // '|'
-
-            row.push_back(d);
-        }
-
-        matrix.push_back(row);
-    }
-
-    ifs.close();
-    return matrix;
 }
 
 } //end of namespace

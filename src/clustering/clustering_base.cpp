@@ -130,53 +130,6 @@ ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs
 }
 
 
-void read_symmetric_IntervalDistance_matrix_from_csv(
-        std::vector<std::vector<IntervalDistance>> &matrix, 
-        const std::string& filename)
-{
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not open file: " + filename);
-    }
-
-    geomgmd::log::info("Reading IntervalDistance matrix from file ", filename, " ...");
-    int n = matrix.size();
-
-    std::string line;
-
-    // Skip header row
-    std::getline(file, line);
-
-    while (std::getline(file, line)) {
-        if (line.empty()) continue;
-        std::istringstream iss(line);
-        int id1, id2;
-        double lb, ub;
-        std::string exactStr;
-        char comma;
-
-        if (!(iss >> id1 >> comma >> id2 >> comma >> lb >> comma >> ub >> comma >> exactStr)) {
-            throw std::runtime_error("In read_IntervalDistance_matrix: Malformed line: " + line);
-        }
-        if (id1 < 0 or id1 >= n){
-            throw std::runtime_error("In read_IntervalDistance_matrix: id1 " + std::to_string(id1) 
-                                     + " is out of bounds for matrix of size " + std::to_string(n));
-        }
-        if (id2 < 0 or id2 >= n){
-            throw std::runtime_error("In read_IntervalDistance_matrix: id2 " + std::to_string(id2) 
-                                     + " is out of bounds for matrix of size " + std::to_string(n));
-        }
-
-        bool exact = (exactStr == "true");
-        matrix[id1][id2] = exact
-            ? IntervalDistance(ExactDistance{lb})
-            : IntervalDistance(lb, ub);
-        matrix[id2][id1] = exact
-            ? IntervalDistance(ExactDistance{lb})
-            : IntervalDistance(lb, ub);
-    }
-}
-
 std::string clustering_result_to_string(ClusteringResult const &clustering_result, std::string const &clustering_name, size_t starting_offset)
 {
     std::ostringstream log;
