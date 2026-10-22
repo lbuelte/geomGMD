@@ -3,6 +3,7 @@
 #include "utility/angle_computation.h"
 #include "utility/overloaded.h"
 
+#include <algorithm>
 #include <stdexcept>
 
 namespace{
@@ -304,6 +305,9 @@ DistanceResult GeomGMDForiSolver::run_optimization()
             }
         } catch (GRBException &) {
         }
+        // geomGMD is non-negative, so 0 is a valid lower bound. Gurobi's bound can be smaller: -GRB_INFINITY
+        // if the time limit is reached before any bound is known, or a weak negative bound.
+        auto lower_bound = [&]() { return std::max(model.get(GRB_DoubleAttr_ObjBound), 0.0); };
         if (status == GRB_OPTIMAL) {
             return ExactDistance{ model.get(GRB_DoubleAttr_ObjVal)};
         } 
@@ -311,7 +315,7 @@ DistanceResult GeomGMDForiSolver::run_optimization()
             return CutoffHit{ model.get(GRB_DoubleAttr_ObjBound) };
         }
         else if (status == GRB_TIME_LIMIT) {
-            return IntervalDistance( model.get(GRB_DoubleAttr_ObjBound), 
+            return IntervalDistance( lower_bound(), 
                                         model.get(GRB_DoubleAttr_ObjVal) );
         } else if (status == GRB_INFEASIBLE) {
             // Without a cutoff the model is always feasible (deleting all edges is a valid constrained
@@ -324,7 +328,7 @@ DistanceResult GeomGMDForiSolver::run_optimization()
             return Infeasible{};
         } else if (status == GRB_NUMERIC) {
             if (model.get(GRB_IntAttr_SolCount) > 0) {
-                return IntervalDistance( model.get(GRB_DoubleAttr_ObjBound), 
+                return IntervalDistance( lower_bound(), 
                                             model.get(GRB_DoubleAttr_ObjVal));
             } else {
                 return SolverError{ status };
