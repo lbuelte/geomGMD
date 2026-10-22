@@ -137,8 +137,9 @@ struct DistanceConfig {
 DistanceConfig load_dist_config(const std::string& filename);
 
 // Only the model parameters of the [Gurobi] section of a config file (all other keys and sections are ignored),
-// e.g. of the config_input.toml of an earlier run. missing_keys: model parameters not set in the file (their
-// defaults may have changed since the file was written).
+// e.g. of the config_input.toml of an earlier run. missing_keys: parameters not set in the file whose default
+// has changed since the sigspatial26 version (cost_factor_angle_difference: 2.0 there, 1.0 now), so the run
+// that wrote the file may have used another value.
 struct ModelParametersFromFile {
     ModelParameters model;
     std::vector<std::string> missing_keys;

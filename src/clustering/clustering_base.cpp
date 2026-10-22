@@ -26,7 +26,8 @@ void check_matrix_parameters(std::filesystem::path const &matrix_file, ModelPara
     if (not missing_keys.empty()) {
         std::string keys;
         for (auto const &key : missing_keys) keys += (keys.empty() ? "" : ", ") + key;
-        geomgmd::log::warning(run_config, " does not set [Gurobi] ", keys, ": assuming the current defaults");
+        geomgmd::log::warning(run_config, " does not set [Gurobi] ", keys,
+                              ": assuming the current default (cost_factor_angle_difference: 1.0, but 2.0 in the sigspatial26 version)");
     }
     if (not (file_model == model)) {
         std::ostringstream msg;

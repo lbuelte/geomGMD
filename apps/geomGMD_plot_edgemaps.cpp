@@ -37,10 +37,20 @@ int run(int argc, char* argv[]) {
     std::vector<GeometricGraph> geometricgraphs;
     read_graph_vector_from_json(geometricgraphs, json_path.string());
 
-    // Get original dataset parameters from logged run config
+    // Model parameters of the run (for the cost breakdown in the plots), from the config copy in the run folder.
+    // Only the model parameters are read, so config copies of older versions with other keys still work.
     std::filesystem::path original_config_path = input_path / "config_input.toml";
-    auto const original_config = load_dist_config(original_config_path.string());
-    const ModelParameters model_parameters = original_config.model;
+    if (not std::filesystem::exists(original_config_path)) {
+        throw std::runtime_error("Could not open " + original_config_path.string()
+                                 + " (written by geomGMD_matrix with the same dataset, output_path and run_name)");
+    }
+    auto const [model_parameters, missing_keys] = load_model_parameters(original_config_path.string());
+    if (not missing_keys.empty()) {
+        std::string keys;
+        for (auto const &key : missing_keys) keys += (keys.empty() ? "" : ", ") + key;
+        logger::warning(original_config_path, " does not set [Gurobi] ", keys,
+                              ": assuming the current default (cost_factor_angle_difference: 1.0, but 2.0 in the sigspatial26 version)");
+    }
 
     // Get reduced dataset (depending on io parameters)
     auto const [starting_instance, num_instances] = select_instances(config.io, geometricgraphs.size());

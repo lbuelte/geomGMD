@@ -489,8 +489,7 @@ ModelParametersFromFile load_model_parameters(const std::string& filename)
     ModelParametersFromFile result;
     auto& model = result.model;
     auto g = get_section(tbl, "Gurobi");
-    for (auto key : {"enforce_cyclic_order", "consider_angle_objective", "cost_factor_deletion_insertion",
-                     "cost_factor_length_difference", "cost_factor_angle_difference", "angle_type"}) {
+    for (auto key : {"cost_factor_angle_difference"}) {
         if (not g or not g->get(key)) result.missing_keys.emplace_back(key);
     }
     if (g) {
