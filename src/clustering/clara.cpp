@@ -31,7 +31,7 @@ CLARA_Clustering::CLARA_Clustering(const std::vector<const GeometricGraph*> &gra
     // Sample size from original paper 80 + 2*num_clusters
     set_sample_size(config.clara.sample_size, config.clara.min_sample_size);    
     if (config.clara.reuse_distances){
-        _distance_matrix = std::vector<std::vector<IntervalDistance>>(_num_graphs, std::vector<IntervalDistance>(_num_graphs, {-1.0, -1.0}));
+        _distances.emplace(_graphs, _model, _solver, _logging, _output_context);
     }
 
     geomgmd::log::info("Model parameters\n", _model, "Solver settings\n", _solver);
@@ -142,7 +142,9 @@ void CLARA_Clustering::transfer_sample_distances_to_matrix(std::vector<std::vect
         for (GraphID j = 0; j < sample_matrix[i].size(); j++){
             GraphID h = sample.sample_indices[j];
 
-            _distance_matrix[g][h] = sample_matrix[i][j];
+            if (sample_matrix[i][j].ub > -1.0) {
+                _distances->set(g, h, sample_matrix[i][j]);
+            }
         }
     }
 }
@@ -155,7 +157,9 @@ std::vector<std::vector<IntervalDistance>> CLARA_Clustering::init_sample_matrix_
         for (GraphID j = 0; j < _sample_size; j++){
             GraphID h = sample.sample_indices[j];
 
-            sample_matrix[i][j] = _distance_matrix[g][h];
+            if (auto const d = _distances->known(g, h)) {
+                sample_matrix[i][j] = *d;
+            }
         }
     }
     return sample_matrix;
@@ -247,13 +251,20 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
 
     AssignmentResult assignment_result;
 
+    // Without reuse_distances, the distances computed for this assignment are not kept
+    std::optional<DistanceMatrix> sample_distances;
+    if (not _distances) {
+        sample_distances.emplace(_graphs, _model, _solver, _logging, _output_context);
+    }
+    DistanceMatrix &distances = _distances ? *_distances : *sample_distances;
+
     // === NAIVE PATH: SINGLE THREAD ===
     if (_num_threads_assignment <= 1) {
-        assignment_result = assign_graphs_to_sample_medoids_singlethreaded(medoids, medoid_indices, sample, order_of_centers, is_sampled);
+        assignment_result = assign_graphs_to_sample_medoids_singlethreaded(medoids, medoid_indices, sample, order_of_centers, is_sampled, distances);
     }
     // === PARALLEL PATH ===
     else {
-        assignment_result = assign_graphs_to_sample_medoids_multithreaded(medoids, medoid_indices, sample, order_of_centers, is_sampled);
+        assignment_result = assign_graphs_to_sample_medoids_multithreaded(medoids, medoid_indices, sample, order_of_centers, is_sampled, distances);
     }
 
     printProgressBar(
@@ -277,7 +288,8 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
         std::vector<GraphID> const& medoid_indices,
         Sample const& sample, 
         std::vector<ClusterID>& order_of_centers, 
-        std::vector<bool>& is_sampled)
+        std::vector<bool>& is_sampled,
+        DistanceMatrix &distances)
 {
     int processed_graphs = 0;
     const GraphID n = _graphs.size();
@@ -300,26 +312,11 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
 
         for (ClusterID m = 0; m < medoids.size(); ++m) {
 
-            std::optional<IntervalDistance> dist_result;
-            if (_reuse_distances and _distance_matrix[g][medoid_indices[order_of_centers[m]]].ub > -1.0){
-                // assert(_distance_matrix[medoid_indices[order_of_centers[m]]][g].ub > -1.0);
-                dist_result = _distance_matrix[g][medoid_indices[order_of_centers[m]]];
-            } else {
-                auto const r = compute_geomGMD(*_graphs[g], *medoids[order_of_centers[m]], _model, _solver,
-                                               {.cutoff = min_dist.ub, .capture_gurobi_log = _logging.gurobi_log});
-                report_gurobi_log(_logging, *_graphs[g], *medoids[order_of_centers[m]], r);
-
-                dist_result = r.distance;
-                if (!dist_result.has_value()) {
-                    report_solver_failure(r.result);
-                    continue;
-                }
-                if (not _distance_matrix.empty()){
-                    _distance_matrix[g][medoid_indices[order_of_centers[m]]] = dist_result.value();
-                    _distance_matrix[medoid_indices[order_of_centers[m]]][g] = dist_result.value();
-                }
-                _output_context.write_edgemap(edgemap_json(r));
-            }            
+            // Known distances are reused; otherwise computed with the current minimum as cutoff
+            auto const dist_result = distances.get_with_cutoff(g, medoid_indices[order_of_centers[m]], min_dist.ub);
+            if (!dist_result.has_value()) {
+                continue;
+            }
 
             if (dist_result.value() < min_dist) {
                 min_dist = dist_result.value();
@@ -343,7 +340,8 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
         std::vector<const GeometricGraph*> const& medoids, 
         std::vector<GraphID> const& medoid_indices,
         Sample const& sample, std::vector<ClusterID>& order_of_centers, 
-        std::vector<bool>& is_sampled)
+        std::vector<bool>& is_sampled,
+        DistanceMatrix &distances)
 {
     std::mutex cost_mutex;
     std::mutex progress_mutex;
@@ -401,26 +399,10 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
 
                 for (ClusterID m = 0; m < medoids.size(); ++m) {
 
-                    std::optional<IntervalDistance> dist_result;
-                    if (_reuse_distances and _distance_matrix[g][medoid_indices[order_of_centers[m]]].ub > -1.0){
-                        // assert(_distance_matrix[medoid_indices[order_of_centers[m]]][g].ub > -1.0);
-                        dist_result = _distance_matrix[g][medoid_indices[order_of_centers[m]]];
-                    } 
-                    else {
-                        auto const r = compute_geomGMD(*_graphs[g], *medoids[order_of_centers[m]], _model, _solver,
-                                                       {.cutoff = min_dist.ub, .capture_gurobi_log = _logging.gurobi_log});
-                        report_gurobi_log(_logging, *_graphs[g], *medoids[order_of_centers[m]], r);
-
-                        dist_result = r.distance;
-                        if (!dist_result.has_value()) {
-                            report_solver_failure(r.result);
-                            continue;
-                        }
-                        if (not _distance_matrix.empty()){
-                            _distance_matrix[g][medoid_indices[order_of_centers[m]]] = dist_result.value();
-                            _distance_matrix[medoid_indices[order_of_centers[m]]][g] = dist_result.value();
-                        }
-                        _output_context.write_edgemap(edgemap_json(r));
+                    // Known distances are reused; otherwise computed with the current minimum as cutoff
+                    auto const dist_result = distances.get_with_cutoff(g, medoid_indices[order_of_centers[m]], min_dist.ub);
+                    if (!dist_result.has_value()) {
+                        continue;
                     }
 
                     if (dist_result.value() < min_dist) {

@@ -11,6 +11,7 @@
 #include <queue>
 CLARANS_Clustering::CLARANS_Clustering(const std::vector<const GeometricGraph*> &graphs_, Config const &config, OutputContext &out) 
     : _graphs(graphs_)
+    , _distances(graphs_, config.model, config.solver, config.logging, out)
     , _num_local(config.clarans.num_local)
     , _num_clusters(config.cluster.k)
     , _model(config.model)
@@ -21,8 +22,6 @@ CLARANS_Clustering::CLARANS_Clustering(const std::vector<const GeometricGraph*> 
 {
     //set n
     _num_graphs = _graphs.size();
-    //initialize empty distance matrix
-    _distance_matrix = std::vector<std::vector<IntervalDistance>>(_num_graphs, std::vector<IntervalDistance>(_num_graphs, {-1.0, -1.0}));
 
     _max_neighbors = std::max(static_cast<size_t>(_num_clusters*(_num_graphs - _num_clusters)* 0.0125), config.clarans.max_neighbors);
 
@@ -101,9 +100,10 @@ ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config)
 
     geomgmd::log::debug("Computed ", [&](){
             int num_computed_entries = 0;
+            auto const distance_matrix = _distances.to_matrix();
             for (GraphID i = 0; i < _num_graphs; i++){
                 for (GraphID j = 0; j < _num_graphs; j++){
-                    if (_distance_matrix[i][j] == IntervalDistance{-1.0, -1.0}){
+                    if (distance_matrix[i][j] == IntervalDistance{-1.0, -1.0}){
                         num_computed_entries++;
                     }
                 }
@@ -143,36 +143,6 @@ CLARANS_Clustering::MedoidSwap CLARANS_Clustering::sample_medoid_swap(std::vecto
 }
 
 
-std::optional<IntervalDistance> CLARANS_Clustering::compute_distance_matrix_entry(GraphID const i, GraphID const j) 
-{
-    if (_distance_matrix.empty()) {
-        geomgmd::log::warning("WARNING: Cannot compute values of empty distance matrix!");
-        return std::nullopt;
-    }
-    
-    if (_distance_matrix[i][j].ub > -1.0){
-        return _distance_matrix[i][j];
-    }
-    if(i == j){
-        _distance_matrix[i][j] = ExactDistance{0.0};
-        return _distance_matrix[i][j];
-    }    
-    auto const r = compute_geomGMD(*_graphs[i], *_graphs[j], _model, _solver,
-                                   {.capture_gurobi_log = _logging.gurobi_log});
-    report_gurobi_log(_logging, *_graphs[i], *_graphs[j], r);
-    auto dist_result = r.distance;
-    if (!dist_result.has_value()) {
-        report_solver_failure(r.result);
-        geomgmd::log::error("Error! Distance between graphs ", i, " and ", j, " could not be computed!");
-        return std::nullopt;
-    }
-    _distance_matrix[i][j] = dist_result.value();
-    _distance_matrix[j][i] = dist_result.value();
-    _output_context.write_edgemap(edgemap_json(r));
-    return _distance_matrix[i][j];
-}
-
-
 double CLARANS_Clustering::compute_swap_cost(
     MedoidSwap const& swap_indices,
     size_t batch_size
@@ -189,13 +159,13 @@ double CLARANS_Clustering::compute_swap_cost(
             for (GraphID m : _medoids) {
                 if (m == swap_indices.idx_removed) continue;
 
-                auto dist_result = compute_distance_matrix_entry(i, m);
+                auto dist_result = _distances.get(i, m);
                 if (dist_result.has_value()) {
                     best = std::min(best, dist_result.value());
                 }
             }
 
-            auto dist_result = compute_distance_matrix_entry(i, swap_indices.idx_added);
+            auto dist_result = _distances.get(i, swap_indices.idx_added);
             if (dist_result.has_value()) {
                 best = std::min(best, dist_result.value());
             }
@@ -244,13 +214,13 @@ double CLARANS_Clustering::compute_swap_cost(
                 for (GraphID m : _medoids) {
                     if (m == swap_indices.idx_removed) continue;
 
-                    auto dist_result = compute_distance_matrix_entry(i, m);
+                    auto dist_result = _distances.get(i, m);
                     if (dist_result.has_value()) {
                         best = std::min(best, dist_result.value());
                     }
                 }
 
-                auto dist_result = compute_distance_matrix_entry(i, swap_indices.idx_added);
+                auto dist_result = _distances.get(i, swap_indices.idx_added);
                 if (dist_result.has_value()) {
                     best = std::min(best, dist_result.value());
                 }
@@ -342,7 +312,7 @@ double CLARANS_Clustering::computeTotalCost(const std::vector<GraphID>& _medoids
         IntervalDistance best = {std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
         for (GraphID m : _medoids){
             //TODO test if cutoff is helpful here (drawback of cutoff: we might need to compute same entry again later)
-            auto const dist_result = compute_distance_matrix_entry(i, m);
+            auto const dist_result = _distances.get(i, m);
             if (dist_result.has_value()){
                 best = std::min(best, dist_result.value()); 
             }
@@ -362,7 +332,7 @@ std::vector<ClusterID> CLARANS_Clustering::assignPointsToMedoids() {
 
         for (ClusterID m_idx = 0; m_idx < _num_clusters; ++m_idx) {
             GraphID m = _medoids[m_idx];
-            auto const dist_result = compute_distance_matrix_entry(i, m);
+            auto const dist_result = _distances.get(i, m);
             if (dist_result.has_value() and dist_result.value() < best_dist){
                 best_dist = dist_result.value();
                 best_medoid = m_idx;    

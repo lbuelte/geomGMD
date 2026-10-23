@@ -3,6 +3,7 @@
 
 #include "io/config.h"
 #include "pam.h"
+#include "io/distance_matrix.h"
 #include "clustering_base.h"
 
 class CLARA_Clustering {
@@ -49,8 +50,8 @@ private:
     //batch size per job in assignment parallelization (one item is the assignment of one graph)
     const size_t BATCH_SIZE_ASSIGNMENT = 10;
 
-    //Store distance matrix entries to reuse across different samples
-    std::vector<std::vector<IntervalDistance>> _distance_matrix;
+    //Distances between all graphs, reused across different samples (only with reuse_distances)
+    std::optional<DistanceMatrix> _distances;
 
     //Parameters for geomGMD objective function
     const ModelParameters _model;
@@ -82,13 +83,15 @@ private:
             std::vector<GraphID> const &medoid_ids, 
             Sample const &sample, 
             std::vector<ClusterID>& order_of_centers, 
-            std::vector<bool>& is_sampled);
+            std::vector<bool>& is_sampled,
+            DistanceMatrix &distances);
     AssignmentResult assign_graphs_to_sample_medoids_multithreaded(
             std::vector<const GeometricGraph*> const &medoids, 
             std::vector<GraphID> const &medoid_ids, 
             Sample const &sample, 
             std::vector<ClusterID>& order_of_centers, 
-            std::vector<bool>& is_sampled);
+            std::vector<bool>& is_sampled,
+            DistanceMatrix &distances);
 
     // function merges cluster on sample and assignment of rest to one coherent clustering result
     ClusteringResult build_clustering_result_from_sample_cluster_and_assignment(
@@ -103,7 +106,7 @@ private:
 
 inline std::vector<std::vector<IntervalDistance>> CLARA_Clustering::return_distance_matrix() const
 {
-    return _distance_matrix;
+    return _distances ? _distances->to_matrix() : std::vector<std::vector<IntervalDistance>>();
 }
 
 #endif // POLYGONCLUSTERING_CLARA_H

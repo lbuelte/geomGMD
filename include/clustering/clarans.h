@@ -3,6 +3,7 @@
 
 #include "clustering_base.h"
 #include "distance/geomGMDSolver.h"
+#include "io/distance_matrix.h"
 
 #include <random>
 
@@ -28,8 +29,8 @@ private:
     std::vector<GraphID> _medoids = std::vector<GraphID>();
     //reference for graphs to be clustered
     const std::vector<const GeometricGraph*>& _graphs;
-    //store already computed distances
-    std::vector<std::vector<IntervalDistance>> _distance_matrix;
+    //distances between the graphs, computed on demand
+    DistanceMatrix _distances;
 
     //number of centers
     int _num_clusters = -1;
@@ -43,8 +44,6 @@ private:
 
     mutable std::mt19937 _rng_local;
 
-    //compute entry of distance matrix
-    std::optional<IntervalDistance> compute_distance_matrix_entry(GraphID const g, GraphID const h);
 
     // Parameters for geomGMD objective function
     const ModelParameters _model;
@@ -76,7 +75,7 @@ private:
 
 inline std::vector<std::vector<IntervalDistance>> CLARANS_Clustering::return_distance_matrix() const
 {
-    return _distance_matrix;
+    return _distances.to_matrix();
 }
 
 

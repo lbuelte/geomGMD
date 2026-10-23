@@ -8,6 +8,7 @@
 #include <iostream>
 #include <queue>
 #include <thread>
+#include <variant>
 
 namespace {
 
@@ -39,48 +40,85 @@ DistanceMatrix::DistanceMatrix(std::vector<const GeometricGraph*> graphs, ModelP
     , _settings(settings)
     , _logging(logging)
     , _output(output)
+    , _state(_graphs.size(), std::vector<State>(_graphs.size(), State::Unknown))
     , _distances(_graphs.size(), std::vector<std::optional<IntervalDistance>>(_graphs.size()))
 {
     for (size_t i = 0; i < _graphs.size(); ++i) {
+        _state[i][i] = State::Known;
         _distances[i][i] = IntervalDistance(ExactDistance{0.0});
     }
 }
 
+void DistanceMatrix::store(size_t i, size_t j, State state, std::optional<IntervalDistance> d)
+{
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        _state[i][j] = _state[j][i] = state;
+        _distances[i][j] = _distances[j][i] = d;
+        if (state == State::Failed) _failed.emplace_back(std::min(i, j), std::max(i, j));
+    }
+    _computed.notify_all();
+}
+
 void DistanceMatrix::set(size_t i, size_t j, IntervalDistance const &d)
 {
-    std::lock_guard<std::mutex> lock(_mutex);
-    _distances[i][j] = d;
-    _distances[j][i] = d;
+    store(i, j, State::Known, d);
 }
 
 std::optional<IntervalDistance> DistanceMatrix::known(size_t i, size_t j) const
 {
     std::lock_guard<std::mutex> lock(_mutex);
-    return _distances[i][j];
+    return _state[i][j] == State::Known ? _distances[i][j] : std::nullopt;
 }
 
-std::optional<IntervalDistance> DistanceMatrix::compute_pair(size_t i, size_t j)
+bool DistanceMatrix::claim(size_t i, size_t j, std::optional<IntervalDistance> *result)
+{
+    std::unique_lock<std::mutex> lock(_mutex);
+    _computed.wait(lock, [&]() { return _state[i][j] != State::Computing; });
+    if (_state[i][j] == State::Unknown) {
+        _state[i][j] = _state[j][i] = State::Computing;
+        return true;
+    }
+    *result = _state[i][j] == State::Known ? _distances[i][j] : std::nullopt;
+    return false;
+}
+
+std::optional<IntervalDistance> DistanceMatrix::get(size_t i, size_t j)
+{
+    std::optional<IntervalDistance> result;
+    return claim(i, j, &result) ? compute_pair(i, j) : result;
+}
+
+std::optional<IntervalDistance> DistanceMatrix::get_with_cutoff(size_t i, size_t j, double cutoff)
+{
+    std::optional<IntervalDistance> result;
+    return claim(i, j, &result) ? compute_pair(i, j, cutoff) : result;
+}
+
+std::optional<IntervalDistance> DistanceMatrix::compute_pair(size_t i, size_t j, std::optional<double> cutoff)
 {
     GeometricGraph const &G = *_graphs[i];
     GeometricGraph const &H = *_graphs[j];
-    auto const r = compute_geomGMD(G, H, _model, _settings, {.capture_gurobi_log = _logging.gurobi_log});
+    auto const r = compute_geomGMD(G, H, _model, _settings,
+                                   {.cutoff = cutoff, .capture_gurobi_log = _logging.gurobi_log});
     report_gurobi_log(_logging, G, H, r);
 
-    if (not r.distance.has_value()) {
-        report_solver_failure(r.result);
-        geomgmd::log::error("Error! Distance between graphs ", G.graph_id(), " and ", H.graph_id(),
-                            " could not be computed!");
-        std::lock_guard<std::mutex> lock(_mutex);
-        _failed.emplace_back(std::min(i, j), std::max(i, j));
+    if (r.distance.has_value()) {
+        _output.write_computation_info_row(r);
+        _output.write_edgemap(edgemap_json(r));
+        store(i, j, State::Known, r.distance);
+        return r.distance;
+    }
+    if (std::holds_alternative<CutoffHit>(r.result)) {
+        // Not an error: the distance is at least the cutoff; the pair stays unknown
+        store(i, j, State::Unknown, std::nullopt);
         return std::nullopt;
     }
-    _output.write_computation_info_row(r);
-    _output.write_edgemap(edgemap_json(r));
-
-    std::lock_guard<std::mutex> lock(_mutex);
-    _distances[i][j] = r.distance;
-    _distances[j][i] = r.distance;
-    return r.distance;
+    report_solver_failure(r.result);
+    geomgmd::log::error("Error! Distance between graphs ", G.graph_id(), " and ", H.graph_id(),
+                        " could not be computed!");
+    store(i, j, State::Failed, std::nullopt);
+    return std::nullopt;
 }
 
 void DistanceMatrix::compute_all(size_t num_threads, size_t batch_size)
@@ -91,11 +129,12 @@ void DistanceMatrix::compute_all(size_t num_threads, size_t batch_size)
     // Batches of pairs whose distance is not known yet
     std::queue<std::vector<std::pair<size_t, size_t>>> tasks;
     {
+        std::lock_guard<std::mutex> lock(_mutex);
         std::vector<std::pair<size_t, size_t>> current;
         current.reserve(batch_size);
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = i + 1; j < n; ++j) {
-                if (known(i, j).has_value()) continue;
+                if (_state[i][j] != State::Unknown) continue;
                 current.emplace_back(i, j);
                 if (current.size() == batch_size) {
                     tasks.push(std::move(current));
@@ -119,7 +158,9 @@ void DistanceMatrix::compute_all(size_t num_threads, size_t batch_size)
                 tasks.pop();
             }
             for (auto const &[i, j] : task) {
-                if (not compute_pair(i, j)) continue;
+                std::optional<IntervalDistance> d;
+                if (claim(i, j, &d)) d = compute_pair(i, j);
+                if (not d) continue;
                 std::lock_guard<std::mutex> lock(progress_mutex);
                 ++computed_pairs;
                 if (computed_pairs % 5 == 0 or computed_pairs == total_pairs) {
@@ -150,7 +191,7 @@ std::vector<std::pair<size_t, size_t>> DistanceMatrix::failed_pairs() const
 std::vector<std::vector<IntervalDistance>> DistanceMatrix::to_matrix() const
 {
     std::lock_guard<std::mutex> lock(_mutex);
-    size_t const n = _distances.size();
+    size_t const n = _distances.size();  // _distances is only set for Known pairs
     std::vector<std::vector<IntervalDistance>> matrix(n, std::vector<IntervalDistance>(n, {-1.0, -1.0}));
     for (size_t i = 0; i < n; ++i) {
         for (size_t j = 0; j < n; ++j) {
