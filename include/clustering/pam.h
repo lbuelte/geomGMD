@@ -59,19 +59,9 @@ private:
 
     //helpers for building
 
-    //this function allows for the option that we have already computed some of the distances
-    //which e.g. happens when we call PAM multiple times from CLARA
-    void compute_distance_matrix_entry(GraphID const g, GraphID const h);
-
-    //compute entire distance matrix (wrapper function to either call single- or multithreaded variant depending
-    //on _num_threads_distance_matrix
+    //compute all distances that are not known yet (known ones, e.g. from earlier samples in CLARA, are kept),
+    //with _num_threads_distance_matrix threads
     void computeEntireDistanceMatrix();
-    void computeEntireDistanceMatrixSingleThreaded();
-    void computeEntireDistanceMatrixMultiThreaded();
-
-    //helper function to print current progress in the distance matrix computation as it is
-    //the longest operation throughout the clustering process
-    void printProgressBar(GraphID current, GraphID total, int barWidth=50);
 
     //swap until convergence
     void swap();

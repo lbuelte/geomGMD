@@ -5,6 +5,7 @@
 #include "utility/log.h"
 
 #include <sstream>
+#include "io/distance_matrix.h"
 #include "io/solver_messages.h"
 
 #include <queue>
@@ -126,36 +127,6 @@ void PAM_Clustering::build() {
 }
 
 
-void PAM_Clustering::compute_distance_matrix_entry(GraphID const i, GraphID const j)
-{
-    if (_distance_matrix.empty()) {
-        geomgmd::log::warning("WARNING: Cannot compute values of empty distance matrix!");
-    }
-    
-    if (_distance_matrix[i][j].ub > -1.0){
-        return;
-    }
-    if(i == j){
-        _distance_matrix[i][j] = ExactDistance{0.0};
-        return;
-    } 
-    auto const r = compute_geomGMD(*_graphs[i], *_graphs[j], _model, _solver,
-                                   {.capture_gurobi_log = _logging.gurobi_log});
-    report_gurobi_log(_logging, *_graphs[i], *_graphs[j], r);
-    auto dist_result = r.distance;
-    if (!dist_result.has_value()) {
-        report_solver_failure(r.result);
-        geomgmd::log::error("Error! Distance between graphs ", i, " and ", j, " could not be computed!");
-        return;
-    }
-    _output_context.write_edgemap(edgemap_json(r));
-    _output_context.write_computation_info_row(r);
-    _distance_matrix[i][j] = dist_result.value();
-    _distance_matrix[j][i] = dist_result.value();
-    return;
-}
-
-
 void PAM_Clustering::computeEntireDistanceMatrix()
 {
     if (_distance_matrix.empty()) {
@@ -166,167 +137,26 @@ void PAM_Clustering::computeEntireDistanceMatrix()
     geomgmd::log::info("Computing distance matrix for PAM clustering with ", _num_threads_distance_matrix, " threads ...");
     auto start = std::chrono::high_resolution_clock::now();
 
-    // === NAIVE PATH: SINGLE THREAD ===
-    if (_num_threads_distance_matrix <= 1) {
-        computeEntireDistanceMatrixSingleThreaded();
+    // Distances that are already known (e.g. from earlier samples in CLARA) are not computed again
+    DistanceMatrix distances(_graphs, _model, _solver, _logging, _output_context);
+    const GraphID n = _distance_matrix.size();
+    for (GraphID i = 0; i < n; ++i) {
+        for (GraphID j = i + 1; j < n; ++j) {
+            if (_distance_matrix[i][j].ub > -1.0) {
+                distances.set(i, j, _distance_matrix[i][j]);
+            }
+        }
     }
-    // === PARALLEL PATH ===
-    else {
-        computeEntireDistanceMatrixMultiThreaded();
-    }
+    distances.compute_all(_num_threads_distance_matrix, _BATCH_SIZE_MATRIX);
+    _distance_matrix = distances.to_matrix();
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration =
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    const GraphID n = _distance_matrix.size();
     const int totalPairs = (n * (n - 1)) / 2;
 
-    std::cout << std::endl;  // end the progress bar line
     geomgmd::log::info("Distance matrix computation with ", _num_threads_distance_matrix, " threads (",
                        totalPairs, " pairs) complete, it took ", duration.count(), " ms.");
-}
-
-void PAM_Clustering::computeEntireDistanceMatrixSingleThreaded() {
-    // info for progress bar
-    int computedPairs = 0;
-    const GraphID n = _distance_matrix.size();
-    const int totalPairs = (n * (n - 1)) / 2;
-
-    for (GraphID i = 0; i < n; ++i) {
-        for (GraphID j = i; j < n; ++j) {
-            compute_distance_matrix_entry(i, j);
-
-            if (++computedPairs % 5 == 0 || computedPairs == totalPairs) {
-                printProgressBar(computedPairs, totalPairs);
-            }
-            
-        }
-    }
-
-    printProgressBar(totalPairs, totalPairs);
-}
-
-void PAM_Clustering::computeEntireDistanceMatrixMultiThreaded() {
-    struct Pair {
-            GraphID i;
-            GraphID j;
-        };
-
-    struct Task {
-        std::vector<Pair> pairs;
-    };
-
-    const GraphID n = _distance_matrix.size();
-    const int totalPairs = (n * (n - 1)) / 2;
-
-    int computedPairs = 0;
-    std::mutex progress_mutex;
-
-    std::queue<Task> tasks;
-    std::mutex queue_mutex;
-
-    // Build task queue
-    Task current;
-    current.pairs.reserve(_BATCH_SIZE_MATRIX);
-
-    for (GraphID i = 0; i < n; ++i) {
-        for (GraphID j = i; j < n; ++j) {
-            if (_distance_matrix[i][j].ub > -1.0){
-                continue;
-            }
-            if (i == j) {
-                _distance_matrix[i][j] = {0.0, 0.0};
-                continue;
-            }
-
-            current.pairs.push_back({i, j});
-            if (current.pairs.size() == _BATCH_SIZE_MATRIX) {
-                tasks.push(std::move(current));
-                current = Task{};
-                current.pairs.reserve(_BATCH_SIZE_MATRIX);
-            }
-        }
-    }
-
-    if (!current.pairs.empty()) {
-        tasks.push(std::move(current));
-    }
-
-    // Worker function
-    auto worker = [&]() {
-        while (true) {
-            Task task;
-
-            {
-                std::lock_guard<std::mutex> lock(queue_mutex);
-                if (tasks.empty()) {
-                    break;
-                }
-                task = std::move(tasks.front());
-                tasks.pop();
-            }
-
-            for (const auto& p : task.pairs) {
-                auto const r = compute_geomGMD(*_graphs[p.i], *_graphs[p.j], _model, _solver,
-                                               {.capture_gurobi_log = _logging.gurobi_log});
-                report_gurobi_log(_logging, *_graphs[p.i], *_graphs[p.j], r);
-                auto dist_result = r.distance;
-
-                if (!dist_result.has_value()) {
-                    report_solver_failure(r.result);
-                    geomgmd::log::error("Error! Distance between graphs ", p.i, " and ", p.j, " could not be computed!");
-                    continue;
-                }
-                _output_context.write_edgemap(edgemap_json(r));
-                _output_context.write_computation_info_row(r);
-
-                _distance_matrix[p.i][p.j] = dist_result.value();
-                _distance_matrix[p.j][p.i] = dist_result.value();
-
-                {
-                    std::lock_guard<std::mutex> lock(progress_mutex);
-                    ++computedPairs;
-                    if (computedPairs % 5 == 0 || computedPairs == totalPairs) {
-                        printProgressBar(computedPairs, totalPairs);
-                    }
-                }
-            }
-        }
-    };
-
-    // Launch threads
-    std::vector<std::thread> threads;
-    threads.reserve(_num_threads_distance_matrix);
-
-    for (unsigned t = 0; t < _num_threads_distance_matrix; ++t) {
-        threads.emplace_back(worker);
-    }
-
-    for (auto& t : threads) {
-        t.join();
-    }
-
-    printProgressBar(totalPairs, totalPairs);
-}
-
-void PAM_Clustering::printProgressBar(
-        GraphID current, GraphID total, int barWidth
-) {
-    double progress = static_cast<double>(current) / total;
-    int pos = static_cast<int>(barWidth * progress);
-
-    std::cout << "[";
-    for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) std::cout << "=";
-        else if (i == pos) std::cout << ">";
-        else std::cout << " ";
-    }
-
-    std::cout << "] "
-              << std::fixed << std::setprecision(1)
-              << (progress * 100.0) << "%  ("
-              << current << " / " << total << ")\r";
-    std::cout.flush();
 }
 
 
