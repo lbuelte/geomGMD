@@ -42,7 +42,7 @@ output_path = "../output/Bonn/Verwaltungsdistrikte/"
 
 [Clustering]
 k = 10
-# clustering_algo = "PAM"
+# clustering_algo = "PAM"   # default; or "CLARA", "CLARANS"
 # parallel = false
 # distance_matrix = "../output/Bonn/Verwaltungsdistrikte/Zentrum-Rheinviertel/matrix/intervaldistance_matrix.csv"
 # compute_missing_distances = false

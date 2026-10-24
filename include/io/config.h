@@ -64,7 +64,7 @@ struct ClusteringConfig {
     enum class ClusteringAlgorithm {
         CLARA, CLARANS, PAM
     };
-    ClusteringAlgorithm clustering_algo = ClusteringAlgorithm::CLARA;
+    ClusteringAlgorithm clustering_algo = ClusteringAlgorithm::PAM;  // the algorithm of the paper
 
     bool parallel = true;
 
