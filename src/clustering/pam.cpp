@@ -180,34 +180,15 @@ void PAM_Clustering::swap() {
 
 // Compute current total cost
 double PAM_Clustering::computeTotalCost(const std::vector<GraphID>& medoids) {
-    double total = 0.0;
-    for (GraphID i = 0; i < n; ++i) {
-        IntervalDistance best = {std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
-        for (GraphID m : medoids)
-            best = std::min(best, _distance_matrix[i][m]);
-        total += best.ub;
-    }
-    return total;
-};
+    return total_cost(n, medoids, [this](size_t i, GraphID m) -> std::optional<IntervalDistance> {
+        return _distance_matrix[i][m];
+    });
+}
 
 std::vector<ClusterID> PAM_Clustering::assignPointsToMedoids() {
-    std::vector<ClusterID> assignments(n);
-
-    for (GraphID i = 0; i < n; ++i) {
-        IntervalDistance best_dist = {std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
-        int best_medoid = -1;
-
-        for (ClusterID m_idx = 0; m_idx < k; ++m_idx) {
-            GraphID m = _medoids[m_idx];
-            IntervalDistance d = _distance_matrix[i][m];
-            if (d < best_dist) {
-                best_dist = d;
-                best_medoid = m_idx;
-            }
-        }
-        assignments[i] = best_medoid;
-    }
-    return assignments;
+    return assign_to_medoids(n, _medoids, [this](size_t i, GraphID m) -> std::optional<IntervalDistance> {
+        return _distance_matrix[i][m];
+    });
 }
 
 

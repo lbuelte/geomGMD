@@ -10,6 +10,8 @@
 #include <vector>
 #include <cstddef>
 #include <fstream>
+#include <limits>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 #include <string>
@@ -41,6 +43,51 @@ private:
 void abort_on_failed_pairs(DistanceMatrix const &distances);
 // The same for the pairs among the graphs of a view only.
 void abort_on_failed_pairs(DistanceView const &distances);
+
+// Building blocks of the clustering algorithms. distance(i, m) returns the distance between graphs i and m
+// as std::optional<IntervalDistance> (none: unknown/failed, the medoid is skipped).
+
+struct NearestMedoid {
+    ClusterID index;            // position in medoids
+    IntervalDistance distance;  // infinite if no distance to any medoid is known
+};
+
+// The medoid nearest to graph i: the first one with the smallest distance (IntervalDistance::operator<,
+// i.e. by ub). If no medoid is nearer than infinity, the first medoid.
+template<class Distance>
+NearestMedoid nearest_medoid(size_t i, std::vector<GraphID> const &medoids, Distance &&distance)
+{
+    NearestMedoid nearest{0, {std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()}};
+    for (ClusterID m = 0; m < medoids.size(); ++m) {
+        std::optional<IntervalDistance> const d = distance(i, medoids[m]);
+        if (d.has_value() and d.value() < nearest.distance) {
+            nearest = {m, d.value()};
+        }
+    }
+    return nearest;
+}
+
+// Sum of the distances (ub) of the graphs 0, ..., n-1 to their nearest medoids
+template<class Distance>
+double total_cost(size_t n, std::vector<GraphID> const &medoids, Distance &&distance)
+{
+    double total = 0.0;
+    for (size_t i = 0; i < n; ++i) {
+        total += nearest_medoid(i, medoids, distance).distance.ub;
+    }
+    return total;
+}
+
+// Cluster (position in medoids) of each of the graphs 0, ..., n-1: its nearest medoid
+template<class Distance>
+std::vector<ClusterID> assign_to_medoids(size_t n, std::vector<GraphID> const &medoids, Distance &&distance)
+{
+    std::vector<ClusterID> assignment(n);
+    for (size_t i = 0; i < n; ++i) {
+        assignment[i] = nearest_medoid(i, medoids, distance).index;
+    }
+    return assignment;
+}
 
 ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs, size_t const k, Config const &config, OutputContext &out);
 

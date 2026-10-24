@@ -87,6 +87,11 @@ namespace {
 void throw_failed_pairs(std::vector<std::pair<GraphID, GraphID>> graph_pairs)
 {
     if (graph_pairs.empty()) return;
+    // sorted, so that the message does not depend on the order in which threads computed the pairs
+    for (auto &[g, h] : graph_pairs) {
+        if (h < g) std::swap(g, h);
+    }
+    std::sort(graph_pairs.begin(), graph_pairs.end());
     auto const &failed = graph_pairs;
     std::ostringstream msg;
     msg << failed.size() << " distance(s) between the graphs to be clustered could not be computed (graph pairs";

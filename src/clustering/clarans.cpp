@@ -148,30 +148,19 @@ double CLARANS_Clustering::compute_swap_cost(
     MedoidSwap const& swap_indices,
     size_t batch_size
 ) {
+    // Medoids after the swap: the current ones without the removed one, then the added one
+    std::vector<GraphID> swapped_medoids;
+    for (GraphID m : _medoids) {
+        if (m != swap_indices.idx_removed) swapped_medoids.push_back(m);
+    }
+    swapped_medoids.push_back(swap_indices.idx_added);
+    auto distance = [this](size_t i, GraphID m) { return _distances.get(i, m); };
+
     // === FAST PATH: NO THREADING ===
     if (_num_threads <= 1) {
         double total = 0.0;
         for (GraphID i = 0; i < _num_graphs; ++i) {
-            IntervalDistance best = {
-                std::numeric_limits<double>::infinity(),
-                std::numeric_limits<double>::infinity()
-            };
-
-            for (GraphID m : _medoids) {
-                if (m == swap_indices.idx_removed) continue;
-
-                auto dist_result = _distances.get(i, m);
-                if (dist_result.has_value()) {
-                    best = std::min(best, dist_result.value());
-                }
-            }
-
-            auto dist_result = _distances.get(i, swap_indices.idx_added);
-            if (dist_result.has_value()) {
-                best = std::min(best, dist_result.value());
-            }
-
-            total += best.ub;
+            total += nearest_medoid(i, swapped_medoids, distance).distance.ub;
         }
         abort_on_failed_pairs(_distances);
         return total;
@@ -208,26 +197,7 @@ double CLARANS_Clustering::compute_swap_cost(
             }
 
             for (GraphID i = task.begin; i < task.end; ++i) {
-                IntervalDistance best = {
-                    std::numeric_limits<double>::infinity(),
-                    std::numeric_limits<double>::infinity()
-                };
-
-                for (GraphID m : _medoids) {
-                    if (m == swap_indices.idx_removed) continue;
-
-                    auto dist_result = _distances.get(i, m);
-                    if (dist_result.has_value()) {
-                        best = std::min(best, dist_result.value());
-                    }
-                }
-
-                auto dist_result = _distances.get(i, swap_indices.idx_added);
-                if (dist_result.has_value()) {
-                    best = std::min(best, dist_result.value());
-                }
-
-                local_sum += best.ub;
+                local_sum += nearest_medoid(i, swapped_medoids, distance).distance.ub;
             }
         }
 
@@ -312,14 +282,7 @@ double CLARANS_Clustering::computeTotalCost(const std::vector<GraphID>& _medoids
     geomgmd::log::info("Computing total cost for ", _num_graphs, " graphs and ", _num_clusters, " clusters...");
     double total = 0.0;
     for (GraphID i = 0; i < _num_graphs; ++i) {
-        IntervalDistance best = {std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
-        for (GraphID m : _medoids){
-            //TODO test if cutoff is helpful here (drawback of cutoff: we might need to compute same entry again later)
-            auto const dist_result = _distances.get(i, m);
-            if (dist_result.has_value()){
-                best = std::min(best, dist_result.value()); 
-            }
-        }
+        auto const best = nearest_medoid(i, _medoids, [this](size_t g, GraphID m) { return _distances.get(g, m); }).distance;
         total += best.ub;
         printProgressBar((i+1)*_num_clusters, _num_graphs*_num_clusters);
     }
@@ -328,22 +291,8 @@ double CLARANS_Clustering::computeTotalCost(const std::vector<GraphID>& _medoids
 };
 
 std::vector<ClusterID> CLARANS_Clustering::assignPointsToMedoids() {
-    std::vector<ClusterID> assignments(_num_graphs);
-
-    for (GraphID i = 0; i < _num_graphs; ++i) {
-        IntervalDistance best_dist = {std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
-        int best_medoid = -1;
-
-        for (ClusterID m_idx = 0; m_idx < _num_clusters; ++m_idx) {
-            GraphID m = _medoids[m_idx];
-            auto const dist_result = _distances.get(i, m);
-            if (dist_result.has_value() and dist_result.value() < best_dist){
-                best_dist = dist_result.value();
-                best_medoid = m_idx;    
-            }
-        }
-        assignments[i] = best_medoid;
-    }
+    auto const assignments = assign_to_medoids(_num_graphs, _medoids,
+                                               [this](size_t i, GraphID m) { return _distances.get(i, m); });
     abort_on_failed_pairs(_distances);
     return assignments;
 }
