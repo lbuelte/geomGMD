@@ -4,6 +4,7 @@
 #include "io/solver_messages.h"
 #include "utility/log.h"
 
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
 #include <queue>
@@ -123,7 +124,14 @@ std::optional<IntervalDistance> DistanceMatrix::compute_pair(size_t i, size_t j,
 
 void DistanceMatrix::compute_all(size_t num_threads, size_t batch_size)
 {
-    size_t const n = size();
+    std::vector<size_t> indices(size());
+    for (size_t i = 0; i < size(); ++i) indices[i] = i;
+    compute_among(indices, num_threads, batch_size);
+}
+
+void DistanceMatrix::compute_among(std::vector<size_t> const &indices, size_t num_threads, size_t batch_size)
+{
+    size_t const n = indices.size();
     size_t const total_pairs = n * (n - 1) / 2;
 
     // Batches of pairs whose distance is not known yet
@@ -132,8 +140,9 @@ void DistanceMatrix::compute_all(size_t num_threads, size_t batch_size)
         std::lock_guard<std::mutex> lock(_mutex);
         std::vector<std::pair<size_t, size_t>> current;
         current.reserve(batch_size);
-        for (size_t i = 0; i < n; ++i) {
-            for (size_t j = i + 1; j < n; ++j) {
+        for (size_t a = 0; a < n; ++a) {
+            for (size_t b = a + 1; b < n; ++b) {
+                size_t const i = indices[a], j = indices[b];
                 if (_state[i][j] != State::Unknown) continue;
                 current.emplace_back(i, j);
                 if (current.size() == batch_size) {
@@ -196,6 +205,44 @@ std::vector<std::vector<IntervalDistance>> DistanceMatrix::to_matrix() const
     for (size_t i = 0; i < n; ++i) {
         for (size_t j = 0; j < n; ++j) {
             if (_distances[i][j]) matrix[i][j] = *_distances[i][j];
+        }
+    }
+    return matrix;
+}
+
+
+DistanceView::DistanceView(DistanceMatrix &matrix)
+    : _matrix(&matrix)
+    , _indices(matrix.size())
+{
+    for (size_t i = 0; i < _indices.size(); ++i) _indices[i] = i;
+}
+
+DistanceView::DistanceView(DistanceMatrix &matrix, std::vector<size_t> indices)
+    : _matrix(&matrix)
+    , _indices(std::move(indices))
+{}
+
+std::vector<std::pair<size_t, size_t>> DistanceView::failed_pairs() const
+{
+    std::vector<std::pair<size_t, size_t>> failed;
+    for (auto const &[i, j] : _matrix->failed_pairs()) {
+        auto const a = std::find(_indices.begin(), _indices.end(), i);
+        auto const b = std::find(_indices.begin(), _indices.end(), j);
+        if (a == _indices.end() or b == _indices.end()) continue;
+        size_t const va = a - _indices.begin(), vb = b - _indices.begin();
+        failed.emplace_back(std::min(va, vb), std::max(va, vb));
+    }
+    return failed;
+}
+
+std::vector<std::vector<IntervalDistance>> DistanceView::to_matrix() const
+{
+    size_t const n = size();
+    std::vector<std::vector<IntervalDistance>> matrix(n, std::vector<IntervalDistance>(n, {-1.0, -1.0}));
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = 0; j < n; ++j) {
+            if (auto const d = known(i, j)) matrix[i][j] = *d;
         }
     }
     return matrix;

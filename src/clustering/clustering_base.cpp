@@ -6,6 +6,7 @@
 #include "utility/log.h"
 
 #include <filesystem>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <queue>
@@ -37,21 +38,19 @@ void check_matrix_parameters(std::filesystem::path const &matrix_file, ModelPara
     }
 }
 
-// Distance matrix of the graphs to be clustered, filled from [Clustering] distance_matrix (graph ids in the
-// file, local indices in the matrix). Pairs missing in the file keep the placeholder {-1, -1} and are
-// computed by PAM, unless compute_missing_distances is false (then this throws).
-std::vector<std::vector<IntervalDistance>> read_precomputed_distances(
-        std::vector<const GeometricGraph*> const &graphs, Config const &config)
+// Fills the distances of the graphs to be clustered from [Clustering] distance_matrix (graph ids in the
+// file, local indices in the matrix). Pairs missing in the file stay unknown and are computed by PAM,
+// unless compute_missing_distances is false (then this throws).
+void read_precomputed_distances(DistanceMatrix &matrix, std::vector<const GeometricGraph*> const &graphs,
+                                Config const &config)
 {
     std::filesystem::path const matrix_file = config.cluster.distance_matrix.value();
     check_matrix_parameters(matrix_file, config.model);
     auto const distances = read_distance_matrix_file(matrix_file);
 
     size_t const n = graphs.size();
-    std::vector<std::vector<IntervalDistance>> matrix(n, std::vector<IntervalDistance>(n, {-1.0, -1.0}));
     size_t num_read = 0, num_missing = 0;
     for (size_t i = 0; i < n; ++i) {
-        matrix[i][i] = ExactDistance{0.0};
         for (size_t j = i + 1; j < n; ++j) {
             auto const d = distances.find(graph_pair(static_cast<GraphID>(graphs[i]->graph_id()),
                                                      static_cast<GraphID>(graphs[j]->graph_id())));
@@ -59,7 +58,7 @@ std::vector<std::vector<IntervalDistance>> read_precomputed_distances(
                 ++num_missing;
                 continue;
             }
-            matrix[i][j] = matrix[j][i] = d->second;
+            matrix.set(i, j, d->second);
             ++num_read;
         }
     }
@@ -75,7 +74,6 @@ std::vector<std::vector<IntervalDistance>> read_precomputed_distances(
                               " for the ", num_read, " distances read from ", matrix_file,
                               " see edgemaps.json in that folder");
     }
-    return matrix;
 }
 
 } // end of anonymous namespace
@@ -112,10 +110,13 @@ ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs
         }
 
         case ClusteringConfig::ClusteringAlgorithm::PAM: {
-            auto pam_clustering = config.cluster.distance_matrix
-                    ? [&]() { auto matrix = read_precomputed_distances(graphs, config);
-                              return PAM_Clustering(graphs, matrix, config, out); }()
-                    : PAM_Clustering(graphs, config, out);
+            std::unique_ptr<DistanceMatrix> precomputed;
+            if (config.cluster.distance_matrix) {
+                precomputed = std::make_unique<DistanceMatrix>(graphs, config.model, config.solver, config.logging, out);
+                read_precomputed_distances(*precomputed, graphs, config);
+            }
+            auto pam_clustering = precomputed ? PAM_Clustering(DistanceView(*precomputed), config)
+                                              : PAM_Clustering(graphs, config, out);
             geomgmd::log::debug("Running PAM Clustering (k=", k, ") on ", graphs.size(), " graphs on ",
                                 config.pam.num_threads_matrix, " threads.");
             clustering_result =  pam_clustering.cluster(config, k);

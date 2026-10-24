@@ -39,6 +39,8 @@ public:
     // Computes all pairs i < j whose distance is not known yet, with num_threads threads (pairs are handed
     // out in batches of batch_size, in the order (0,1), (0,2), ..., (1,2), ...), and shows a progress bar.
     void compute_all(size_t num_threads, size_t batch_size);
+    // The same for the pairs among the given graphs only (pairs (indices[a], indices[b]) for a < b).
+    void compute_among(std::vector<size_t> const &indices, size_t num_threads, size_t batch_size);
 
     // Pairs (i < j) whose computation failed.
     std::vector<std::pair<size_t, size_t>> failed_pairs() const;
@@ -67,6 +69,31 @@ private:
     std::vector<std::vector<State>> _state;
     std::vector<std::vector<std::optional<IntervalDistance>>> _distances;
     std::vector<std::pair<size_t, size_t>> _failed;
+};
+
+// A subset of the graphs of a DistanceMatrix (e.g. a CLARA sample): index i of the view is index indices[i]
+// of the matrix. Distances computed through the view are stored in the matrix (and reused by other views).
+class DistanceView {
+public:
+    // All graphs of the matrix
+    explicit DistanceView(DistanceMatrix &matrix);
+    DistanceView(DistanceMatrix &matrix, std::vector<size_t> indices);
+
+    size_t size() const { return _indices.size(); }
+    // Index of view index i in the matrix
+    size_t matrix_index(size_t i) const { return _indices[i]; }
+
+    std::optional<IntervalDistance> known(size_t i, size_t j) const { return _matrix->known(_indices[i], _indices[j]); }
+    std::optional<IntervalDistance> get(size_t i, size_t j) { return _matrix->get(_indices[i], _indices[j]); }
+    void compute_all(size_t num_threads, size_t batch_size) { _matrix->compute_among(_indices, num_threads, batch_size); }
+    // Failed pairs among the graphs of the view (view indices, i < j)
+    std::vector<std::pair<size_t, size_t>> failed_pairs() const;
+    // Matrix of the view with the placeholder {-1, -1} for pairs without a distance; diagonal {0, 0}.
+    std::vector<std::vector<IntervalDistance>> to_matrix() const;
+
+private:
+    DistanceMatrix *_matrix;
+    std::vector<size_t> _indices;
 };
 
 #endif // GEOMGMD_IO_DISTANCE_MATRIX_H

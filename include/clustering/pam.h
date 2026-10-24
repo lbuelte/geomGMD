@@ -3,21 +3,25 @@
 
 #include "clustering_base.h"
 #include "distance/geomGMDSolver.h"
+#include "io/distance_matrix.h"
+
+#include <memory>
 
 class PAM_Clustering {
 public:
 
+    // PAM on the graphs with its own distance matrix
     PAM_Clustering(
             const std::vector<const GeometricGraph*> &graphs, 
             Config const &config, 
             OutputContext &out, 
             const size_t BATCH_SIZE_MATRIX = 10);
 
+    // PAM on the graphs of a view of a distance matrix (e.g. a CLARA sample); known distances are reused,
+    // computed ones are stored in the matrix
     PAM_Clustering(
-            const std::vector<const GeometricGraph*> &graphs, 
-            std::vector<std::vector<IntervalDistance>> &distance_matrix, 
+            DistanceView distances,
             Config const &config, 
-            OutputContext &out, 
             const size_t BATCH_SIZE_MATRIX = 10);
 
     //method to compute the clustering
@@ -29,9 +33,11 @@ private:
     //store information about the clustering
     //ids of graphs that are medoids
     std::vector<GraphID> _medoids = std::vector<GraphID>();
-    //reference for graphs to be clustered
-    const std::vector<const GeometricGraph*>& _graphs;
-    //store already computed distances
+    //own distance matrix (only if PAM was not given a view)
+    std::unique_ptr<DistanceMatrix> _own_distances;
+    //distances between the graphs to be clustered
+    DistanceView _distances;
+    //all distances, once computed (BUILD and SWAP read only this copy)
     std::vector<std::vector<IntervalDistance>> _distance_matrix;
 
     //number of centers
@@ -43,14 +49,6 @@ private:
     int _num_threads_distance_matrix = 1;
     //batch size per job in matrix parallelization (one item is one matrix entry)
     const size_t _BATCH_SIZE_MATRIX = 10;
-
-    //Parameters for geomGMD objective function
-    const ModelParameters _model;
-    const SolverSettings _solver;
-    const LoggingConfig _logging;
-
-    //Output context for writing output
-    OutputContext &_output_context;
 
     //helper functions for PAM Clustering
 
@@ -75,7 +73,7 @@ private:
 };
 
 inline std::vector<std::vector<IntervalDistance>> PAM_Clustering::return_distance_matrix() const {
-    return _distance_matrix;
+    return _distances.to_matrix();
 }
 
 

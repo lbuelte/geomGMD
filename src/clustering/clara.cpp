@@ -82,10 +82,9 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
         //Compute Clustering on sample
         ClusteringResult sample_cluster_result;
         if (config.clara.reuse_distances){
-            auto sample_matrix = init_sample_matrix_from_distances(sample);
-            PAM_Clustering pam_clustering(sample.sample_graphs, sample_matrix, config, _output_context);
+            // PAM on the sample, with the distances shared by all samples
+            PAM_Clustering pam_clustering(DistanceView(*_distances, sample.sample_indices), config);
             sample_cluster_result = pam_clustering.cluster(config, _num_clusters);
-            transfer_sample_distances_to_matrix(pam_clustering.return_distance_matrix(), sample);
         } else {
             PAM_Clustering pam_clustering(sample.sample_graphs, config, _output_context);
             sample_cluster_result = pam_clustering.cluster(config, _num_clusters);        
@@ -134,37 +133,6 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
     return build_clustering_result_from_sample_cluster_and_assignment(best_clustering, best_sample);
 
 }
-
-void CLARA_Clustering::transfer_sample_distances_to_matrix(std::vector<std::vector<IntervalDistance>> const &sample_matrix, Sample const &sample)
-{
-    for (GraphID i = 0; i < sample_matrix.size(); i++){
-        GraphID g = sample.sample_indices[i];
-        for (GraphID j = 0; j < sample_matrix[i].size(); j++){
-            GraphID h = sample.sample_indices[j];
-
-            if (sample_matrix[i][j].ub > -1.0) {
-                _distances->set(g, h, sample_matrix[i][j]);
-            }
-        }
-    }
-}
-
-std::vector<std::vector<IntervalDistance>> CLARA_Clustering::init_sample_matrix_from_distances(Sample const &sample)
-{
-    std::vector<std::vector<IntervalDistance>> sample_matrix(_sample_size, std::vector<IntervalDistance>(_sample_size, {-1.0, -1.0}));
-    for (GraphID i = 0; i < _sample_size; i++){
-        GraphID g = sample.sample_indices[i];
-        for (GraphID j = 0; j < _sample_size; j++){
-            GraphID h = sample.sample_indices[j];
-
-            if (auto const d = _distances->known(g, h)) {
-                sample_matrix[i][j] = *d;
-            }
-        }
-    }
-    return sample_matrix;
-}
-
 
 void CLARA_Clustering::set_sample_size(ClaraConfig::SampleSizeSpec const &s, std::optional<size_t> const &min_sample_size)
 {

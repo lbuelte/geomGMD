@@ -13,50 +13,31 @@
 //CLASS PAM_Clustering
 
 PAM_Clustering::PAM_Clustering(const std::vector<const GeometricGraph*> &graphs, Config const &config, OutputContext &out, const size_t BATCH_SIZE_MATRIX)
-    : _graphs(graphs)
-    , _model(config.model)
-    , _solver(config.solver)
-    , _logging(config.logging)
-    , _output_context(out)
+    : _own_distances(std::make_unique<DistanceMatrix>(graphs, config.model, config.solver, config.logging, out))
+    , _distances(*_own_distances)
     , _BATCH_SIZE_MATRIX(BATCH_SIZE_MATRIX)
 {
     //set n
     this->n = graphs.size();
-    //initialize empty distance matrix
-    _distance_matrix = std::vector<std::vector<IntervalDistance>>(n, std::vector<IntervalDistance>(n, {-1.0, -1.0}));
     if (config.cluster.parallel){
         _num_threads_distance_matrix = config.pam.num_threads_matrix;
     }
-    geomgmd::log::info("Model parameters\n", _model, "Solver settings\n", _solver);
+    geomgmd::log::info("Model parameters\n", config.model, "Solver settings\n", config.solver);
 }
 
 PAM_Clustering::PAM_Clustering(
-        const std::vector<const GeometricGraph*> &graphs, 
-        std::vector<std::vector<IntervalDistance>> &distance_matrix, 
+        DistanceView distances,
         Config const &config, 
-        OutputContext &out, 
         const size_t BATCH_SIZE_MATRIX)
-    : _graphs(graphs)
-    , _distance_matrix(distance_matrix)
-    , _model(config.model)
-    , _solver(config.solver)
-    , _logging(config.logging)
-    , _output_context(out)
+    : _distances(std::move(distances))
     , _BATCH_SIZE_MATRIX(BATCH_SIZE_MATRIX)
 {
     //set n
-    this->n = graphs.size();
-    //check that matrix is the correct size
-    if (n > 0){
-        assert(_distance_matrix.size() == n);
-        for (auto const &row : _distance_matrix){
-            assert(row.size() == n);
-        }
-    }
+    this->n = _distances.size();
     if (config.cluster.parallel){
         _num_threads_distance_matrix = config.pam.num_threads_matrix;
     }
-    geomgmd::log::info("Model parameters\n", _model, "Solver settings\n", _solver);
+    geomgmd::log::info("Model parameters\n", config.model, "Solver settings\n", config.solver);
 }
 
 
@@ -129,7 +110,7 @@ void PAM_Clustering::build() {
 
 void PAM_Clustering::computeEntireDistanceMatrix()
 {
-    if (_distance_matrix.empty()) {
+    if (n <= 0) {
         geomgmd::log::warning("WARNING: Cannot compute values of empty distance matrix!");
         return;
     }
@@ -138,17 +119,8 @@ void PAM_Clustering::computeEntireDistanceMatrix()
     auto start = std::chrono::high_resolution_clock::now();
 
     // Distances that are already known (e.g. from earlier samples in CLARA) are not computed again
-    DistanceMatrix distances(_graphs, _model, _solver, _logging, _output_context);
-    const GraphID n = _distance_matrix.size();
-    for (GraphID i = 0; i < n; ++i) {
-        for (GraphID j = i + 1; j < n; ++j) {
-            if (_distance_matrix[i][j].ub > -1.0) {
-                distances.set(i, j, _distance_matrix[i][j]);
-            }
-        }
-    }
-    distances.compute_all(_num_threads_distance_matrix, _BATCH_SIZE_MATRIX);
-    _distance_matrix = distances.to_matrix();
+    _distances.compute_all(_num_threads_distance_matrix, _BATCH_SIZE_MATRIX);
+    _distance_matrix = _distances.to_matrix();
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration =
