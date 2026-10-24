@@ -93,19 +93,18 @@ ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config)
     
     auto solution_value = computeTotalCost(_medoids);
 
-    geomgmd::log::debug("Computed ", [&](){
-            int num_computed_entries = 0;
-            auto const distance_matrix = _distances.to_matrix();
+    geomgmd::log::debug("Known distances: ", [&](){
+            size_t num_known = 0;
             for (GraphID i = 0; i < _num_graphs; i++){
-                for (GraphID j = 0; j < _num_graphs; j++){
-                    if (distance_matrix[i][j] == IntervalDistance{-1.0, -1.0}){
-                        num_computed_entries++;
+                for (GraphID j = i + 1; j < _num_graphs; j++){
+                    if (_distances.known(i, j).has_value()){
+                        num_known++;
                     }
                 }
             }
-            return num_computed_entries;
+            return num_known;
         }(),
-        " / ", _num_graphs * _num_graphs, " distance matrix entries.");
+        " of ", _num_graphs * (_num_graphs - 1) / 2, " pairs.");
 
     auto end = std::chrono::high_resolution_clock::now();
     auto dur = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

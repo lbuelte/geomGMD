@@ -160,7 +160,7 @@ ClusteringResult cluster_once(DistanceView distances, size_t const k, Config con
             return cluster_clara(std::move(distances), k, config);
         case ClusteringConfig::ClusteringAlgorithm::CLARANS:
             geomgmd::log::debug("Running CLARANS Clustering (k=", k, ") on ", distances.size(), " graphs on ",
-                                config.pam.num_threads_matrix, " threads and ", config.clarans.num_local,
+                                config.clarans.num_threads, " threads and ", config.clarans.num_local,
                                 " starting samples.");
             return cluster_clarans(std::move(distances), k, config);
         case ClusteringConfig::ClusteringAlgorithm::PAM:

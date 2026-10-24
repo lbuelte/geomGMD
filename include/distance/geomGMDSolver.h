@@ -49,12 +49,11 @@ inline bool operator<(const IntervalDistance& a,
     return a.lb < b.lb - EPS;
 }
 
+// Equal if neither is smaller (ub and lb equal up to the tolerance of operator<).
 inline bool operator==(const IntervalDistance& a,
                        const IntervalDistance& b)
 {
-    constexpr double EPS = 1e-9;
-    if (a.ub == b.ub - EPS and a.lb == b.lb) return true;
-    return false;
+    return not (a < b) and not (b < a);
 }
 
 // If a cutoff parameter was specified, and during Gurobi, the best lower bound exceeds the cutoff parameter, 
