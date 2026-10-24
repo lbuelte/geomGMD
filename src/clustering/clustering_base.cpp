@@ -179,6 +179,10 @@ ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs
 {
     using FailedDistances = ClusteringConfig::FailedDistances;
     auto const mode = config.cluster.failed_distances;
+    if (graphs.size() < k) {
+        throw std::runtime_error("[Clustering] k = " + std::to_string(k) + " is larger than the number of graphs to be"
+                                 " clustered (" + std::to_string(graphs.size()) + ")");
+    }
 
     // Distances between all graphs, shared by the algorithm's steps and kept when graphs are excluded and the
     // clustering is repeated

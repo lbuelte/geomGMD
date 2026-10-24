@@ -54,6 +54,10 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
                            " graphs and ", _num_clusters, " clusters!");
         return trivial_clustering;
     }
+    if (_sample_size < _num_clusters){
+        throw std::runtime_error("CLARA: the sample size " + std::to_string(_sample_size) + " is smaller than k = "
+                                 + std::to_string(_num_clusters) + " ([Clara] sample_size / sample_fraction / min_sample_size)");
+    }
     if (_sample_size >= _num_graphs){
         geomgmd::log::info("CLARA sample size >= number of graphs: Running PAM on the whole dataset.");
         PAM_Clustering pam_clustering(_distances, config);

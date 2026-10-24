@@ -32,6 +32,9 @@ ClusteringResult PAM_Clustering::cluster(Config const &config, int k)
 {
     //set k
     this->k = k;
+    if (k > n) {
+        throw std::logic_error("PAM with k = " + std::to_string(k) + " on only " + std::to_string(n) + " graphs");
+    }
 
     geomgmd::log::info("PAM Clustering on ", n, " graphs with k = ", k);
 
