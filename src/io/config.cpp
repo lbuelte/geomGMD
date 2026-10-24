@@ -400,6 +400,9 @@ Config load_config(const std::string& filename)
         read_seeds(*c, "random_seeds", cfg.clara.random_seeds);
         require(cfg.clara.random_seeds.size() <= cfg.clara.num_samples, 
                 "Number of random_seeds exceeds num_samples");
+    }
+    // Missing seeds are random (also without a [Clara] section: one seed per sample is needed)
+    {
         std::random_device rd;
         while (cfg.clara.random_seeds.size() < cfg.clara.num_samples){
             cfg.clara.random_seeds.push_back(rd());
@@ -419,7 +422,10 @@ Config load_config(const std::string& filename)
         require(cfg.clarans.num_threads > 0, cr->key_name("num_threads") + " must be > 0");
         read_seeds(*cr, "random_seeds_initialization", cfg.clarans.random_seeds_initialization);
         require(cfg.clarans.random_seeds_initialization.size() <= cfg.clarans.num_local, 
-                "Number of random_seeds exceeds num_samples");
+                "Number of random_seeds_initialization exceeds num_local");
+    }
+    // Missing seeds are random (also without a [Clarans] section: one seed per start is needed)
+    {
         std::random_device rd;
         while (cfg.clarans.random_seeds_initialization.size() < cfg.clarans.num_local){
             cfg.clarans.random_seeds_initialization.push_back(rd());
