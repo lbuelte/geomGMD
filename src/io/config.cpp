@@ -55,6 +55,17 @@ parse_angle_type(const std::string& s_in)
     throw std::runtime_error("Unknown angle_type: " + s);
 }
 
+ClusteringConfig::FailedDistances
+parse_failed_distances(const std::string& s_in)
+{
+    std::string s = to_lower(s_in);
+    if (s == "abort")    return ClusteringConfig::FailedDistances::Abort;
+    if (s == "infinite") return ClusteringConfig::FailedDistances::Infinite;
+    if (s == "exclude")  return ClusteringConfig::FailedDistances::Exclude;
+
+    throw std::runtime_error("Unknown failed_distances: " + s + " (expected abort, infinite or exclude)");
+}
+
 LogLevel
 parse_log_level_or_throw(const std::string& s)
 {
@@ -421,12 +432,14 @@ Config load_config(const std::string& filename)
 
     /* ===================== Clustering ===================== */
     if (auto cl = get_section(tbl, "Clustering")) {
-        cl->check_keys({"k", "parallel", "clustering_algo", "distance_matrix", "compute_missing_distances"});
+        cl->check_keys({"k", "parallel", "clustering_algo", "distance_matrix", "compute_missing_distances",
+                        "failed_distances"});
         cl->read_required("k", cfg.cluster.k);
         cl->read("parallel", cfg.cluster.parallel);
         cl->read_enum("clustering_algo", cfg.cluster.clustering_algo, parse_clustering_algo);
         cl->read("distance_matrix", cfg.cluster.distance_matrix);
         cl->read("compute_missing_distances", cfg.cluster.compute_missing_distances);
+        cl->read_enum("failed_distances", cfg.cluster.failed_distances, parse_failed_distances);
         require(cfg.cluster.k > 0, cl->key_name("k") + " must be > 0");
         require(not cfg.cluster.distance_matrix or cfg.cluster.clustering_algo == ClusteringConfig::ClusteringAlgorithm::PAM,
                 cl->key_name("distance_matrix") + " is only supported with clustering_algo = \"PAM\"");
@@ -482,6 +495,16 @@ DistanceConfig load_dist_config(const std::string& filename)
     return cfg;
 }
 
+
+std::string to_string(ClusteringConfig::FailedDistances mode)
+{
+    switch (mode) {
+        case ClusteringConfig::FailedDistances::Abort:    return "abort";
+        case ClusteringConfig::FailedDistances::Infinite: return "infinite";
+        case ClusteringConfig::FailedDistances::Exclude:  return "exclude";
+    }
+    return "unknown";
+}
 
 ModelParametersFromFile load_model_parameters(const std::string& filename)
 {
@@ -566,6 +589,7 @@ std::ostream& operator<<(std::ostream& out, const ClusteringConfig& cluster)
     if (cluster.distance_matrix) {
         print_entry(out, "compute_missing_distances", tf(cluster.compute_missing_distances));
     }
+    print_entry(out, "failed_distances", to_string(cluster.failed_distances));
     return out;
 }
 

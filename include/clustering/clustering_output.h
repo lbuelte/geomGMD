@@ -15,12 +15,14 @@
 
 // clustering.csv: one row per clustered graph, sorted by graph id:
 //   graph_id,polygon_id,cluster,is_medoid
+// followed by the excluded graphs (failed_distances = "exclude") with an empty cluster.
 void write_clustering_csv(std::filesystem::path const &path,
                           ClusteringResult const &clustering_result,
                           std::vector<const GeometricGraph*> const &graphs);
 
 // clustering.json: {"dataset", "run_name", "algorithm", "k", "solution_value",
-//                   "clusters": [{"cluster", "medoid": {graph_id, polygon_id}, "members": [{graph_id, polygon_id}, ...]}]}
+//                   "clusters": [{"cluster", "medoid": {graph_id, polygon_id}, "members": [{graph_id, polygon_id}, ...]}],
+//                   "excluded": [{graph_id, polygon_id}, ...] (only if graphs were excluded)}
 nlohmann::ordered_json clustering_to_json(ClusteringResult const &clustering_result,
                                   std::vector<const GeometricGraph*> const &graphs,
                                   std::string const &dataset,

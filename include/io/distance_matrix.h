@@ -25,6 +25,11 @@ public:
 
     size_t size() const { return _graphs.size(); }
 
+    // If set, pairs whose computation failed have the distance +infinity (get, known, to_matrix) instead of
+    // none. They are still listed by failed_pairs().
+    void treat_failed_as_infinite(bool infinite) { _failed_infinite = infinite; }
+    bool failed_as_infinite() const { return _failed_infinite; }
+
     // Sets a known distance (e.g. from an earlier computation); it is not computed again.
     void set(size_t i, size_t j, IntervalDistance const &d);
     // The distance if it is known (computed or set), without computing it.
@@ -44,6 +49,8 @@ public:
 
     // Pairs (i < j) whose computation failed.
     std::vector<std::pair<size_t, size_t>> failed_pairs() const;
+    // Graph id of graph i
+    GraphID graph_id(size_t i) const { return static_cast<GraphID>(_graphs[i]->graph_id()); }
 
     // Matrix with the placeholder {-1, -1} for pairs without a distance; diagonal {0, 0}.
     std::vector<std::vector<IntervalDistance>> to_matrix() const;
@@ -69,6 +76,7 @@ private:
     std::vector<std::vector<State>> _state;
     std::vector<std::vector<std::optional<IntervalDistance>>> _distances;
     std::vector<std::pair<size_t, size_t>> _failed;
+    bool _failed_infinite = false;
 };
 
 // A subset of the graphs of a DistanceMatrix (e.g. a CLARA sample): index i of the view is index indices[i]
@@ -82,6 +90,7 @@ public:
     size_t size() const { return _indices.size(); }
     // Index of view index i in the matrix
     size_t matrix_index(size_t i) const { return _indices[i]; }
+    DistanceMatrix const &matrix() const { return *_matrix; }
 
     std::optional<IntervalDistance> known(size_t i, size_t j) const { return _matrix->known(_indices[i], _indices[j]); }
     std::optional<IntervalDistance> get(size_t i, size_t j) { return _matrix->get(_indices[i], _indices[j]); }

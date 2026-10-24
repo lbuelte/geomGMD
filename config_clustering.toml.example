@@ -47,3 +47,4 @@ k = 10
 # parallel = false
 # distance_matrix = "../output/Bonn/Verwaltungsdistrikte/Zentrum-Rheinviertel/matrix/intervaldistance_matrix.csv"
 # compute_missing_distances = false
+# failed_distances = "abort"   # or "infinite", "exclude"

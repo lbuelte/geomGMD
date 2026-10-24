@@ -69,6 +69,7 @@ private:
     void set_sample_size(ClaraConfig::SampleSizeSpec const &s, std::optional<size_t> const &min_sample_size);
 
     bool _reuse_distances;
+    bool _failed_infinite;  // failed distances count as infinite ([Clustering] failed_distances)
 
     //wrapper function for assignment of graphs to sample medoids, calls single- or multithreaded version depending on
     //_num_threads_assignment

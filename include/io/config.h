@@ -73,7 +73,15 @@ struct ClusteringConfig {
     // there are computed if compute_missing_distances, otherwise the run aborts.
     std::optional<std::string> distance_matrix;
     bool compute_missing_distances = true;
+
+    // What happens if the distance of a pair of graphs to be clustered could not be computed:
+    // Abort the clustering, treat the distance as Infinite, or Exclude graphs from the clustering
+    // (as few as possible, so that no failed pair remains)
+    enum class FailedDistances { Abort, Infinite, Exclude };
+    FailedDistances failed_distances = FailedDistances::Abort;
 };
+
+std::string to_string(ClusteringConfig::FailedDistances mode);
 
 // Log levels of console and log file (see utility/log.h); can be overridden on the command line.
 struct LoggingConfig {

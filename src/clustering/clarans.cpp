@@ -20,6 +20,7 @@ CLARANS_Clustering::CLARANS_Clustering(const std::vector<const GeometricGraph*> 
     , _output_context(out)
     , _rng_local()
 {
+    _distances.treat_failed_as_infinite(config.cluster.failed_distances == ClusteringConfig::FailedDistances::Infinite);
     //set n
     _num_graphs = _graphs.size();
 
@@ -172,6 +173,7 @@ double CLARANS_Clustering::compute_swap_cost(
 
             total += best.ub;
         }
+        abort_on_failed_pairs(_distances);
         return total;
     }
 
@@ -247,6 +249,7 @@ double CLARANS_Clustering::compute_swap_cost(
     for (auto& t : threads) {
         t.join();
     }
+    abort_on_failed_pairs(_distances);
 
     return total;
 }
@@ -320,6 +323,7 @@ double CLARANS_Clustering::computeTotalCost(const std::vector<GraphID>& _medoids
         total += best.ub;
         printProgressBar((i+1)*_num_clusters, _num_graphs*_num_clusters);
     }
+    abort_on_failed_pairs(_distances);
     return total;
 };
 
@@ -340,6 +344,7 @@ std::vector<ClusterID> CLARANS_Clustering::assignPointsToMedoids() {
         }
         assignments[i] = best_medoid;
     }
+    abort_on_failed_pairs(_distances);
     return assignments;
 }
 

@@ -20,6 +20,7 @@ CLARA_Clustering::CLARA_Clustering(const std::vector<const GeometricGraph*> &gra
     , _output_context(out)
     , _num_clusters(config.cluster.k)
     , _reuse_distances(config.clara.reuse_distances)
+    , _failed_infinite(config.cluster.failed_distances == ClusteringConfig::FailedDistances::Infinite)
 {
     //set n
     this->_num_graphs = _graphs.size();
@@ -32,6 +33,7 @@ CLARA_Clustering::CLARA_Clustering(const std::vector<const GeometricGraph*> &gra
     set_sample_size(config.clara.sample_size, config.clara.min_sample_size);    
     if (config.clara.reuse_distances){
         _distances.emplace(_graphs, _model, _solver, _logging, _output_context);
+        _distances->treat_failed_as_infinite(_failed_infinite);
     }
 
     geomgmd::log::info("Model parameters\n", _model, "Solver settings\n", _solver);
@@ -112,8 +114,9 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
         geomgmd::log::debug("Total cost of this sample clustering: ", sample_cluster_result.clustering_solution_value, " + ",
                             assignment.solution_value, " = ", sample_cluster_result.clustering_solution_value + assignment.solution_value);
 
-        // Compare to results from previous samples
-        if (sample_cluster_result.clustering_solution_value + assignment.solution_value < best_clustering_value){
+        // Compare to results from previous samples (the first sample in any case: with infinite distances
+        // all values can be infinite)
+        if (s == 0 or sample_cluster_result.clustering_solution_value + assignment.solution_value < best_clustering_value){
             best_clustering_value = sample_cluster_result.clustering_solution_value + assignment.solution_value;
             best_clustering = {sample_cluster_result, assignment};
             best_sample = sample;
@@ -223,6 +226,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
     std::optional<DistanceMatrix> sample_distances;
     if (not _distances) {
         sample_distances.emplace(_graphs, _model, _solver, _logging, _output_context);
+        sample_distances->treat_failed_as_infinite(_failed_infinite);
     }
     DistanceMatrix &distances = _distances ? *_distances : *sample_distances;
 
@@ -247,6 +251,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
     std::cout << std::endl;  // end the progress bar line
     geomgmd::log::info("Assignment computation using ", _num_threads_assignment, " threads complete, it took ",
                        duration.count(), " ms.");
+    abort_on_failed_pairs(distances);
 
     return assignment_result;
 }

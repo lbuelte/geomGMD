@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <queue>
 #include <thread>
 #include <variant>
@@ -66,9 +67,17 @@ void DistanceMatrix::set(size_t i, size_t j, IntervalDistance const &d)
     store(i, j, State::Known, d);
 }
 
+namespace {
+IntervalDistance infinite_distance()
+{
+    return {std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity()};
+}
+} // end of anonymous namespace
+
 std::optional<IntervalDistance> DistanceMatrix::known(size_t i, size_t j) const
 {
     std::lock_guard<std::mutex> lock(_mutex);
+    if (_state[i][j] == State::Failed and _failed_infinite) return infinite_distance();
     return _state[i][j] == State::Known ? _distances[i][j] : std::nullopt;
 }
 
@@ -80,7 +89,8 @@ bool DistanceMatrix::claim(size_t i, size_t j, std::optional<IntervalDistance> *
         _state[i][j] = _state[j][i] = State::Computing;
         return true;
     }
-    *result = _state[i][j] == State::Known ? _distances[i][j] : std::nullopt;
+    if (_state[i][j] == State::Failed and _failed_infinite) *result = infinite_distance();
+    else *result = _state[i][j] == State::Known ? _distances[i][j] : std::nullopt;
     return false;
 }
 
@@ -119,6 +129,7 @@ std::optional<IntervalDistance> DistanceMatrix::compute_pair(size_t i, size_t j,
     geomgmd::log::error("Error! Distance between graphs ", G.graph_id(), " and ", H.graph_id(),
                         " could not be computed!");
     store(i, j, State::Failed, std::nullopt);
+    if (_failed_infinite) return infinite_distance();
     return std::nullopt;
 }
 
@@ -205,6 +216,7 @@ std::vector<std::vector<IntervalDistance>> DistanceMatrix::to_matrix() const
     for (size_t i = 0; i < n; ++i) {
         for (size_t j = 0; j < n; ++j) {
             if (_distances[i][j]) matrix[i][j] = *_distances[i][j];
+            else if (_state[i][j] == State::Failed and _failed_infinite) matrix[i][j] = infinite_distance();
         }
     }
     return matrix;

@@ -64,6 +64,11 @@ void write_clustering_csv(std::filesystem::path const &path,
             << g.cluster << ","
             << (g.is_medoid ? "true" : "false") << "\n";
     }
+    // graphs left out because of failed distances: no cluster
+    for (GraphID g : clustering_result.excluded) {
+        out << graphs[g]->graph_id() << ","
+            << (graphs[g]->polygon_id() >= 0 ? std::to_string(graphs[g]->polygon_id()) : "") << ",,false\n";
+    }
     if (not out.good()) {
         throw std::runtime_error("I/O error while writing: " + path.string());
     }
@@ -95,6 +100,12 @@ nlohmann::ordered_json clustering_to_json(ClusteringResult const &clustering_res
             cluster["members"].push_back(ids_to_json(*graphs[g]));
         }
         j["clusters"].push_back(cluster);
+    }
+    if (not clustering_result.excluded.empty()) {
+        j["excluded"] = nlohmann::ordered_json::array();
+        for (GraphID g : clustering_result.excluded) {
+            j["excluded"].push_back(ids_to_json(*graphs[g]));
+        }
     }
     return j;
 }

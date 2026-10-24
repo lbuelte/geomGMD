@@ -17,6 +17,7 @@ PAM_Clustering::PAM_Clustering(const std::vector<const GeometricGraph*> &graphs,
     , _distances(*_own_distances)
     , _BATCH_SIZE_MATRIX(BATCH_SIZE_MATRIX)
 {
+    _own_distances->treat_failed_as_infinite(config.cluster.failed_distances == ClusteringConfig::FailedDistances::Infinite);
     //set n
     this->n = graphs.size();
     if (config.cluster.parallel){
@@ -94,8 +95,9 @@ void PAM_Clustering::build() {
                 total_cost += dmin.ub;
             }
 
-            // track the candidate with the lowest total cost
-            if (total_cost < best_cost) {
+            // track the candidate with the lowest total cost (the first one in any case: with infinite
+            // distances all costs can be infinite)
+            if (best_candidate == -1 or total_cost < best_cost) {
                 best_cost = total_cost;
                 best_candidate = i;
             }
@@ -120,6 +122,7 @@ void PAM_Clustering::computeEntireDistanceMatrix()
 
     // Distances that are already known (e.g. from earlier samples in CLARA) are not computed again
     _distances.compute_all(_num_threads_distance_matrix, _BATCH_SIZE_MATRIX);
+    abort_on_failed_pairs(_distances);
     _distance_matrix = _distances.to_matrix();
 
     auto end = std::chrono::high_resolution_clock::now();
