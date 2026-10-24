@@ -10,13 +10,6 @@
 class PAM_Clustering {
 public:
 
-    // PAM on the graphs with its own distance matrix
-    PAM_Clustering(
-            const std::vector<const GeometricGraph*> &graphs, 
-            Config const &config, 
-            OutputContext &out, 
-            const size_t BATCH_SIZE_MATRIX = 10);
-
     // PAM on the graphs of a view of a distance matrix (e.g. a CLARA sample); known distances are reused,
     // computed ones are stored in the matrix
     PAM_Clustering(
@@ -27,14 +20,11 @@ public:
     //method to compute the clustering
     ClusteringResult cluster(Config const &config, int k);
 
-    std::vector<std::vector<IntervalDistance>> return_distance_matrix() const;
 
 private:
     //store information about the clustering
     //ids of graphs that are medoids
     std::vector<GraphID> _medoids = std::vector<GraphID>();
-    //own distance matrix (only if PAM was not given a view)
-    std::unique_ptr<DistanceMatrix> _own_distances;
     //distances between the graphs to be clustered
     DistanceView _distances;
     //all distances, once computed (BUILD and SWAP read only this copy)
@@ -72,9 +62,8 @@ private:
 
 };
 
-inline std::vector<std::vector<IntervalDistance>> PAM_Clustering::return_distance_matrix() const {
-    return _distances.to_matrix();
-}
+// PAM (k-medoids: BUILD and SWAP) on the graphs of the view
+ClusteringResult cluster_pam(DistanceView distances, size_t k, Config const &config);
 
 
 #endif // POLYGONCLUSTERING_PAM_H

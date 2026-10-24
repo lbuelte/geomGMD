@@ -16,21 +16,18 @@ public:
     };
 
 
-    CLARANS_Clustering(const std::vector<const GeometricGraph*> &graphs_, Config const &config, OutputContext &out);
+    // CLARANS on the graphs of a view of a distance matrix; distances are computed when they are needed
+    CLARANS_Clustering(DistanceView distances, Config const &config);
 
     //method to compute the clustering
     ClusteringResult cluster(int k, ClaransConfig const &config);
-
-    std::vector<std::vector<IntervalDistance>> return_distance_matrix() const;
 
 private:
     //store information about the clustering
     //ids of graphs that are medoids
     std::vector<GraphID> _medoids = std::vector<GraphID>();
-    //reference for graphs to be clustered
-    const std::vector<const GeometricGraph*>& _graphs;
-    //distances between the graphs, computed on demand
-    DistanceMatrix _distances;
+    //distances between the graphs to be clustered, computed on demand
+    DistanceView _distances;
 
     //number of centers
     int _num_clusters = -1;
@@ -44,14 +41,6 @@ private:
 
     mutable std::mt19937 _rng_local;
 
-
-    // Parameters for geomGMD objective function
-    const ModelParameters _model;
-    const SolverSettings _solver;
-    const LoggingConfig _logging;
-
-    //Output context for writing output
-    OutputContext &_output_context;
 
     void sample_starting_medoids(std::optional<uint32_t> rs);
 
@@ -73,10 +62,8 @@ private:
 
 };
 
-inline std::vector<std::vector<IntervalDistance>> CLARANS_Clustering::return_distance_matrix() const
-{
-    return _distances.to_matrix();
-}
+// CLARANS (randomized search for medoid swaps) on the graphs of the view
+ClusteringResult cluster_clarans(DistanceView distances, size_t k, Config const &config);
 
 
 

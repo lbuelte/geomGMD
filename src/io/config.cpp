@@ -372,7 +372,7 @@ Config load_config(const std::string& filename)
 
     /* ===================== Clara ===================== */
     if (auto c = get_section(tbl, "Clara")) {
-        c->check_keys({"sample_size", "sample_fraction", "min_sample_size", "num_samples", "reuse_distances",
+        c->check_keys({"sample_size", "sample_fraction", "min_sample_size", "num_samples",
                        "num_threads_assignment", "random_seeds"});
         size_t sample_size = 0;
         c->read("sample_size", sample_size);
@@ -394,7 +394,6 @@ Config load_config(const std::string& filename)
         }
         c->read("min_sample_size", cfg.clara.min_sample_size);
         c->read("num_samples", cfg.clara.num_samples);
-        c->read("reuse_distances", cfg.clara.reuse_distances);
         c->read("num_threads_assignment", cfg.clara.num_threads_assignment);
         require(cfg.clara.num_samples > 0, c->key_name("num_samples") + " must be > 0");
         require(cfg.clara.num_threads_assignment > 0, c->key_name("num_threads_assignment") + " must be > 0");
@@ -441,8 +440,6 @@ Config load_config(const std::string& filename)
         cl->read("compute_missing_distances", cfg.cluster.compute_missing_distances);
         cl->read_enum("failed_distances", cfg.cluster.failed_distances, parse_failed_distances);
         require(cfg.cluster.k > 0, cl->key_name("k") + " must be > 0");
-        require(not cfg.cluster.distance_matrix or cfg.cluster.clustering_algo == ClusteringConfig::ClusteringAlgorithm::PAM,
-                cl->key_name("distance_matrix") + " is only supported with clustering_algo = \"PAM\"");
     }
     else {
         throw std::runtime_error("Missing required [Clustering] section");
@@ -560,7 +557,6 @@ std::ostream& operator<<(std::ostream& out, const ClaraConfig& clara)
         print_entry(out, "min_sample_size", clara.min_sample_size.value());
     }
     print_entry(out, "num_samples", clara.num_samples);
-    print_entry(out, "reuse_distances", tf(clara.reuse_distances));
     print_entry(out, "num_threads_assignment", clara.num_threads_assignment);
     print_entry(out, "random_seeds", seeds_to_string(clara.random_seeds));
     return out;

@@ -49,7 +49,8 @@ public:
 
     // Pairs (i < j) whose computation failed.
     std::vector<std::pair<size_t, size_t>> failed_pairs() const;
-    // Graph id of graph i
+    // Graph i and its graph id
+    GeometricGraph const &graph(size_t i) const { return *_graphs[i]; }
     GraphID graph_id(size_t i) const { return static_cast<GraphID>(_graphs[i]->graph_id()); }
 
     // Matrix with the placeholder {-1, -1} for pairs without a distance; diagonal {0, 0}.
@@ -94,6 +95,18 @@ public:
 
     std::optional<IntervalDistance> known(size_t i, size_t j) const { return _matrix->known(_indices[i], _indices[j]); }
     std::optional<IntervalDistance> get(size_t i, size_t j) { return _matrix->get(_indices[i], _indices[j]); }
+    std::optional<IntervalDistance> get_with_cutoff(size_t i, size_t j, double cutoff)
+    {
+        return _matrix->get_with_cutoff(_indices[i], _indices[j], cutoff);
+    }
+    GeometricGraph const &graph(size_t i) const { return _matrix->graph(_indices[i]); }
+    // The view of the graphs view_indices[0], view_indices[1], ... of this view
+    DistanceView subview(std::vector<size_t> const &view_indices) const
+    {
+        std::vector<size_t> indices;
+        for (size_t i : view_indices) indices.push_back(_indices[i]);
+        return DistanceView(*_matrix, std::move(indices));
+    }
     void compute_all(size_t num_threads, size_t batch_size) { _matrix->compute_among(_indices, num_threads, batch_size); }
     // Failed pairs among the graphs of the view (view indices, i < j)
     std::vector<std::pair<size_t, size_t>> failed_pairs() const;

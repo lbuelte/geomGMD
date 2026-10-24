@@ -12,20 +12,6 @@
 
 //CLASS PAM_Clustering
 
-PAM_Clustering::PAM_Clustering(const std::vector<const GeometricGraph*> &graphs, Config const &config, OutputContext &out, const size_t BATCH_SIZE_MATRIX)
-    : _own_distances(std::make_unique<DistanceMatrix>(graphs, config.model, config.solver, config.logging, out))
-    , _distances(*_own_distances)
-    , _BATCH_SIZE_MATRIX(BATCH_SIZE_MATRIX)
-{
-    _own_distances->treat_failed_as_infinite(config.cluster.failed_distances == ClusteringConfig::FailedDistances::Infinite);
-    //set n
-    this->n = graphs.size();
-    if (config.cluster.parallel){
-        _num_threads_distance_matrix = config.pam.num_threads_matrix;
-    }
-    geomgmd::log::info("Model parameters\n", config.model, "Solver settings\n", config.solver);
-}
-
 PAM_Clustering::PAM_Clustering(
         DistanceView distances,
         Config const &config, 
@@ -193,3 +179,9 @@ std::vector<ClusterID> PAM_Clustering::assignPointsToMedoids() {
 
 
 //END CLASS PAM_Clustering
+
+ClusteringResult cluster_pam(DistanceView distances, size_t k, Config const &config)
+{
+    PAM_Clustering pam_clustering(std::move(distances), config);
+    return pam_clustering.cluster(config, k);
+}

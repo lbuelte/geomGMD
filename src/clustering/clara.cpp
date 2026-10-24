@@ -11,17 +11,14 @@
 
 #include <cassert>
 #include <queue>
-CLARA_Clustering::CLARA_Clustering(const std::vector<const GeometricGraph*> &graphs_, Config const &config, OutputContext &out) 
-    : _graphs(graphs_) 
-    , _model(config.model)
-    , _solver(config.solver)
-    , _logging(config.logging)
+CLARA_Clustering::CLARA_Clustering(DistanceView distances, Config const &config) 
+    : _distances(std::move(distances))
     , _num_samples(config.clara.num_samples)
-    , _output_context(out)
     , _num_clusters(config.cluster.k)
-    , _reuse_distances(config.clara.reuse_distances)
-    , _failed_infinite(config.cluster.failed_distances == ClusteringConfig::FailedDistances::Infinite)
 {
+    for (size_t i = 0; i < _distances.size(); ++i) {
+        _graphs.push_back(&_distances.graph(i));
+    }
     //set n
     this->_num_graphs = _graphs.size();
 
@@ -31,12 +28,8 @@ CLARA_Clustering::CLARA_Clustering(const std::vector<const GeometricGraph*> &gra
     }
     // Sample size from original paper 80 + 2*num_clusters
     set_sample_size(config.clara.sample_size, config.clara.min_sample_size);    
-    if (config.clara.reuse_distances){
-        _distances.emplace(_graphs, _model, _solver, _logging, _output_context);
-        _distances->treat_failed_as_infinite(_failed_infinite);
-    }
 
-    geomgmd::log::info("Model parameters\n", _model, "Solver settings\n", _solver);
+    geomgmd::log::info("Model parameters\n", config.model, "Solver settings\n", config.solver);
 }
 
 
@@ -63,7 +56,7 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
     }
     if (_sample_size >= _num_graphs){
         geomgmd::log::info("CLARA sample size >= number of graphs: Running PAM on the whole dataset.");
-        PAM_Clustering pam_clustering(_graphs, config, _output_context);
+        PAM_Clustering pam_clustering(_distances, config);
         return pam_clustering.cluster(config, _num_clusters);
     }
 
@@ -82,15 +75,9 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
         Sample sample = get_sample(config.clara.random_seeds[s]);       
 
         //Compute Clustering on sample
-        ClusteringResult sample_cluster_result;
-        if (config.clara.reuse_distances){
-            // PAM on the sample, with the distances shared by all samples
-            PAM_Clustering pam_clustering(DistanceView(*_distances, sample.sample_indices), config);
-            sample_cluster_result = pam_clustering.cluster(config, _num_clusters);
-        } else {
-            PAM_Clustering pam_clustering(sample.sample_graphs, config, _output_context);
-            sample_cluster_result = pam_clustering.cluster(config, _num_clusters);        
-        }
+        // PAM on the sample, with the distances shared by all samples
+        PAM_Clustering pam_clustering(_distances.subview(sample.sample_indices), config);
+        ClusteringResult sample_cluster_result = pam_clustering.cluster(config, _num_clusters);
         auto sample_clusters = sample_cluster_result.clusters;      
 
         auto sampled_time = std::chrono::high_resolution_clock::now();
@@ -222,21 +209,14 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
 
     AssignmentResult assignment_result;
 
-    // Without reuse_distances, the distances computed for this assignment are not kept
-    std::optional<DistanceMatrix> sample_distances;
-    if (not _distances) {
-        sample_distances.emplace(_graphs, _model, _solver, _logging, _output_context);
-        sample_distances->treat_failed_as_infinite(_failed_infinite);
-    }
-    DistanceMatrix &distances = _distances ? *_distances : *sample_distances;
 
     // === NAIVE PATH: SINGLE THREAD ===
     if (_num_threads_assignment <= 1) {
-        assignment_result = assign_graphs_to_sample_medoids_singlethreaded(medoids, medoid_indices, sample, order_of_centers, is_sampled, distances);
+        assignment_result = assign_graphs_to_sample_medoids_singlethreaded(medoids, medoid_indices, sample, order_of_centers, is_sampled);
     }
     // === PARALLEL PATH ===
     else {
-        assignment_result = assign_graphs_to_sample_medoids_multithreaded(medoids, medoid_indices, sample, order_of_centers, is_sampled, distances);
+        assignment_result = assign_graphs_to_sample_medoids_multithreaded(medoids, medoid_indices, sample, order_of_centers, is_sampled);
     }
 
     printProgressBar(
@@ -251,7 +231,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
     std::cout << std::endl;  // end the progress bar line
     geomgmd::log::info("Assignment computation using ", _num_threads_assignment, " threads complete, it took ",
                        duration.count(), " ms.");
-    abort_on_failed_pairs(distances);
+    abort_on_failed_pairs(_distances);
 
     return assignment_result;
 }
@@ -261,8 +241,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
         std::vector<GraphID> const& medoid_indices,
         Sample const& sample, 
         std::vector<ClusterID>& order_of_centers, 
-        std::vector<bool>& is_sampled,
-        DistanceMatrix &distances)
+        std::vector<bool>& is_sampled)
 {
     int processed_graphs = 0;
     const GraphID n = _graphs.size();
@@ -286,7 +265,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
         for (ClusterID m = 0; m < medoids.size(); ++m) {
 
             // Known distances are reused; otherwise computed with the current minimum as cutoff
-            auto const dist_result = distances.get_with_cutoff(g, medoid_indices[order_of_centers[m]], min_dist.ub);
+            auto const dist_result = _distances.get_with_cutoff(g, medoid_indices[order_of_centers[m]], min_dist.ub);
             if (!dist_result.has_value()) {
                 continue;
             }
@@ -313,8 +292,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
         std::vector<const GeometricGraph*> const& medoids, 
         std::vector<GraphID> const& medoid_indices,
         Sample const& sample, std::vector<ClusterID>& order_of_centers, 
-        std::vector<bool>& is_sampled,
-        DistanceMatrix &distances)
+        std::vector<bool>& is_sampled)
 {
     std::mutex cost_mutex;
     std::mutex progress_mutex;
@@ -373,7 +351,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
                 for (ClusterID m = 0; m < medoids.size(); ++m) {
 
                     // Known distances are reused; otherwise computed with the current minimum as cutoff
-                    auto const dist_result = distances.get_with_cutoff(g, medoid_indices[order_of_centers[m]], min_dist.ub);
+                    auto const dist_result = _distances.get_with_cutoff(g, medoid_indices[order_of_centers[m]], min_dist.ub);
                     if (!dist_result.has_value()) {
                         continue;
                     }
@@ -470,4 +448,11 @@ ClusteringResult CLARA_Clustering::build_clustering_result_from_sample_cluster_a
     }
 
     return {clusters, medoids, clustering.first.clustering_solution_value + clustering.second.solution_value};
+}
+
+
+ClusteringResult cluster_clara(DistanceView distances, size_t k, Config const &config)
+{
+    CLARA_Clustering clara_clustering(std::move(distances), config);
+    return clara_clustering.cluster(k, config);
 }

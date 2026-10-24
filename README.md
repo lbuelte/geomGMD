@@ -125,7 +125,7 @@ Reads the output of a `geomGMD_matrix` run (same `dataset`, `output_path` and `r
 ```
 
 Clusters the graphs of a dataset using geomGMD (PAM, CLARA or CLARANS; see `config_clustering.toml.example`). It additionally expects the polygons as `<input_path>/<dataset>/<dataset>.gpkg` and writes a copy with the assigned cluster IDs.
-With PAM, distances computed earlier by `geomGMD_matrix` can be reused: `[Clustering] distance_matrix = "<run folder>/intervaldistance_matrix.csv"`. Pairs missing there are computed, or the run aborts if `compute_missing_distances = false`. The run aborts as well if the model parameters in the `config_input.toml` of that run folder differ from the clustering's.
+Distances computed earlier by `geomGMD_matrix` can be reused: `[Clustering] distance_matrix = "<run folder>/intervaldistance_matrix.csv"`. Pairs missing there are computed, or the run aborts if `compute_missing_distances = false`. The run aborts as well if the model parameters in the `config_input.toml` of that run folder differ from the clustering's.
 If the distance of a pair of graphs cannot be computed (solver error), `[Clustering] failed_distances` decides: `"abort"` (default) stops the clustering, `"infinite"` treats the distance as infinite, and `"exclude"` leaves out as few graphs as possible so that no failed pair remains (they are listed in `clustering.csv`/`clustering.json` without a cluster).
 
 ## Citation

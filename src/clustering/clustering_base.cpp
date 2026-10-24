@@ -149,55 +149,26 @@ std::vector<GraphID> graphs_to_exclude(std::vector<std::pair<GraphID, GraphID>> 
     return excluded;
 }
 
-// One clustering of the graphs active[0], active[1], ... (positions in graphs); the result refers to
-// positions in active. PAM uses the distances of all graphs in *pam_distances (only set for PAM).
-ClusteringResult cluster_once(std::vector<const GeometricGraph*> const &graphs, std::vector<size_t> const &active,
-                              size_t const k, Config const &config, OutputContext &out, DistanceMatrix *pam_distances)
+// One clustering of the graphs of the view (the result refers to positions in the view)
+ClusteringResult cluster_once(DistanceView distances, size_t const k, Config const &config)
 {
-    std::vector<const GeometricGraph*> active_graphs;
-    for (size_t p : active) active_graphs.push_back(graphs[p]);
-
-    ClusteringResult clustering_result;
     switch (config.cluster.clustering_algo) {
-
-        case ClusteringConfig::ClusteringAlgorithm::CLARA: {
-            CLARA_Clustering clara_clustering(active_graphs, config, out);
-            geomgmd::log::debug("Running CLARA Clustering (k=", k, ") on ", active_graphs.size(), " graphs on ",
+        case ClusteringConfig::ClusteringAlgorithm::CLARA:
+            geomgmd::log::debug("Running CLARA Clustering (k=", k, ") on ", distances.size(), " graphs on ",
                                 config.pam.num_threads_matrix, "/", config.clara.num_threads_assignment,
                                 " threads and ", config.clara.num_samples, " samples.");
-            clustering_result = clara_clustering.cluster(k, config);
-            if (config.io.write_distance_matrix){
-                clustering_result._distance_matrix_opt = clara_clustering.return_distance_matrix();
-            }
-            break;
-        }
-
-        case ClusteringConfig::ClusteringAlgorithm::CLARANS: {
-            CLARANS_Clustering clarans_clustering(active_graphs, config, out);
-            geomgmd::log::debug("Running CLARANS Clustering (k=", k, ") on ", active_graphs.size(), " graphs on ",
+            return cluster_clara(std::move(distances), k, config);
+        case ClusteringConfig::ClusteringAlgorithm::CLARANS:
+            geomgmd::log::debug("Running CLARANS Clustering (k=", k, ") on ", distances.size(), " graphs on ",
                                 config.pam.num_threads_matrix, " threads and ", config.clarans.num_local,
                                 " starting samples.");
-            clustering_result =  clarans_clustering.cluster(k, config.clarans);
-            if (config.io.write_distance_matrix){
-                clustering_result._distance_matrix_opt = clarans_clustering.return_distance_matrix();
-            }
-            break;
-        }
-
-        case ClusteringConfig::ClusteringAlgorithm::PAM: {
-            PAM_Clustering pam_clustering(DistanceView(*pam_distances, active), config);
-            geomgmd::log::debug("Running PAM Clustering (k=", k, ") on ", active_graphs.size(), " graphs on ",
+            return cluster_clarans(std::move(distances), k, config);
+        case ClusteringConfig::ClusteringAlgorithm::PAM:
+            geomgmd::log::debug("Running PAM Clustering (k=", k, ") on ", distances.size(), " graphs on ",
                                 config.pam.num_threads_matrix, " threads.");
-            clustering_result =  pam_clustering.cluster(config, k);
-            if (config.io.write_distance_matrix){
-                clustering_result._distance_matrix_opt = pam_clustering.return_distance_matrix();
-            }
-            break;
-        }
-        default:
-            throw std::logic_error("Unhandled clustering algorithm");
+            return cluster_pam(std::move(distances), k, config);
     }
-    return clustering_result;
+    throw std::logic_error("Unhandled clustering algorithm");
 }
 
 } // end of anonymous namespace
@@ -209,15 +180,12 @@ ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs
     using FailedDistances = ClusteringConfig::FailedDistances;
     auto const mode = config.cluster.failed_distances;
 
-    // Distances for PAM (kept when graphs are excluded and the clustering is repeated); CLARA and CLARANS
-    // keep their own distances
-    std::unique_ptr<DistanceMatrix> pam_distances;
-    if (config.cluster.clustering_algo == ClusteringConfig::ClusteringAlgorithm::PAM) {
-        pam_distances = std::make_unique<DistanceMatrix>(graphs, config.model, config.solver, config.logging, out);
-        pam_distances->treat_failed_as_infinite(mode == FailedDistances::Infinite);
-        if (config.cluster.distance_matrix) {
-            read_precomputed_distances(*pam_distances, graphs, config);
-        }
+    // Distances between all graphs, shared by the algorithm's steps and kept when graphs are excluded and the
+    // clustering is repeated
+    DistanceMatrix distances(graphs, config.model, config.solver, config.logging, out);
+    distances.treat_failed_as_infinite(mode == FailedDistances::Infinite);
+    if (config.cluster.distance_matrix) {
+        read_precomputed_distances(distances, graphs, config);
     }
 
     std::vector<size_t> active(graphs.size());
@@ -227,7 +195,7 @@ ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs
     ClusteringResult clustering_result;
     while (true) {
         try {
-            clustering_result = cluster_once(graphs, active, k, config, out, pam_distances.get());
+            clustering_result = cluster_once(DistanceView(distances, active), k, config);
             break;
         } catch (FailedDistancesError const &e) {
             if (mode != FailedDistances::Exclude) throw;
@@ -261,15 +229,8 @@ ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs
     for (auto &m : clustering_result.medoid_indices) m = active[m];
     std::sort(excluded.begin(), excluded.end());
     clustering_result.excluded = excluded;
-    if (clustering_result._distance_matrix_opt and clustering_result._distance_matrix_opt->size() == active.size()
-        and active.size() != graphs.size()) {
-        auto const &sub = *clustering_result._distance_matrix_opt;
-        std::vector<std::vector<IntervalDistance>> full(graphs.size(),
-                std::vector<IntervalDistance>(graphs.size(), {-1.0, -1.0}));
-        for (size_t a = 0; a < active.size(); ++a) {
-            for (size_t b = 0; b < active.size(); ++b) full[active[a]][active[b]] = sub[a][b];
-        }
-        clustering_result._distance_matrix_opt = std::move(full);
+    if (config.io.write_distance_matrix) {
+        clustering_result._distance_matrix_opt = distances.to_matrix();
     }
 
     if (mode == FailedDistances::Infinite and std::isinf(clustering_result.clustering_solution_value)) {

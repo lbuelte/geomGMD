@@ -20,17 +20,18 @@ public:
     };
 
 
-    CLARA_Clustering(const std::vector<const GeometricGraph*> &graphs_, Config const &config, OutputContext &out);
+    // CLARA on the graphs of a view of a distance matrix; known distances are reused, computed ones are stored
+    CLARA_Clustering(DistanceView distances, Config const &config);
 
     //method to compute the clustering
     ClusteringResult cluster(int k, Config const &config);
 
-    std::vector<std::vector<IntervalDistance>> return_distance_matrix() const;
-
 private:
 
-    //reference for graphs to be clustered
-    const std::vector<const GeometricGraph*>& _graphs;
+    //distances between the graphs to be clustered (shared by all samples)
+    DistanceView _distances;
+    //graphs to be clustered (the graphs of _distances)
+    std::vector<const GeometricGraph*> _graphs;
 
     //number of centers
     int _num_clusters = -1;
@@ -50,17 +51,6 @@ private:
     //batch size per job in assignment parallelization (one item is the assignment of one graph)
     const size_t BATCH_SIZE_ASSIGNMENT = 10;
 
-    //Distances between all graphs, reused across different samples (only with reuse_distances)
-    std::optional<DistanceMatrix> _distances;
-
-    //Parameters for geomGMD objective function
-    const ModelParameters _model;
-    const SolverSettings _solver;
-    const LoggingConfig _logging;
-
-    //Output context for writing output
-    OutputContext &_output_context;
-
     //helper functions for CLARA Clustering
 
     Sample get_sample(std::optional<uint32_t> const &rs) const;
@@ -68,8 +58,6 @@ private:
     //method to set a fixed sample size
     void set_sample_size(ClaraConfig::SampleSizeSpec const &s, std::optional<size_t> const &min_sample_size);
 
-    bool _reuse_distances;
-    bool _failed_infinite;  // failed distances count as infinite ([Clustering] failed_distances)
 
     //wrapper function for assignment of graphs to sample medoids, calls single- or multithreaded version depending on
     //_num_threads_assignment
@@ -82,15 +70,13 @@ private:
             std::vector<GraphID> const &medoid_ids, 
             Sample const &sample, 
             std::vector<ClusterID>& order_of_centers, 
-            std::vector<bool>& is_sampled,
-            DistanceMatrix &distances);
+            std::vector<bool>& is_sampled);
     AssignmentResult assign_graphs_to_sample_medoids_multithreaded(
             std::vector<const GeometricGraph*> const &medoids, 
             std::vector<GraphID> const &medoid_ids, 
             Sample const &sample, 
             std::vector<ClusterID>& order_of_centers, 
-            std::vector<bool>& is_sampled,
-            DistanceMatrix &distances);
+            std::vector<bool>& is_sampled);
 
     // function merges cluster on sample and assignment of rest to one coherent clustering result
     ClusteringResult build_clustering_result_from_sample_cluster_and_assignment(
@@ -103,9 +89,7 @@ private:
 
 };
 
-inline std::vector<std::vector<IntervalDistance>> CLARA_Clustering::return_distance_matrix() const
-{
-    return _distances ? _distances->to_matrix() : std::vector<std::vector<IntervalDistance>>();
-}
+// CLARA (PAM on samples, assignment of the other graphs to the sample medoids) on the graphs of the view
+ClusteringResult cluster_clara(DistanceView distances, size_t k, Config const &config);
 
 #endif // POLYGONCLUSTERING_CLARA_H

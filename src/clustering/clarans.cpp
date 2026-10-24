@@ -9,20 +9,14 @@
 #include "io/solver_messages.h"
 
 #include <queue>
-CLARANS_Clustering::CLARANS_Clustering(const std::vector<const GeometricGraph*> &graphs_, Config const &config, OutputContext &out) 
-    : _graphs(graphs_)
-    , _distances(graphs_, config.model, config.solver, config.logging, out)
+CLARANS_Clustering::CLARANS_Clustering(DistanceView distances, Config const &config) 
+    : _distances(std::move(distances))
     , _num_local(config.clarans.num_local)
     , _num_clusters(config.cluster.k)
-    , _model(config.model)
-    , _solver(config.solver)
-    , _logging(config.logging)
-    , _output_context(out)
     , _rng_local()
 {
-    _distances.treat_failed_as_infinite(config.cluster.failed_distances == ClusteringConfig::FailedDistances::Infinite);
     //set n
-    _num_graphs = _graphs.size();
+    _num_graphs = _distances.size();
 
     _max_neighbors = std::max(static_cast<size_t>(_num_clusters*(_num_graphs - _num_clusters)* 0.0125), config.clarans.max_neighbors);
 
@@ -34,7 +28,7 @@ CLARANS_Clustering::CLARANS_Clustering(const std::vector<const GeometricGraph*> 
     if (config.cluster.parallel){
         _num_threads = config.clarans.num_threads;
     }
-    geomgmd::log::info("Model parameters\n", _model, "Solver settings\n", _solver);
+    geomgmd::log::info("Model parameters\n", config.model, "Solver settings\n", config.solver);
 }
 
 ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config) 
@@ -297,3 +291,9 @@ std::vector<ClusterID> CLARANS_Clustering::assignPointsToMedoids() {
     return assignments;
 }
 
+
+ClusteringResult cluster_clarans(DistanceView distances, size_t k, Config const &config)
+{
+    CLARANS_Clustering clarans_clustering(std::move(distances), config);
+    return clarans_clustering.cluster(k, config.clarans);
+}

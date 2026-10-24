@@ -27,7 +27,6 @@ struct ClaraConfig {
     size_t num_samples = 1;
     size_t num_threads_assignment = 8;
 
-    bool reuse_distances = true;
 
     // TODO: For the diminishing va mode, we might want more seeds than num_samples,
     // since we run CLARA multiple times. 
@@ -69,7 +68,7 @@ struct ClusteringConfig {
 
     bool parallel = true;
 
-    // Precomputed distances (intervaldistance_matrix.csv of a geomGMD_matrix run), PAM only. Pairs missing
+    // Precomputed distances (intervaldistance_matrix.csv of a geomGMD_matrix run). Pairs missing
     // there are computed if compute_missing_distances, otherwise the run aborts.
     std::optional<std::string> distance_matrix;
     bool compute_missing_distances = true;
