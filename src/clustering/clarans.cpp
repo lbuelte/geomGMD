@@ -11,8 +11,8 @@
 #include <queue>
 CLARANS_Clustering::CLARANS_Clustering(DistanceView distances, Config const &config) 
     : _distances(std::move(distances))
-    , _num_local(config.clarans.num_local)
     , _num_clusters(config.cluster.k)
+    , _num_local(config.clarans.num_local)
     , _rng_local()
 {
     //set n
@@ -58,7 +58,7 @@ ClusteringResult CLARANS_Clustering::cluster(int k, ClaransConfig const &config)
 
     geomgmd::log::debug("Running ", _num_local, " iterations of outer CLARANS loop:"); 
 
-    for (int it = 0; it < _num_local; it++)
+    for (size_t it = 0; it < _num_local; it++)
     {
         auto init_time = std::chrono::high_resolution_clock::now();
 
@@ -127,7 +127,7 @@ CLARANS_Clustering::MedoidSwap CLARANS_Clustering::sample_medoid_swap(std::vecto
     GraphID removed_idx = medoids[distC(_rng_local)];
 
     // Randomly choose medoid to add
-    std::uniform_int_distribution<int> distS(0, _num_graphs - 1);
+    std::uniform_int_distribution<int> distS(0, static_cast<int>(_num_graphs) - 1);
     GraphID added;
     do {
         added = distS(_rng_local);

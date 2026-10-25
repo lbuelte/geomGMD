@@ -90,7 +90,7 @@ int run(int argc, char* argv[])
     auto begin = std::chrono::high_resolution_clock::now();
     
     auto const r = compute_geomGMD(geometricgraphs[g], geometricgraphs[h], config.model, config.solver,
-                                   {.capture_gurobi_log = config.logging.gurobi_log});
+                                   {.cutoff = std::nullopt, .capture_gurobi_log = config.logging.gurobi_log});
     report_gurobi_log(config.logging, geometricgraphs[g], geometricgraphs[h], r);
     auto dist_result = r.distance;
 

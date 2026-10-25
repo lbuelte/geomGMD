@@ -28,7 +28,7 @@ PAM_Clustering::PAM_Clustering(
 }
 
 
-ClusteringResult PAM_Clustering::cluster(Config const &config, int k) 
+ClusteringResult PAM_Clustering::cluster(size_t k) 
 {
     //set k
     this->k = k;
@@ -47,7 +47,7 @@ ClusteringResult PAM_Clustering::cluster(Config const &config, int k)
     //assign elements to clusters
     auto point_assigment = assignPointsToMedoids();
     std::vector<std::vector<GraphID>> clustering(k, std::vector<GraphID>());
-    for(int p=0; p<point_assigment.size(); p++) {
+    for(size_t p=0; p<point_assigment.size(); p++) {
         clustering[point_assigment[p]].push_back(p);
     }
     
@@ -101,7 +101,7 @@ void PAM_Clustering::build() {
 
 void PAM_Clustering::computeEntireDistanceMatrix()
 {
-    if (n <= 0) {
+    if (n == 0) {
         geomgmd::log::warning("WARNING: Cannot compute values of empty distance matrix!");
         return;
     }
@@ -117,7 +117,7 @@ void PAM_Clustering::computeEntireDistanceMatrix()
     auto end = std::chrono::high_resolution_clock::now();
     auto duration =
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    const int totalPairs = (n * (n - 1)) / 2;
+    const size_t totalPairs = (n * (n - 1)) / 2;
 
     geomgmd::log::info("Distance matrix computation with ", _num_threads_distance_matrix, " threads (",
                        totalPairs, " pairs) complete, it took ", duration.count(), " ms.");
@@ -186,5 +186,5 @@ std::vector<ClusterID> PAM_Clustering::assignPointsToMedoids() {
 ClusteringResult cluster_pam(DistanceView distances, size_t k, Config const &config)
 {
     PAM_Clustering pam_clustering(std::move(distances), config);
-    return pam_clustering.cluster(config, k);
+    return pam_clustering.cluster(k);
 }

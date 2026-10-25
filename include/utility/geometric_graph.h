@@ -36,8 +36,8 @@ public:
                    std::vector<Edge> edges_, 
                    std::optional<PolygonID> polygon_id_ = std::nullopt, 
                    std::optional<GraphID> graph_id_ = std::nullopt)
-        : _graph_id(graph_id_)
-        , _polygon_id(polygon_id_)
+        : _polygon_id(polygon_id_)
+        , _graph_id(graph_id_)
         , _vertices(vertices_)
         , _edges(edges_)
     {

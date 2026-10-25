@@ -177,7 +177,6 @@ GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_,
                                     std::optional<double> cutoff)
     : params(model_parameters)
     , settings(solver_settings)
-    , use_path_variables(params.consider_angle_objective or params.enforce_cyclic_order)
     , G(std::max(G_, H_))
     , H(std::min(H_, G_))
     , swapped(&G != &G_)
@@ -187,6 +186,7 @@ GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_,
     , eg(G.num_edges())
     , env(GurobiEnvManager::getEnv())
     , model(env)
+    , use_path_variables(params.consider_angle_objective or params.enforce_cyclic_order)
 {
     model.set(GRB_StringAttr_ModelName,  "geomGMD_FORI");
     model.set(GRB_IntParam_Threads, settings.threads);

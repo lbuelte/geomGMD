@@ -34,17 +34,17 @@ private:
     std::vector<const GeometricGraph*> _graphs;
 
     //number of centers
-    int _num_clusters = -1;
+    size_t _num_clusters = 0;
     //number of data points
-    int _num_graphs = -1;
+    size_t _num_graphs = 0;
 
     size_t _num_samples;
-    int _sample_size = -1;
+    size_t _sample_size = 0;
 
     //number of threads for distance matrix computation
-    int _num_threads_distance_matrix = 1;
+    size_t _num_threads_distance_matrix = 1;
     //number of threads for graph to cluster medoid assignment computation
-    int _num_threads_assignment = 1;
+    size_t _num_threads_assignment = 1;
 
     //batch size per job in matrix parallelization (one item is one matrix entry)
     const size_t BATCH_SIZE_MATRIX = 10;

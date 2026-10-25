@@ -30,9 +30,9 @@ private:
     DistanceView _distances;
 
     //number of centers
-    int _num_clusters = -1;
+    size_t _num_clusters = 0;
     //number of data points
-    int _num_graphs = -1;
+    size_t _num_graphs = 0;
 
     size_t _num_local;
     size_t _max_neighbors;

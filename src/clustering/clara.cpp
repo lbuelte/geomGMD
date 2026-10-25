@@ -13,8 +13,8 @@
 #include <queue>
 CLARA_Clustering::CLARA_Clustering(DistanceView distances, Config const &config) 
     : _distances(std::move(distances))
-    , _num_samples(config.clara.num_samples)
     , _num_clusters(config.cluster.k)
+    , _num_samples(config.clara.num_samples)
 {
     for (size_t i = 0; i < _distances.size(); ++i) {
         _graphs.push_back(&_distances.graph(i));
@@ -61,7 +61,7 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
     if (_sample_size >= _num_graphs){
         geomgmd::log::info("CLARA sample size >= number of graphs: Running PAM on the whole dataset.");
         PAM_Clustering pam_clustering(_distances, config);
-        return pam_clustering.cluster(config, _num_clusters);
+        return pam_clustering.cluster(_num_clusters);
     }
 
     geomgmd::log::debug("Started CLARA Clustering with ", _num_samples, " samples:");
@@ -71,7 +71,7 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
     Sample best_sample;
     size_t best_it = 0;
 
-    for (int s = 0; s < _num_samples; s++){
+    for (size_t s = 0; s < _num_samples; s++){
 
         auto init_time = std::chrono::high_resolution_clock::now();
         geomgmd::log::debug("Sample ", s, ":");
@@ -81,7 +81,7 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
         //Compute Clustering on sample
         // PAM on the sample, with the distances shared by all samples
         PAM_Clustering pam_clustering(_distances.subview(sample.sample_indices), config);
-        ClusteringResult sample_cluster_result = pam_clustering.cluster(config, _num_clusters);
+        ClusteringResult sample_cluster_result = pam_clustering.cluster(_num_clusters);
         auto sample_clusters = sample_cluster_result.clusters;      
 
         auto sampled_time = std::chrono::high_resolution_clock::now();
@@ -91,7 +91,7 @@ ClusteringResult CLARA_Clustering::cluster(int k, Config const &config)
         // Store medoids as graphs
         std::vector<const GeometricGraph*> medoids;   
         std::vector<GraphID> medoid_indices;     
-        for(int cluster_id = 0; cluster_id < sample_clusters.size(); cluster_id++) {
+        for(ClusterID cluster_id = 0; cluster_id < sample_clusters.size(); cluster_id++) {
             medoids.push_back(sample.sample_graphs[sample_cluster_result.medoid_indices[cluster_id]]); 
             medoid_indices.push_back(sample.sample_indices[sample_cluster_result.medoid_indices[cluster_id]]);
         }
@@ -165,7 +165,7 @@ CLARA_Clustering::Sample CLARA_Clustering::get_sample(std::optional<uint32_t> co
     
     // Prepare reduced dataset
     std::vector<const GeometricGraph*> sample_graphs;
-    for(int i = 0; i < _sample_size; i++){
+    for(size_t i = 0; i < _sample_size; i++){
         int graph_id = sample_indices[i];
         sample_graphs.push_back(_graphs[graph_id]);
         sample_text << graph_id << " ";
@@ -394,7 +394,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
     std::vector<std::thread> threads;
     threads.reserve(_num_threads_assignment);
 
-    for (unsigned t = 0; t < _num_threads_assignment; ++t) {
+    for (size_t t = 0; t < _num_threads_assignment; ++t) {
         threads.emplace_back(worker);
     }
 

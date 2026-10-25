@@ -309,10 +309,11 @@ void read_seeds(const Section& s, std::string_view key, std::vector<uint32_t>& s
     require(arr != nullptr, s.key_name(key) + " must be a list of integers, e.g. [1, 2, 3]");
     seeds.clear();
     for (const auto& v : *arr) {
-        auto seed = v.is_integer() ? v.value<int64_t>() : std::nullopt;
-        require(seed and *seed >= 0 and *seed <= std::numeric_limits<uint32_t>::max(),
-                s.key_name(key) + " must be a list of integers between 0 and "
-                + std::to_string(std::numeric_limits<uint32_t>::max()));
+        auto const seed = v.is_integer() ? v.value<int64_t>() : std::nullopt;
+        if (not seed or *seed < 0 or *seed > std::numeric_limits<uint32_t>::max()) {
+            throw std::runtime_error("Config error: " + s.key_name(key) + " must be a list of integers between 0 and "
+                                     + std::to_string(std::numeric_limits<uint32_t>::max()));
+        }
         seeds.push_back(static_cast<uint32_t>(*seed));
     }
 }

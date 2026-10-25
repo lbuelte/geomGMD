@@ -111,7 +111,7 @@ int run(int argc, char* argv[]) {
         }
     }
     //mark medoid polygons
-    for (int cluster_id = 0; cluster_id < clustering_result.medoid_indices.size(); cluster_id++) {
+    for (ClusterID cluster_id = 0; cluster_id < clustering_result.medoid_indices.size(); cluster_id++) {
         is_medoid[graphs[clustering_result.medoid_indices[cluster_id]]->graph_id()] = cluster_id;
     }
     std::filesystem::path input_gpkg =

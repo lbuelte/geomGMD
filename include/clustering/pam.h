@@ -18,7 +18,7 @@ public:
             const size_t BATCH_SIZE_MATRIX = 10);
 
     //method to compute the clustering
-    ClusteringResult cluster(Config const &config, int k);
+    ClusteringResult cluster(size_t k);
 
 
 private:
@@ -31,9 +31,9 @@ private:
     std::vector<std::vector<IntervalDistance>> _distance_matrix;
 
     //number of centers
-    int k=-1;
+    size_t k = 0;
     //number of data points
-    int n=-1;
+    size_t n = 0;
 
     //number of threads for distance matrix computation
     int _num_threads_distance_matrix = 1;

@@ -94,7 +94,7 @@ void assignClustersToPolygons(
     inLayer->ResetReading();
 
     //sanity check
-    if (inLayer->GetFeatureCount() != clusterIds.size()) {
+    if (inLayer->GetFeatureCount() != static_cast<GIntBig>(clusterIds.size())) {
         geomgmd::log::warning("Warning: number of features in input layer (", inLayer->GetFeatureCount(), ") does not match number of cluster ids (", clusterIds.size(), ")");
     }
 
@@ -117,7 +117,7 @@ void assignClustersToPolygons(
         }
         GraphID gid = polygon_id_to_graph_id.at(pid);
 
-        if (gid < 0 || gid >= clusterIds.size()) {
+        if (gid >= clusterIds.size()) {
             geomgmd::log::warning("Warning: cluster ID out of range for graph id ", gid);
             OGRFeature::DestroyFeature(inFeat);
             continue;

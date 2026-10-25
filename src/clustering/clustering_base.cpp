@@ -249,7 +249,7 @@ std::string clustering_result_to_string(ClusteringResult const &clustering_resul
 {
     std::ostringstream log;
     log << clustering_name << " with solution value " << clustering_result.clustering_solution_value << " :";
-    for (int c = 0; c < clustering_result.clusters.size(); c++){
+    for (ClusterID c = 0; c < clustering_result.clusters.size(); c++){
         log << "\nCluster " << c << " with medoid " << clustering_result.medoid_indices[c] + starting_offset << " :\n";
         for (auto const & g : clustering_result.clusters[c]){
             log << g + starting_offset << " ";
