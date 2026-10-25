@@ -5,34 +5,11 @@
 #include "utility/log.h"
 
 #include <algorithm>
-#include <iomanip>
-#include <iostream>
 #include <limits>
 #include <queue>
 #include <thread>
 #include <variant>
 
-namespace {
-
-void print_progress_bar(size_t current, size_t total, int bar_width = 50)
-{
-    double const progress = total > 0 ? static_cast<double>(current) / total : 1.0;
-    int const pos = static_cast<int>(bar_width * progress);
-
-    std::cout << "[";
-    for (int i = 0; i < bar_width; ++i) {
-        if (i < pos) std::cout << "=";
-        else if (i == pos) std::cout << ">";
-        else std::cout << " ";
-    }
-    std::cout << "] "
-              << std::fixed << std::setprecision(1)
-              << (progress * 100.0) << "%  ("
-              << current << " / " << total << ")\r";
-    std::cout.flush();
-}
-
-} // end of anonymous namespace
 
 
 DistanceMatrix::DistanceMatrix(std::vector<const GeometricGraph*> graphs, ModelParameters const &model,
@@ -184,7 +161,7 @@ void DistanceMatrix::compute_among(std::vector<size_t> const &indices, size_t nu
                 std::lock_guard<std::mutex> lock(progress_mutex);
                 ++computed_pairs;
                 if (computed_pairs % 5 == 0 or computed_pairs == total_pairs) {
-                    print_progress_bar(computed_pairs, total_pairs);
+                    geomgmd::log::progress(computed_pairs, total_pairs);
                 }
             }
         }
@@ -198,8 +175,8 @@ void DistanceMatrix::compute_among(std::vector<size_t> const &indices, size_t nu
     for (auto &t : threads) {
         t.join();
     }
-    print_progress_bar(total_pairs, total_pairs);
-    std::cout << std::endl;  // end the progress bar line
+    geomgmd::log::progress(total_pairs, total_pairs);
+    geomgmd::log::finish_progress();
 }
 
 std::vector<std::pair<size_t, size_t>> DistanceMatrix::failed_pairs() const

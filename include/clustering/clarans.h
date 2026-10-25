@@ -52,7 +52,6 @@ private:
 
     double compute_swap_cost(MedoidSwap const &swap_indices, size_t batch_size = 10);
 
-    void printProgressBar(int current, int total, int barWidth=50) const;
 
     //helper function to compute cost given a set of medoids
     double computeTotalCost(const std::vector<GraphID>& medoids);

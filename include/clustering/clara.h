@@ -83,9 +83,6 @@ private:
             std::pair<ClusteringResult, CLARA_Clustering::AssignmentResult> const &clustering, 
             Sample const &sample) const;
 
-    //helper function to print current progress in the distance matrix computation as it is
-    //the longest operation throughout the clustering process
-    void printProgressBar(int current, int total, int barWidth=50) const;
 
 };
 

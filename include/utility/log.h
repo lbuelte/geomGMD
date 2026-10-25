@@ -14,6 +14,7 @@
 //     geomgmd::log::set_file(output_path / "run.log");
 //     geomgmd::log::info("Computed ", n, " pairs in ", seconds, " s.");
 
+#include <cstddef>
 #include <filesystem>
 #include <optional>
 #include <sstream>
@@ -48,6 +49,12 @@ void close_file();
 
 // Writes one message (one line) to the console and/or the log file, depending on their levels.
 void write(LogLevel level, std::string_view message);
+
+// Progress bar on the console (stdout), e.g. "[=====>     ] 42.0%  (21 / 50)", redrawn in place. Shown only if
+// stdout is a terminal and info messages go to the console (not in redirected output, e.g. Slurm logs). A log
+// message written while a bar is shown starts on a new line; finish_progress() ends the bar's line.
+void progress(size_t current, size_t total);
+void finish_progress();
 
 template<class... Args>
 void message(LogLevel level, Args&&... args)

@@ -219,24 +219,6 @@ double CLARANS_Clustering::compute_swap_cost(
 
 
 
-void CLARANS_Clustering::printProgressBar(int current, int total, int barWidth) const 
-{
-    double progress = static_cast<double>(current) / total;
-    int pos = static_cast<int>(barWidth * progress);
-
-    std::cout << "[";
-    for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) std::cout << "=";
-        else if (i == pos) std::cout << ">";
-        else std::cout << " ";
-    }
-
-    std::cout << "] "
-              << std::fixed << std::setprecision(1)
-              << (progress * 100.0) << "%  ("
-              << current << " / " << total << ")\r";
-    std::cout.flush();
-}
 
 
 
@@ -248,7 +230,7 @@ double CLARANS_Clustering::swap() {
 
     geomgmd::log::info("Swapping medoids. We try at most ", _max_neighbors, " many swaps if there is no improvement...");
     while (search_count < _max_neighbors){
-        printProgressBar(search_count, _max_neighbors);
+        geomgmd::log::progress(search_count, _max_neighbors);
         MedoidSwap swap_indices = sample_medoid_swap(_medoids);
 
         double new_cost = compute_swap_cost(swap_indices);
@@ -256,7 +238,7 @@ double CLARANS_Clustering::swap() {
             current_cost = new_cost;
             auto removed_it = std::find(_medoids.begin(), _medoids.end(), swap_indices.idx_removed);
             if (removed_it == _medoids.end()){
-                geomgmd::log::error("Error: Medoid to be removed is not actually contained in _medoids!");
+                throw std::logic_error("CLARANS: the medoid to be removed is not a medoid");
             }
             *removed_it = swap_indices.idx_added; 
             search_count = 0;
@@ -265,7 +247,8 @@ double CLARANS_Clustering::swap() {
             search_count++;
         }
     }
-    printProgressBar(search_count, _max_neighbors);
+    geomgmd::log::progress(search_count, _max_neighbors);
+    geomgmd::log::finish_progress();
     return current_cost;
 }
 
@@ -277,8 +260,9 @@ double CLARANS_Clustering::computeTotalCost(const std::vector<GraphID>& _medoids
     for (GraphID i = 0; i < _num_graphs; ++i) {
         auto const best = nearest_medoid(i, _medoids, [this](size_t g, GraphID m) { return _distances.get(g, m); }).distance;
         total += best.ub;
-        printProgressBar((i+1)*_num_clusters, _num_graphs*_num_clusters);
+        geomgmd::log::progress((i+1)*_num_clusters, _num_graphs*_num_clusters);
     }
+    geomgmd::log::finish_progress();
     abort_on_failed_pairs(_distances);
     return total;
 };

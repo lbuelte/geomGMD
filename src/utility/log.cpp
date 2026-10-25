@@ -10,6 +10,11 @@
 #include <iostream>
 #include <mutex>
 #include <stdexcept>
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <unistd.h>
+#endif
 
 namespace {
 
@@ -18,6 +23,26 @@ std::atomic<LogLevel> file_max_level{LogLevel::Debug};
 std::atomic<bool> file_is_open{false};
 std::mutex log_mutex;
 std::ofstream log_file;
+bool progress_line_open = false;  // a progress bar is shown in the current console line (guarded by log_mutex)
+
+bool stdout_is_terminal()
+{
+#ifdef _WIN32
+    static bool const terminal = _isatty(_fileno(stdout));
+#else
+    static bool const terminal = isatty(fileno(stdout));
+#endif
+    return terminal;
+}
+
+// Ends the line of a shown progress bar (call with log_mutex held)
+void end_progress_line()
+{
+    if (progress_line_open) {
+        std::cout << '\n' << std::flush;
+        progress_line_open = false;
+    }
+}
 
 bool at_most(LogLevel level, LogLevel max_level)
 {
@@ -128,12 +153,39 @@ void write(LogLevel level, std::string_view message)
     }
     std::lock_guard<std::mutex> lock(log_mutex);
     if (to_console) {
+        end_progress_line();
         std::ostream &console = (level == LogLevel::Error or level == LogLevel::Warning) ? std::cerr : std::cout;
         console << message << '\n';
     }
     if (to_file and log_file.is_open()) {
         log_file << time_stamp() << " [" << to_string(level) << "] " << message << std::endl;
     }
+}
+
+void progress(size_t current, size_t total)
+{
+    if (not at_most(LogLevel::Info, console_max_level) or not stdout_is_terminal()) {
+        return;
+    }
+    constexpr int bar_width = 50;
+    double const fraction = total > 0 ? static_cast<double>(current) / total : 1.0;
+    int const pos = static_cast<int>(bar_width * fraction);
+    std::ostringstream bar;
+    bar << "[";
+    for (int i = 0; i < bar_width; ++i) {
+        bar << (i < pos ? '=' : (i == pos ? '>' : ' '));
+    }
+    bar << "] " << std::fixed << std::setprecision(1) << (fraction * 100.0) << "%  (" << current << " / " << total << ")";
+
+    std::lock_guard<std::mutex> lock(log_mutex);
+    std::cout << '\r' << bar.str() << std::flush;
+    progress_line_open = true;
+}
+
+void finish_progress()
+{
+    std::lock_guard<std::mutex> lock(log_mutex);
+    end_progress_line();
 }
 
 } // namespace geomgmd::log

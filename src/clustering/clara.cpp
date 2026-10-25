@@ -223,16 +223,13 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
         assignment_result = assign_graphs_to_sample_medoids_multithreaded(medoids, medoid_indices, sample, order_of_centers, is_sampled);
     }
 
-    printProgressBar(
-        total_graphs_to_assign * medoids.size(),
-        total_graphs_to_assign * medoids.size()
-    );
+    geomgmd::log::progress(total_graphs_to_assign * medoids.size(), total_graphs_to_assign * medoids.size());
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration =
         std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-    std::cout << std::endl;  // end the progress bar line
+    geomgmd::log::finish_progress();
     geomgmd::log::info("Assignment computation using ", _num_threads_assignment, " threads complete, it took ",
                        duration.count(), " ms.");
     abort_on_failed_pairs(_distances);
@@ -284,10 +281,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
         total_cost_of_assignment += min_dist.ub;
 
         ++processed_graphs;
-        printProgressBar(
-            processed_graphs * medoids.size(),
-            total_graphs_to_assign * medoids.size()
-        );
+        geomgmd::log::progress(processed_graphs * medoids.size(), total_graphs_to_assign * medoids.size());
     }
     return {cluster_assignment, total_cost_of_assignment};
 }
@@ -379,10 +373,7 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
             {
                 std::lock_guard<std::mutex> lock(progress_mutex);
                 processed_graphs += local_processed;
-                printProgressBar(
-                    processed_graphs * medoids.size(),
-                    total_graphs_to_assign * medoids.size()
-                );
+                geomgmd::log::progress(processed_graphs * medoids.size(), total_graphs_to_assign * medoids.size());
             }
 
             local_cost = 0.0;
@@ -405,24 +396,6 @@ CLARA_Clustering::AssignmentResult CLARA_Clustering::assign_graphs_to_sample_med
     return {cluster_assignment, total_cost_of_assignment};
 }
 
-void CLARA_Clustering::printProgressBar(int current, int total, int barWidth) const 
-{
-    double progress = static_cast<double>(current) / total;
-    int pos = static_cast<int>(barWidth * progress);
-
-    std::cout << "[";
-    for (int i = 0; i < barWidth; ++i) {
-        if (i < pos) std::cout << "=";
-        else if (i == pos) std::cout << ">";
-        else std::cout << " ";
-    }
-
-    std::cout << "] "
-              << std::fixed << std::setprecision(1)
-              << (progress * 100.0) << "%  ("
-              << current << " / " << total << ")\r";
-    std::cout.flush();
-}
 
 
 ClusteringResult CLARA_Clustering::build_clustering_result_from_sample_cluster_and_assignment(std::pair<ClusteringResult, AssignmentResult> const &clustering, Sample const &sample) const
