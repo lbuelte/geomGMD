@@ -77,8 +77,8 @@ void OutputContext::write_computation_info_row(const GeomGMDResult &result)
     auto const &run_info = result.instance;
     auto const &statistics = result.statistics;
     pairwise_computation_info_writer.value().write_row({
-        std::to_string(run_info.g),
-        std::to_string(run_info.h),
+        run_info.g ? std::to_string(*run_info.g) : "",
+        run_info.h ? std::to_string(*run_info.h) : "",
         std::to_string(run_info.ng),
         std::to_string(run_info.nh),
         std::to_string(run_info.eg),

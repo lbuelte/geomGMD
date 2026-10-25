@@ -35,8 +35,8 @@ struct EdgeMap {
         bool is_deletion() const { return g && !h; }
     };
 
-    int g_graph_id = -1;    // graph id of G (whose edges are the g entries); -1 if not set
-    int h_graph_id = -1;    // graph id of H (whose edges are the h entries); -1 if not set
+    std::optional<GraphID> g_graph_id;  // graph id of G (whose edges are the g entries), if G has one
+    std::optional<GraphID> h_graph_id;  // graph id of H (whose edges are the h entries), if H has one
     std::vector<EdgePair> edge_pairs;
 };
 

@@ -124,7 +124,9 @@ int run(int argc, char* argv[]) {
 
     std::unordered_map<PolygonID, GraphID> polygon_id_to_graph_id;
     for (auto const &graph : geometricgraphs){
-        polygon_id_to_graph_id.emplace(graph.polygon_id(), graph.graph_id());
+        if (graph.polygon_id()) {
+            polygon_id_to_graph_id.emplace(*graph.polygon_id(), graph.graph_id());
+        }
     }
 
     assignClustersToPolygons(input_gpkg.string(), output_gpkg.string(), polygon_id_to_graph_id, cluster_ids, is_medoid);

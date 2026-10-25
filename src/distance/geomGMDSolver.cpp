@@ -351,7 +351,7 @@ EdgeMap GeomGMDForiSolver::return_edge_map()
 {
     if (model.get(GRB_IntAttr_SolCount) == 0){
         // No solution was computed (callers only request the edge map after a successful optimization)
-        return EdgeMap{G.graph_id(), H.graph_id(), {}};
+        return EdgeMap{G.optional_graph_id(), H.optional_graph_id(), {}};
     }
 
     double tol = model.get(GRB_DoubleParam_IntFeasTol);
@@ -382,7 +382,7 @@ EdgeMap GeomGMDForiSolver::return_edge_map()
             pairs.emplace_back(std::nullopt, k);
         }
     }
-    return EdgeMap{G.graph_id(), H.graph_id(), std::move(pairs)};
+    return EdgeMap{G.optional_graph_id(), H.optional_graph_id(), std::move(pairs)};
 }
 
 void GeomGMDForiSolver::create_node_and_edge_variables()

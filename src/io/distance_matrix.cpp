@@ -126,7 +126,7 @@ std::optional<IntervalDistance> DistanceMatrix::compute_pair(size_t i, size_t j,
         return std::nullopt;
     }
     report_solver_failure(r.result);
-    geomgmd::log::error("Error! Distance between graphs ", G.graph_id(), " and ", H.graph_id(),
+    geomgmd::log::error("Error! Distance between graphs ", graph_id_text(G), " and ", graph_id_text(H),
                         " could not be computed!");
     store(i, j, State::Failed, std::nullopt);
     if (_failed_infinite) return infinite_distance();

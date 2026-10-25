@@ -14,8 +14,8 @@ using json = nlohmann::json;
 json edgemap_to_json(EdgeMap const &edgemap, bool optimal)
 {
     json j;
-    j["G_id"] = edgemap.g_graph_id;
-    j["H_id"] = edgemap.h_graph_id;
+    j["G_id"] = edgemap.g_graph_id ? json(*edgemap.g_graph_id) : json(nullptr);
+    j["H_id"] = edgemap.h_graph_id ? json(*edgemap.h_graph_id) : json(nullptr);
     j["optimal"] = optimal;
 
     j["edge_map"] = json::array();
@@ -37,8 +37,12 @@ EdgeMap edgemap_from_json(json const &j)
     };
 
     EdgeMap edgemap;
-    edgemap.g_graph_id = j.at("G_id").get<int>();
-    edgemap.h_graph_id = j.at("H_id").get<int>();
+    auto read_id = [](const json &v) -> std::optional<GraphID> {
+        if (v.is_null()) return std::nullopt;
+        return v.get<GraphID>();
+    };
+    edgemap.g_graph_id = read_id(j.at("G_id"));
+    edgemap.h_graph_id = read_id(j.at("H_id"));
     const json &arr = j.at("edge_map");
     edgemap.edge_pairs.reserve(arr.size());
     for (const auto &entry : arr) {

@@ -8,6 +8,7 @@
 #include <span>      // std::span
 #include <string>    // std::string
 #include <cassert>   // assert
+#include <stdexcept> // std::logic_error
 
 #include "utility/geometry_base.h"
 #include "utility/graph_base.h"
@@ -55,12 +56,18 @@ public:
         _graph_id = id_;
     }
 
-    int graph_id() const { 
-        return _graph_id.has_value() ? _graph_id.value() : -1; 
+    // Graph id: position in the input file (set for all graphs read from a file). graph_id() throws
+    // std::logic_error if it is not set; optional_graph_id() is for code that also handles graphs without id.
+    bool has_graph_id() const { return _graph_id.has_value(); }
+    GraphID graph_id() const {
+        if (not _graph_id.has_value()) {
+            throw std::logic_error("GeometricGraph::graph_id: the graph has no graph id");
+        }
+        return _graph_id.value();
     }
-    int polygon_id() const {
-        return _polygon_id.has_value() ? _polygon_id.value() : -1;
-    }
+    std::optional<GraphID> optional_graph_id() const { return _graph_id; }
+    // Polygon id: the optional "id" of the graph in the input file
+    std::optional<PolygonID> polygon_id() const { return _polygon_id; }
 
     EdgeID num_edges() const { return _edges.size(); }
     VertexID num_vertices() const {return _vertices.size(); }
@@ -111,5 +118,11 @@ private :
     std::vector<std::vector<VertexID>> _ordered_adjacency_list; 
     std::vector<std::vector<EdgeID>> _adjacency_list_edge_association;
 };
+
+// The graph id as text for messages, "?" if the graph has none
+inline std::string graph_id_text(GeometricGraph const &G)
+{
+    return G.has_graph_id() ? std::to_string(G.graph_id()) : "?";
+}
 
 #endif // GEOMGMD_UTILITY_GEOMETRIC_GRAPH_H

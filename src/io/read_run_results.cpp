@@ -50,11 +50,10 @@ std::map<GraphPair, StoredEdgeMap> read_edgemaps_file(std::filesystem::path cons
             json const entry = json::parse(line);
             EdgeMap edgemap = edgemap_from_json(entry);
             bool const optimal = entry.at("optimal").get<bool>();
-            if (edgemap.g_graph_id < 0 or edgemap.h_graph_id < 0) {
-                throw std::runtime_error("negative graph id");
+            if (not edgemap.g_graph_id or not edgemap.h_graph_id) {
+                throw std::runtime_error("edge map without graph ids");
             }
-            GraphPair const key = graph_pair(static_cast<GraphID>(edgemap.g_graph_id),
-                                             static_cast<GraphID>(edgemap.h_graph_id));
+            GraphPair const key = graph_pair(*edgemap.g_graph_id, *edgemap.h_graph_id);
             edgemaps.insert_or_assign(key, StoredEdgeMap{std::move(edgemap), optimal});
         } catch (std::exception const &e) {
             throw format_error(path, line_number, e.what());

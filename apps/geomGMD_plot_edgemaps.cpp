@@ -74,8 +74,8 @@ int run(int argc, char* argv[]) {
 
             // Edge maps are stored in the computation's (g, h) order; files written before edge maps
             // were reported in the caller's order may contain the pair as (h, g)
-            GraphID const first = static_cast<GraphID>(edgemap.g_graph_id);
-            GraphID const second = static_cast<GraphID>(edgemap.h_graph_id);
+            GraphID const first = edgemap.g_graph_id.value();  // set for all edge maps of a file (read_edgemaps_file)
+            GraphID const second = edgemap.h_graph_id.value();
             if (first >= geometricgraphs.size() or second >= geometricgraphs.size()) {
                 throw std::runtime_error("Edge map between graphs " + std::to_string(first) + " and "
                                          + std::to_string(second) + " does not fit the dataset ("

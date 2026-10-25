@@ -51,7 +51,7 @@ public:
     std::vector<std::pair<size_t, size_t>> failed_pairs() const;
     // Graph i and its graph id
     GeometricGraph const &graph(size_t i) const { return *_graphs[i]; }
-    GraphID graph_id(size_t i) const { return static_cast<GraphID>(_graphs[i]->graph_id()); }
+    GraphID graph_id(size_t i) const { return _graphs[i]->graph_id(); }
 
     // Matrix with the placeholder {-1, -1} for pairs without a distance; diagonal {0, 0}.
     std::vector<std::vector<IntervalDistance>> to_matrix() const;

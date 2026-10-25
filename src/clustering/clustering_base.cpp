@@ -55,8 +55,7 @@ void read_precomputed_distances(DistanceMatrix &matrix, std::vector<const Geomet
     size_t num_read = 0, num_missing = 0;
     for (size_t i = 0; i < n; ++i) {
         for (size_t j = i + 1; j < n; ++j) {
-            auto const d = distances.find(graph_pair(static_cast<GraphID>(graphs[i]->graph_id()),
-                                                     static_cast<GraphID>(graphs[j]->graph_id())));
+            auto const d = distances.find(graph_pair(graphs[i]->graph_id(), graphs[j]->graph_id()));
             if (d == distances.end()) {
                 ++num_missing;
                 continue;
@@ -211,7 +210,7 @@ ClusteringResult run_clustering(std::vector<const GeometricGraph*> const &graphs
                                   text.str());
             size_t const num_active = active.size();
             std::erase_if(active, [&](size_t p) {
-                bool const remove = std::find(ids.begin(), ids.end(), static_cast<GraphID>(graphs[p]->graph_id()))
+                bool const remove = std::find(ids.begin(), ids.end(), graphs[p]->graph_id())
                                     != ids.end();
                 if (remove) excluded.push_back(p);
                 return remove;

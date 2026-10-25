@@ -8,7 +8,7 @@ namespace {
 
 struct ClusteredGraph {
     GraphID graph_id;
-    int polygon_id;  // -1 if the input file has no "id"
+    std::optional<PolygonID> polygon_id;  // none if the input file has no "id"
     ClusterID cluster;
     bool is_medoid;
 };
@@ -21,7 +21,7 @@ std::vector<ClusteredGraph> clustered_graphs(ClusteringResult const &clustering_
     for (ClusterID c = 0; c < clustering_result.clusters.size(); c++) {
         const GraphID medoid = clustering_result.medoid_indices[c];
         for (GraphID g : clustering_result.clusters[c]) {
-            result.push_back({static_cast<GraphID>(graphs[g]->graph_id()), graphs[g]->polygon_id(), c, g == medoid});
+            result.push_back({graphs[g]->graph_id(), graphs[g]->polygon_id(), c, g == medoid});
         }
     }
     std::sort(result.begin(), result.end(),
@@ -33,7 +33,7 @@ nlohmann::ordered_json ids_to_json(GeometricGraph const &graph)
 {
     nlohmann::ordered_json j;
     j["graph_id"] = graph.graph_id();
-    j["polygon_id"] = graph.polygon_id() >= 0 ? nlohmann::ordered_json(graph.polygon_id()) : nlohmann::ordered_json(nullptr);
+    j["polygon_id"] = graph.polygon_id() ? nlohmann::ordered_json(*graph.polygon_id()) : nlohmann::ordered_json(nullptr);
     return j;
 }
 
@@ -60,14 +60,14 @@ void write_clustering_csv(std::filesystem::path const &path,
     out << "graph_id,polygon_id,cluster,is_medoid\n";
     for (auto const &g : clustered_graphs(clustering_result, graphs)) {
         out << g.graph_id << ","
-            << (g.polygon_id >= 0 ? std::to_string(g.polygon_id) : "") << ","
+            << (g.polygon_id ? std::to_string(*g.polygon_id) : "") << ","
             << g.cluster << ","
             << (g.is_medoid ? "true" : "false") << "\n";
     }
     // graphs left out because of failed distances: no cluster
     for (GraphID g : clustering_result.excluded) {
         out << graphs[g]->graph_id() << ","
-            << (graphs[g]->polygon_id() >= 0 ? std::to_string(graphs[g]->polygon_id()) : "") << ",,false\n";
+            << (graphs[g]->polygon_id() ? std::to_string(*graphs[g]->polygon_id()) : "") << ",,false\n";
     }
     if (not out.good()) {
         throw std::runtime_error("I/O error while writing: " + path.string());

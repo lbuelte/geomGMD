@@ -25,12 +25,11 @@ bool gurobi_log_wanted(LoggingConfig const &logging, GeometricGraph const &G, Ge
         return true;
     }
 
-    const size_t g = static_cast<size_t>(G.graph_id());
-    const size_t h = static_cast<size_t>(H.graph_id());
-    const bool selected_pair = std::any_of(
+    const std::optional<GraphID> g = G.optional_graph_id(), h = H.optional_graph_id();
+    const bool selected_pair = g and h and std::any_of(
         logging.gurobi_log_pairs.begin(), logging.gurobi_log_pairs.end(),
         [&](auto const &pair) {
-            return (pair.first == g and pair.second == h) or (pair.first == h and pair.second == g);
+            return (pair.first == *g and pair.second == *h) or (pair.first == *h and pair.second == *g);
         });
     if (selected_pair) {
         return true;
@@ -56,7 +55,7 @@ void report_gurobi_log(LoggingConfig const &logging, GeometricGraph const &G, Ge
     if (lines.empty() or not gurobi_log_wanted(logging, G, H, res)) {
         return;
     }
-    const std::string prefix = "[" + std::to_string(G.graph_id()) + "," + std::to_string(H.graph_id()) + "] ";
+    const std::string prefix = "[" + graph_id_text(G) + "," + graph_id_text(H) + "] ";
     std::string block;
     for (auto const &line : lines) {
         if (not block.empty()) {

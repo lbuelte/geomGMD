@@ -10,7 +10,7 @@
 #include <optional>
 
 // JSON representation of an edge map, as written to edgemaps.json:
-//   {"G_id": <graph id of G>, "H_id": <graph id of H>, "optimal": <bool>,
+//   {"G_id": <graph id of G or null>, "H_id": <graph id of H or null>, "optimal": <bool>,
 //    "edge_map": [{"g": <edge of G or null>, "h": <edge of H or null>}, ...]}
 nlohmann::json edgemap_to_json(EdgeMap const &edgemap, bool optimal);
 EdgeMap edgemap_from_json(nlohmann::json const &j);

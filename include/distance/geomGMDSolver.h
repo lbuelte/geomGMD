@@ -183,14 +183,14 @@ public:
     bool graphs_swapped() const { return swapped; }
 
     struct InstancePairInfo {
-        GraphID g, h;    // graph ids (positions in the input file)
+        std::optional<GraphID> g, h;  // graph ids (positions in the input file), if the graphs have ids
         VertexID ng, nh;
         EdgeID eg, eh;
     };
     InstancePairInfo return_run_info() const {
         return {
-            .g  = static_cast<GraphID>(G.graph_id()),  // graph_id() still returns int (phase 5)
-            .h  = static_cast<GraphID>(H.graph_id()),
+            .g  = G.optional_graph_id(),
+            .h  = H.optional_graph_id(),
             .ng = G.num_vertices(),
             .nh = H.num_vertices(),
             .eg = G.num_edges(),
