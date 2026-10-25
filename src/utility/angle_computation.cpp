@@ -1,5 +1,3 @@
-// Created by Laura Bülte on 2026-04-27.
-
 #include "utility/angle_computation.h"
 
 #include <cmath>        // std::fabs, std::atan2, std::cos, std::sin    

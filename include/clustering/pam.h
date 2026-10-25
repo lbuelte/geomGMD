@@ -1,5 +1,5 @@
-#ifndef POLYGONCLUSTERING_PAM_H
-#define POLYGONCLUSTERING_PAM_H
+#ifndef GEOMGMD_CLUSTERING_PAM_H
+#define GEOMGMD_CLUSTERING_PAM_H
 
 #include "clustering_base.h"
 #include "distance/geomGMDSolver.h"
@@ -66,4 +66,4 @@ private:
 ClusteringResult cluster_pam(DistanceView distances, size_t k, Config const &config);
 
 
-#endif // POLYGONCLUSTERING_PAM_H
+#endif // GEOMGMD_CLUSTERING_PAM_H

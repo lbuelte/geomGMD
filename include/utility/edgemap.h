@@ -1,5 +1,3 @@
-// Created by Laura Bülte on 2026-04-01.
-
 #ifndef GEOMGMD_UTILITY_EDGEMAP_H
 #define GEOMGMD_UTILITY_EDGEMAP_H
 

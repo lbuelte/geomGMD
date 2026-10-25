@@ -15,7 +15,7 @@
 
 // This is a graph data structure where the adjacencies always 
 // respect the cyclic order of the edges that are given 
-// by the geometric embedding into the Euklidean plane.
+// by the geometric embedding into the Euclidean plane.
 class GeometricGraph {
 
 public:

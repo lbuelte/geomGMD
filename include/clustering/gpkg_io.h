@@ -1,5 +1,5 @@
-#ifndef POLYGONCLUSTERING_GPKG_IO_H
-#define POLYGONCLUSTERING_GPKG_IO_H
+#ifndef GEOMGMD_CLUSTERING_GPKG_IO_H
+#define GEOMGMD_CLUSTERING_GPKG_IO_H
 
 #include <ogrsf_frmts.h>
 #include <vector>
@@ -18,4 +18,4 @@ void assignClustersToPolygons(
         const std::vector<int>& medoidInfo,
         bool reduce_to_assigned_polys = true);
 
-#endif // POLYGONCLUSTERING_GPKG_IO_H
+#endif // GEOMGMD_CLUSTERING_GPKG_IO_H

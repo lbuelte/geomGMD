@@ -1,5 +1,3 @@
-// Created by Laura Bülte on 2026-04-09
-
 #include "io/edgemap_io.h"
 
 #include "json/json.hpp"

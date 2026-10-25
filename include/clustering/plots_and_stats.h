@@ -1,5 +1,5 @@
-#ifndef POLYGONCLUSTERING_PLOTS_AND_STATS_H
-#define POLYGONCLUSTERING_PLOTS_AND_STATS_H
+#ifndef GEOMGMD_CLUSTERING_PLOTS_AND_STATS_H
+#define GEOMGMD_CLUSTERING_PLOTS_AND_STATS_H
 
 #include <gurobi_c++.h>
 
@@ -141,4 +141,4 @@ void write_instance_and_cluster_svg(GeometricGraph const &g, ClusterID c,
 
 } //end of namespace
 
-#endif // POLYGONCLUSTERING_PLOTS_AND_STATS_H
+#endif // GEOMGMD_CLUSTERING_PLOTS_AND_STATS_H

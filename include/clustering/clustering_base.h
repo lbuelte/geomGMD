@@ -1,5 +1,5 @@
-#ifndef POLYGONCLUSTERING_CLUSTERING_BASE_H
-#define POLYGONCLUSTERING_CLUSTERING_BASE_H
+#ifndef GEOMGMD_CLUSTERING_CLUSTERING_BASE_H
+#define GEOMGMD_CLUSTERING_CLUSTERING_BASE_H
 
 #include "io/config.h"
 #include "io/output_context.h"
@@ -97,4 +97,4 @@ std::string clustering_result_to_string(
         std::string const &clustering_name,
         size_t starting_offset = 0);
 
-#endif // POLYGONCLUSTERING_CLUSTERING_BASE_H
+#endif // GEOMGMD_CLUSTERING_CLUSTERING_BASE_H

@@ -1,5 +1,5 @@
-#ifndef POLYGONCLUSTERING_SAMPLING_H
-#define POLYGONCLUSTERING_SAMPLING_H
+#ifndef GEOMGMD_CLUSTERING_SAMPLING_H
+#define GEOMGMD_CLUSTERING_SAMPLING_H
 
 #include <vector>
 #include <random>
@@ -35,4 +35,4 @@ std::vector<size_t> uniformly_sample_indices(size_t n, size_t k, std::optional<u
 }
 
 
-#endif // POLYGONCLUSTERING_SAMPLING_H
+#endif // GEOMGMD_CLUSTERING_SAMPLING_H

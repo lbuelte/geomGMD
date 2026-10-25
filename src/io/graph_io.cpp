@@ -7,7 +7,7 @@
 
 namespace {
 
-    double euklidean_length(Point const &a, Point const &b){
+    double euclidean_length(Point const &a, Point const &b){
         return std::hypot(b.x - a.x, b.y - a.y);
     }
 
@@ -43,7 +43,7 @@ GeometricGraph graph_from_json(const nlohmann::json& j, std::optional<GraphID> g
 
         VertexID source = e["source"].get<size_t>();
         VertexID target = e["target"].get<size_t>();
-        const auto length = euklidean_length(vertices[source].p, vertices[target].p);
+        const auto length = euclidean_length(vertices[source].p, vertices[target].p);
         edges.emplace_back(source, target, length);
     }
     return GeometricGraph(std::move(vertices), std::move(edges), read_shape_id_from_json(j), graph_id);

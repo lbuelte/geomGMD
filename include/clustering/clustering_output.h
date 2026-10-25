@@ -1,5 +1,5 @@
-#ifndef POLYGONCLUSTERING_CLUSTERING_OUTPUT_H
-#define POLYGONCLUSTERING_CLUSTERING_OUTPUT_H
+#ifndef GEOMGMD_CLUSTERING_CLUSTERING_OUTPUT_H
+#define GEOMGMD_CLUSTERING_CLUSTERING_OUTPUT_H
 
 #include "clustering/clustering_base.h"
 
@@ -32,4 +32,4 @@ nlohmann::ordered_json clustering_to_json(ClusteringResult const &clustering_res
 
 void write_clustering_json(std::filesystem::path const &path, nlohmann::ordered_json const &clustering);
 
-#endif // POLYGONCLUSTERING_CLUSTERING_OUTPUT_H
+#endif // GEOMGMD_CLUSTERING_CLUSTERING_OUTPUT_H

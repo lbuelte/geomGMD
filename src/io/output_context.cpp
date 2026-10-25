@@ -1,5 +1,3 @@
-// Created by Laura Bülte on 2026-04-02.
-
 #include "io/output_context.h"
 #include "utility/log.h"
 
@@ -36,7 +34,7 @@ bool is_optimal(double lb, double ub) {
     return std::abs(lb - ub) < EPS;
 }
 
-} // end of anonymour namespace
+} // end of anonymous namespace
 
 
 // We assume that matrix is symmetric

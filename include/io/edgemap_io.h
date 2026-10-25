@@ -1,5 +1,3 @@
-// Created by Laura Bülte on 2026-04-15.
-
 #ifndef GEOMGMD_IO_EDGEMAP_IO_H
 #define GEOMGMD_IO_EDGEMAP_IO_H
 

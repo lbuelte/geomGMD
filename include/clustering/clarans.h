@@ -1,5 +1,5 @@
-#ifndef POLYGONCLUSTERING_CLARANS_H
-#define POLYGONCLUSTERING_CLARANS_H
+#ifndef GEOMGMD_CLUSTERING_CLARANS_H
+#define GEOMGMD_CLUSTERING_CLARANS_H
 
 #include "clustering_base.h"
 #include "distance/geomGMDSolver.h"
@@ -68,4 +68,4 @@ ClusteringResult cluster_clarans(DistanceView distances, size_t k, Config const 
 
 
 
-#endif // POLYGONCLUSTERING_CLARANS_H
+#endif // GEOMGMD_CLUSTERING_CLARANS_H

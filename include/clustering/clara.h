@@ -1,5 +1,5 @@
-#ifndef POLYGONCLUSTERING_CLARA_H
-#define POLYGONCLUSTERING_CLARA_H
+#ifndef GEOMGMD_CLUSTERING_CLARA_H
+#define GEOMGMD_CLUSTERING_CLARA_H
 
 #include "io/config.h"
 #include "pam.h"
@@ -92,4 +92,4 @@ private:
 // CLARA (PAM on samples, assignment of the other graphs to the sample medoids) on the graphs of the view
 ClusteringResult cluster_clara(DistanceView distances, size_t k, Config const &config);
 
-#endif // POLYGONCLUSTERING_CLARA_H
+#endif // GEOMGMD_CLUSTERING_CLARA_H

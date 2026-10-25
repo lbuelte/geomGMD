@@ -1,5 +1,3 @@
-// Created by Laura Bülte on 2026-03-30.
-
 #ifndef GEOMGMD_IO_RESULT_WRITER_H
 #define GEOMGMD_IO_RESULT_WRITER_H
 
