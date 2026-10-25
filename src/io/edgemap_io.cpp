@@ -9,6 +9,8 @@
 #include <unordered_map>
 #include <cmath>
 
+using json = nlohmann::json;
+
 json edgemap_to_json(EdgeMap const &edgemap, bool optimal)
 {
     json j;

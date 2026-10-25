@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+using json = nlohmann::json;
+
 namespace {
 
 std::ifstream open_result_file(std::filesystem::path const &path)
