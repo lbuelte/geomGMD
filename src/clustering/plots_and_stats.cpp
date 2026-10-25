@@ -57,17 +57,17 @@ void write_instance_and_cluster_svg(GeometricGraph const &g, ClusterID c,
 {
     double radius = 2.0; // fixed small radius for visualization
 
-    if (g.num_vertices() == 0) {
+    if (g.num_nodes() == 0) {
         return;
     }
 
     // ---- bounding box ----
-    double min_x = g.vertex(0).p.x;
-    double min_y = g.vertex(0).p.y;
+    double min_x = g.node(0).p.x;
+    double min_y = g.node(0).p.y;
     double max_x = min_x;
     double max_y = min_y;
 
-    for (const auto& v : g.vertices()) {
+    for (const auto& v : g.nodes()) {
         min_x = std::min(min_x, v.p.x);
         min_y = std::min(min_y, v.p.y);
         max_x = std::max(max_x, v.p.x);
@@ -103,8 +103,8 @@ void write_instance_and_cluster_svg(GeometricGraph const &g, ClusterID c,
     for (size_t k = 0; k < g.num_edges(); ++k) {
         int i1 = g.edge(k).v1;
         int i2 = g.edge(k).v2;
-        const auto& p1 = g.vertex(i1).p;
-        const auto& p2 = g.vertex(i2).p;
+        const auto& p1 = g.node(i1).p;
+        const auto& p2 = g.node(i2).p;
 
         svg << "<line x1='" << sx(p1.x) << "' y1='" << sy(p1.y)
             << "' x2='" << sx(p2.x) << "' y2='" << sy(p2.y)
@@ -113,8 +113,8 @@ void write_instance_and_cluster_svg(GeometricGraph const &g, ClusterID c,
 
     }
 
-    // ---- draw medial axis vertices ----
-    for (const auto& v : g.vertices()) {
+    // ---- draw medial axis nodes ----
+    for (const auto& v : g.nodes()) {
         svg << "<circle cx='" << sx(v.p.x) << "' cy='" << sy(v.p.y)
             << "' r='" << radius << "' fill='black' stroke='black' stroke-width='2'/>\n";
     }
@@ -125,7 +125,7 @@ void write_instance_and_cluster_svg(GeometricGraph const &g, ClusterID c,
     svg << "<text x='" << legend_x
         << "' y='" << legend_y
         << "' font-family='Arial' font-size='14' fill='black'>"
-        << "Vertices: " << g.num_vertices()
+        << "Nodes: " << g.num_nodes()
         << "</text>\n";
 
     svg << "<text x='" << legend_x

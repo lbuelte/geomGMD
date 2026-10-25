@@ -29,24 +29,24 @@ GeometricGraph graph_from_json(const nlohmann::json& j, std::optional<GraphID> g
         throw std::runtime_error("Invalid JSON structure.");
     }
 
-    std::vector<GeometricGraph::Vertex> vertices;
-    const auto& vertices_json = j["medial_axis"]["vertices"];
-    for (VertexID i = 0; i < vertices_json.size(); ++i) {
+    std::vector<GeometricGraph::Node> nodes;
+    const auto& nodes_json = j["medial_axis"]["vertices"];
+    for (NodeID i = 0; i < nodes_json.size(); ++i) {
 
-        double x = vertices_json[i]["x"].get<double>();
-        double y = vertices_json[i]["y"].get<double>();
-        vertices.emplace_back(i, Point(x, y));
+        double x = nodes_json[i]["x"].get<double>();
+        double y = nodes_json[i]["y"].get<double>();
+        nodes.emplace_back(i, Point(x, y));
     }
 
     std::vector<GeometricGraph::Edge> edges;
     for (const auto& e : j["medial_axis"]["edges"]) {
 
-        VertexID source = e["source"].get<size_t>();
-        VertexID target = e["target"].get<size_t>();
-        const auto length = euclidean_length(vertices[source].p, vertices[target].p);
+        NodeID source = e["source"].get<size_t>();
+        NodeID target = e["target"].get<size_t>();
+        const auto length = euclidean_length(nodes[source].p, nodes[target].p);
         edges.emplace_back(source, target, length);
     }
-    return GeometricGraph(std::move(vertices), std::move(edges), read_shape_id_from_json(j), graph_id);
+    return GeometricGraph(std::move(nodes), std::move(edges), read_shape_id_from_json(j), graph_id);
 }
 
 

@@ -19,17 +19,17 @@ namespace {
 } // end of anonymous namespace
 
 
-std::vector<VertexID> GeometricGraph::get_neighbor_sequence(VertexID center, VertexID start, VertexID end) const
+std::vector<NodeID> GeometricGraph::get_neighbor_sequence(NodeID center, NodeID start, NodeID end) const
 {
     const auto neighbors = _ordered_adjacency_list[center];
    
 
-    auto idx = [&neighbors](VertexID id) -> std::optional<NeighborID> {
+    auto idx = [&neighbors](NodeID id) -> std::optional<NeighborID> {
         auto it = std::find(neighbors.begin(), neighbors.end(), id);
         if (it != neighbors.end()) {
             return std::distance(neighbors.begin(), it);
         } else {
-            std::cerr << "Warning: GeometricGraph::get_neighbor_sequence was called with vertex" 
+            std::cerr << "Warning: GeometricGraph::get_neighbor_sequence was called with node" 
                       << id << " not in neighborhood of center!" << std::endl;
             return std::nullopt;
         }
@@ -37,13 +37,13 @@ std::vector<VertexID> GeometricGraph::get_neighbor_sequence(VertexID center, Ver
     auto const start_idx = idx(start);
     auto const end_idx = idx(end);
     if (not start_idx.has_value() or not end_idx.has_value()){
-        std::cerr << "Warning: GeometricGraph::get_neighbor_sequence: vertex not in neighborhood of center " 
+        std::cerr << "Warning: GeometricGraph::get_neighbor_sequence: node not in neighborhood of center " 
                   << center << "!" << std::endl;
-        return std::vector<VertexID>();
+        return std::vector<NodeID>();
     }
-    if (neighbors.size() <= 2) return std::vector<VertexID>();
+    if (neighbors.size() <= 2) return std::vector<NodeID>();
 
-    std::vector<VertexID> neighbor_sequence;
+    std::vector<NodeID> neighbor_sequence;
     for (NeighborID w = start_idx.value() + 1; w < neighbors.size(); ++w){
         if (w >= end_idx.value()) break;
         neighbor_sequence.push_back(neighbors[w]);
@@ -57,15 +57,15 @@ std::vector<VertexID> GeometricGraph::get_neighbor_sequence(VertexID center, Ver
 }
 
 
-VertexID GeometricGraph::get_cyclic_order_distance(VertexID center, VertexID start, VertexID end) const
+NodeID GeometricGraph::get_cyclic_order_distance(NodeID center, NodeID start, NodeID end) const
 {
     const auto neighbors = _ordered_adjacency_list[center];
-    auto idx = [&neighbors](VertexID id) -> std::optional<NeighborID> {
+    auto idx = [&neighbors](NodeID id) -> std::optional<NeighborID> {
         auto it = std::find(neighbors.begin(), neighbors.end(), id);
         if (it != neighbors.end()) {
             return std::distance(neighbors.begin(), it);
         } else {
-            std::cerr << "Warning: GeometricGraph::get_cyclic_order_distance was called with vertex" 
+            std::cerr << "Warning: GeometricGraph::get_cyclic_order_distance was called with node" 
                       << id << " not in neighborhood of center!" << std::endl;
             return std::nullopt;
         }
@@ -73,7 +73,7 @@ VertexID GeometricGraph::get_cyclic_order_distance(VertexID center, VertexID sta
     auto const start_idx = idx(start);
     auto const end_idx = idx(end);
     if (not start_idx.has_value() or not end_idx.has_value()){
-        std::cerr << "Warning: GeometricGraph::get_cyclic_order_distance: vertex not in neighborhood of center " 
+        std::cerr << "Warning: GeometricGraph::get_cyclic_order_distance: node not in neighborhood of center " 
                   << center << "!" << std::endl;
         return 0;
     }
@@ -89,12 +89,12 @@ VertexID GeometricGraph::get_cyclic_order_distance(VertexID center, VertexID sta
 
 bool GeometricGraph::check_cyclic_order() const
 {
-    for (VertexID v = 0; v < num_vertices(); ++v){
+    for (NodeID v = 0; v < num_nodes(); ++v){
         const auto neighbors = _ordered_adjacency_list[v];
-        const VertexID n = neighbors.size();
+        const NodeID n = neighbors.size();
         if (n < 2) continue;
 
-        const Point &p = _vertices[v].p;
+        const Point &p = _nodes[v].p;
         auto isLessOrEqual = [&](Point const &p1, Point const &p2) {
             double dx1 = p1.x - p.x;
             double dy1 = p1.y - p.y;
@@ -111,21 +111,21 @@ bool GeometricGraph::check_cyclic_order() const
         };
 
         // Find index of neighbor with minimal angle
-        VertexID min_idx = 0;
-        for (VertexID i = 1; i < n; ++i) {
-            const Point& pi = _vertices[neighbors[i]].p;
-            const Point& pmin = _vertices[neighbors[min_idx]].p;
+        NodeID min_idx = 0;
+        for (NodeID i = 1; i < n; ++i) {
+            const Point& pi = _nodes[neighbors[i]].p;
+            const Point& pmin = _nodes[neighbors[min_idx]].p;
             if (!isLessOrEqual(pmin, pi))  // pmin > pi
                 min_idx = i;
         }
 
         // Check linear order starting from minimal
-        for (VertexID w = 0; w < n - 1; ++w) {
-            const VertexID i = (min_idx + w) % n;
-            const VertexID j = (min_idx + w + 1) % n;
+        for (NodeID w = 0; w < n - 1; ++w) {
+            const NodeID i = (min_idx + w) % n;
+            const NodeID j = (min_idx + w + 1) % n;
 
-            const Point& curr = _vertices[neighbors[i]].p;
-            const Point& next = _vertices[neighbors[j]].p;
+            const Point& curr = _nodes[neighbors[i]].p;
+            const Point& next = _nodes[neighbors[j]].p;
 
             if (!isLessOrEqual(curr, next))
                 return false;
@@ -137,11 +137,11 @@ bool GeometricGraph::check_cyclic_order() const
 
 bool GeometricGraph::check_match_of_adjacencies() const
 {
-    for (VertexID v = 0; v < num_vertices(); ++v){
-        for (VertexID w = 0; w < _ordered_adjacency_list[v].size(); ++w){
+    for (NodeID v = 0; v < num_nodes(); ++v){
+        for (NodeID w = 0; w < _ordered_adjacency_list[v].size(); ++w){
             Edge e = _edges[_adjacency_list_edge_association[v][w]];
 
-            auto matches = [&e](VertexID a, VertexID b) {
+            auto matches = [&e](NodeID a, NodeID b) {
                 return (e.v1 == a and e.v2 == b)
                     or (e.v1 == b and e.v2 == a);
             };
@@ -156,7 +156,7 @@ bool GeometricGraph::check_match_of_adjacencies() const
 void GeometricGraph::build_ordered_adjacency_lists()
 {
     // Store edge ids in end node entries
-    _adjacency_list_edge_association = std::vector<std::vector<EdgeID>>(num_vertices());
+    _adjacency_list_edge_association = std::vector<std::vector<EdgeID>>(num_nodes());
     for (EdgeID e = 0; e < num_edges(); ++e){
         auto i = _edges[e].v1;
         auto j = _edges[e].v2;
@@ -164,18 +164,18 @@ void GeometricGraph::build_ordered_adjacency_lists()
         _adjacency_list_edge_association[j].push_back(e);
     }
 
-    for (VertexID v = 0; v < num_vertices(); ++v){
+    for (NodeID v = 0; v < num_nodes(); ++v){
         // Sort edges anti-clockwise starting from the positive x-axis
         std::sort(_adjacency_list_edge_association[v].begin(), 
                   _adjacency_list_edge_association[v].end(), 
                   [&](EdgeID const &f1, EdgeID const &f2){
 
-            const Point &p = _vertices[v].p;
+            const Point &p = _nodes[v].p;
             const Edge &e1 = _edges[f1];
             const Edge &e2 = _edges[f2];
 
-            const Point &n1 = _vertices[(e1.v1 == v) ? e1.v2 : e1.v1].p;
-            const Point &n2 = _vertices[(e2.v1 == v) ? e2.v2 : e2.v1].p;
+            const Point &n1 = _nodes[(e1.v1 == v) ? e1.v2 : e1.v1].p;
+            const Point &n2 = _nodes[(e2.v1 == v) ? e2.v2 : e2.v1].p;
 
             double dx1 = n1.x - p.x;
             double dy1 = n1.y - p.y;
@@ -191,10 +191,10 @@ void GeometricGraph::build_ordered_adjacency_lists()
         });
     }
 
-    _ordered_adjacency_list = std::vector<std::vector<VertexID>>(num_vertices());
-    for (VertexID v = 0; v < num_vertices(); ++v){
+    _ordered_adjacency_list = std::vector<std::vector<NodeID>>(num_nodes());
+    for (NodeID v = 0; v < num_nodes(); ++v){
         for (auto const &e: _adjacency_list_edge_association[v]){
-            VertexID other = (_edges[e].v1 == v)
+            NodeID other = (_edges[e].v1 == v)
                     ? _edges[e].v2 
                     : _edges[e].v1;
             _ordered_adjacency_list[v].push_back(other);
@@ -205,6 +205,6 @@ void GeometricGraph::build_ordered_adjacency_lists()
         throw std::runtime_error("Error: In build adjacency list: The cyclic order is violated!");
     }
     if (not check_match_of_adjacencies()){
-        throw std::runtime_error("Error: In build adjacency list: The edge and vertex adjacencies do not match!");
+        throw std::runtime_error("Error: In build adjacency list: The edge and node adjacencies do not match!");
     }
 }

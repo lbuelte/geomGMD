@@ -16,7 +16,7 @@ double path_angle_cost(
         const GeometricGraph& H,
         const EdgeMap& edgemap)
 {
-    std::vector<std::vector<EdgeMap::EdgePair>> G_mapped_edge_adjacencies(G.num_vertices());
+    std::vector<std::vector<EdgeMap::EdgePair>> G_mapped_edge_adjacencies(G.num_nodes());
 
     for (auto const &edge_pair : edgemap.edge_pairs){
         if (edge_pair.is_substitution()){
@@ -28,7 +28,7 @@ double path_angle_cost(
 
     double objective_value = 0;
 
-    for (VertexID j = 0; j < G.num_vertices(); ++j){
+    for (NodeID j = 0; j < G.num_nodes(); ++j){
         // If there are at least two mapped edges incident to j, 
         // get path mapping cost for all paths with j in the middle
         if (G_mapped_edge_adjacencies[j].size() < 2) continue;
@@ -39,8 +39,8 @@ double path_angle_cost(
             EdgeID edge1_G = edge_pair_1.g.value();
             EdgeID edge1_H = edge_pair_1.h.value();
 
-            // Other G-vertex adjacent to j
-            VertexID i = G.edge(edge1_G).v1 == j ? 
+            // Other G-node adjacent to j
+            NodeID i = G.edge(edge1_G).v1 == j ? 
                     G.edge(edge1_G).v2 :
                     G.edge(edge1_G).v1;
 
@@ -52,42 +52,42 @@ double path_angle_cost(
                 EdgeID edge2_G = edge_pair_2.g.value();
                 EdgeID edge2_H = edge_pair_2.h.value();
 
-                // Other G-vertex adjacent to j and different from i
-                VertexID h = (G.edge(edge2_G).v1 == j) ? 
+                // Other G-node adjacent to j and different from i
+                NodeID h = (G.edge(edge2_G).v1 == j) ? 
                         G.edge(edge2_G).v2 : 
                         G.edge(edge2_G).v1;
 
                 // Angle for path ijh
                 double angle1 = (params.angle_type == AngleType::Signed) ?
-                        compute_signed_angle_between_lines(G.vertex(i).p, G.vertex(j).p, G.vertex(h).p) :
-                        compute_unsigned_angle_between_lines(G.vertex(i).p, G.vertex(j).p, G.vertex(h).p);
+                        compute_signed_angle_between_lines(G.node(i).p, G.node(j).p, G.node(h).p) :
+                        compute_unsigned_angle_between_lines(G.node(i).p, G.node(j).p, G.node(h).p);
 
-                // Helper to find middle vertex of corresponding path in H
-                auto is_common_vertex_H = [&](VertexID k){
+                // Helper to find middle node of corresponding path in H
+                auto is_common_node_H = [&](NodeID k){
                     if (H.edge(edge2_H).v1 == k or H.edge(edge2_H).v2 == k){
                         return true;
                     }
                     return false;
                 };
 
-                // Setting vertices k, l and m such that the path ijh is mapped to the path klm
-                VertexID l, k; 
-                if (is_common_vertex_H(H.edge(edge1_H).v1)) {
+                // Setting nodes k, l and m such that the path ijh is mapped to the path klm
+                NodeID l, k; 
+                if (is_common_node_H(H.edge(edge1_H).v1)) {
                     l = H.edge(edge1_H).v1;
                     k = H.edge(edge1_H).v2;
                 } else {
-                    assert(is_common_vertex_H(H.edge(edge1_H).v2));
+                    assert(is_common_node_H(H.edge(edge1_H).v2));
                     l = H.edge(edge1_H).v2;
                     k = H.edge(edge1_H).v1;
                 }
-                VertexID m = (H.edge(edge2_H).v1 == l) ?
+                NodeID m = (H.edge(edge2_H).v1 == l) ?
                         H.edge(edge2_H).v2 :
                         H.edge(edge2_H).v1;
 
                 // Angle for path klm
                 double angle2 = (params.angle_type == AngleType::Signed) ?
-                        compute_signed_angle_between_lines(H.vertex(k).p, H.vertex(l).p, H.vertex(m).p) :
-                        compute_unsigned_angle_between_lines(H.vertex(k).p, H.vertex(l).p, H.vertex(m).p);
+                        compute_signed_angle_between_lines(H.node(k).p, H.node(l).p, H.node(m).p) :
+                        compute_unsigned_angle_between_lines(H.node(k).p, H.node(l).p, H.node(m).p);
 
                 objective_value += params.cost_factor_angle_difference * std::abs(angle1 - angle2);
             }

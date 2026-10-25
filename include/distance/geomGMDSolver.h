@@ -116,9 +116,9 @@ private:
 };
 
 struct DirectedPathLength2 {
-    VertexID v1;
-    VertexID v2; 
-    VertexID v3;
+    NodeID v1;
+    NodeID v2; 
+    NodeID v3;
     double angle = 0.0;
 };
 
@@ -184,15 +184,15 @@ public:
 
     struct InstancePairInfo {
         std::optional<GraphID> g, h;  // graph ids (positions in the input file), if the graphs have ids
-        VertexID ng, nh;
+        NodeID ng, nh;
         EdgeID eg, eh;
     };
     InstancePairInfo return_run_info() const {
         return {
             .g  = G.optional_graph_id(),
             .h  = H.optional_graph_id(),
-            .ng = G.num_vertices(),
-            .nh = H.num_vertices(),
+            .ng = G.num_nodes(),
+            .nh = H.num_nodes(),
             .eg = G.num_edges(),
             .eh = H.num_edges()
         };

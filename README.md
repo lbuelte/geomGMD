@@ -48,7 +48,7 @@ This creates the executables `geomGMD_pair`, `geomGMD_matrix`, `geomGMD_plot_edg
 
 The input is a file `<input_path>/<dataset>/<dataset>_graphs.json`.
 It contains a JSON array `graphs`. Each entry has an entry `medial_axis` with two arrays `vertices` and `edges`:
-* `vertices` is an array of 2D points, each given by the coordinates `x` and `y` (doubles).
+* `vertices` is an array of 2D points (the nodes of the graph), each given by the coordinates `x` and `y` (doubles).
 * `edges` is an array of index pairs, each given by `source` and `target`.
 
 Example:

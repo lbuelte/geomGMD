@@ -8,17 +8,17 @@ void write_graph_svg(const GeometricGraph& G, const std::string &filename, doubl
 {
     double radius = 2.0; // fixed small radius for visualization
 
-    if (G.num_vertices() == 0) {
+    if (G.num_nodes() == 0) {
         return;
     }
 
     // ---- bounding box ----
-    double min_x = G.vertex(0).p.x;
-    double min_y = G.vertex(0).p.y;
+    double min_x = G.node(0).p.x;
+    double min_y = G.node(0).p.y;
     double max_x = min_x;
     double max_y = min_y;
 
-    for (const auto& v : G.vertices()) {
+    for (const auto& v : G.nodes()) {
         min_x = std::min(min_x, v.p.x);
         min_y = std::min(min_y, v.p.y);
         max_x = std::max(max_x, v.p.x);
@@ -50,22 +50,22 @@ void write_graph_svg(const GeometricGraph& G, const std::string &filename, doubl
 
     // ---- draw medial axis edges ----
     for (const auto& e : G.edges()) {
-        const auto& p1 = G.vertex(e.v1).p;
-        const auto& p2 = G.vertex(e.v2).p;
+        const auto& p1 = G.node(e.v1).p;
+        const auto& p2 = G.node(e.v2).p;
 
         svg << "<line x1='" << sx(p1.x) << "' y1='" << sy(p1.y)
             << "' x2='" << sx(p2.x) << "' y2='" << sy(p2.y)
             << "' style='stroke:green;stroke-width:2'/>\n";
     }
 
-    // ---- draw medial axis vertices ----
-    for (const auto& v : G.vertices()) {
+    // ---- draw medial axis nodes ----
+    for (const auto& v : G.nodes()) {
         svg << "<circle cx='" << sx(v.p.x) << "' cy='" << sy(v.p.y)
             << "' r='" << radius << "' fill='black' stroke='black' stroke-width='2'/>\n";
     }
 
     // ---- legend with graph size ----
-    std::size_t num_vertices = G.num_vertices();
+    std::size_t num_nodes = G.num_nodes();
     std::size_t num_edges    = G.num_edges();
 
     double legend_x = 15;
@@ -74,7 +74,7 @@ void write_graph_svg(const GeometricGraph& G, const std::string &filename, doubl
     svg << "<text x='" << legend_x
         << "' y='" << legend_y
         << "' font-family='Arial' font-size='14' fill='black'>"
-        << "Vertices: " << num_vertices
+        << "Nodes: " << num_nodes
         << "</text>\n";
 
     svg << "<text x='" << legend_x

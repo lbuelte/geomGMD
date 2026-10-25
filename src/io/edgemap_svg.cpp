@@ -58,7 +58,7 @@ BBox compute_bbox(const GeometricGraph& g) {
     b.min_x = b.min_y = std::numeric_limits<double>::infinity();
     b.max_x = b.max_y = -std::numeric_limits<double>::infinity();
 
-    for (const auto& v : g.vertices()) {
+    for (const auto& v : g.nodes()) {
         b.min_x = std::min(b.min_x, v.p.x);
         b.min_y = std::min(b.min_y, v.p.y);
         b.max_x = std::max(b.max_x, v.p.x);
@@ -125,8 +125,8 @@ void write_edge_mapping_svg(
         for (size_t e = 0; e < g.num_edges(); ++e) {
             auto edge = g.edge(e);
 
-            auto p1 = g.vertex(edge.v1).p;
-            auto p2 = g.vertex(edge.v2).p;
+            auto p1 = g.node(edge.v1).p;
+            auto p2 = g.node(edge.v2).p;
 
             std::string color = "lightgray";
 
@@ -145,7 +145,7 @@ void write_edge_mapping_svg(
                 << ";stroke-width:2'/>\n";
         }
 
-        for (const auto& v : g.vertices()) {
+        for (const auto& v : g.nodes()) {
             svg << "<circle cx='" << sx(v.p.x)
                 << "' cy='" << sy(v.p.y)
                 << "' r='2' fill='black'/>\n";

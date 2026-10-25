@@ -183,7 +183,7 @@ std::vector<ClusterID> sort_center_indices_by_graph_size(std::vector<const Geome
         sorted_cluster_indices[i] = i;
     }
     std::sort(sorted_cluster_indices.begin(), sorted_cluster_indices.end(), [&](int a, int b){
-        return centers[a]->num_vertices() < centers[b]->num_vertices();
+        return centers[a]->num_nodes() < centers[b]->num_nodes();
     });
     return sorted_cluster_indices;
 }

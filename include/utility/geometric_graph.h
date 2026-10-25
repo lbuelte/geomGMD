@@ -21,25 +21,25 @@ class GeometricGraph {
 
 public:
 
-    struct Vertex {
-        const VertexID id;
+    struct Node {
+        const NodeID id;
         const Point p;
     };
 
     struct Edge {
-        const VertexID v1;
-        const VertexID v2;
+        const NodeID v1;
+        const NodeID v2;
         const double length;
     };
 
     // Reading a graph from JSON: see io/graph_io.h.
-    GeometricGraph(std::vector<Vertex> vertices_, 
+    GeometricGraph(std::vector<Node> nodes_, 
                    std::vector<Edge> edges_, 
                    std::optional<PolygonID> polygon_id_ = std::nullopt, 
                    std::optional<GraphID> graph_id_ = std::nullopt)
         : _polygon_id(polygon_id_)
         , _graph_id(graph_id_)
-        , _vertices(vertices_)
+        , _nodes(nodes_)
         , _edges(edges_)
     {
         build_ordered_adjacency_lists();
@@ -70,36 +70,36 @@ public:
     std::optional<PolygonID> polygon_id() const { return _polygon_id; }
 
     EdgeID num_edges() const { return _edges.size(); }
-    VertexID num_vertices() const {return _vertices.size(); }
+    NodeID num_nodes() const {return _nodes.size(); }
 
-    Vertex vertex(VertexID v) const { 
-        assert(v < _vertices.size());
-        return _vertices[v]; 
+    Node node(NodeID v) const { 
+        assert(v < _nodes.size());
+        return _nodes[v]; 
     }
     Edge edge(EdgeID e) const { 
         assert(e < _edges.size());
         return _edges[e]; 
     }
 
-    auto vertices() const {
-        return std::span<const Vertex>(_vertices);
+    auto nodes() const {
+        return std::span<const Node>(_nodes);
     }
     auto edges() const {
         return std::span<const Edge>(_edges);
     }
-    auto neighbors(VertexID v) const {
+    auto neighbors(NodeID v) const {
         assert(v < _ordered_adjacency_list.size());
-        return std::span<const VertexID>(_ordered_adjacency_list[v]);
+        return std::span<const NodeID>(_ordered_adjacency_list[v]);
     }
-    NeighborID degree(VertexID v) const { 
+    NeighborID degree(NodeID v) const { 
         assert(v < _ordered_adjacency_list.size());
         return _ordered_adjacency_list[v].size(); 
     }
 
     // Returns the neighbors of center that come in the order after start and before end (excluding both)
-    std::vector<VertexID> get_neighbor_sequence(VertexID center, VertexID start, VertexID end) const;
+    std::vector<NodeID> get_neighbor_sequence(NodeID center, NodeID start, NodeID end) const;
     // Returns number of neighbors of center that come in cyclic order between start and end (excluding both)
-    VertexID get_cyclic_order_distance(VertexID center, VertexID start, VertexID end) const;
+    NodeID get_cyclic_order_distance(NodeID center, NodeID start, NodeID end) const;
 
 private :
 
@@ -112,10 +112,10 @@ private :
 
     std::optional<GraphID> _graph_id;
 
-    std::vector<Vertex> _vertices;
+    std::vector<Node> _nodes;
     std::vector<Edge> _edges;
     // This adjacency list always respects the cyclic order of the neighbors
-    std::vector<std::vector<VertexID>> _ordered_adjacency_list; 
+    std::vector<std::vector<NodeID>> _ordered_adjacency_list; 
     std::vector<std::vector<EdgeID>> _adjacency_list_edge_association;
 };
 

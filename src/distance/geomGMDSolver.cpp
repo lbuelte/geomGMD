@@ -8,20 +8,20 @@
 
 namespace{
 
-// Finds all directed paths of length 2 in the graph g, i.e., all triples of vertices (i, j, h)
+// Finds all directed paths of length 2 in the graph g, i.e., all triples of nodes (i, j, h)
 // such that (i, j) and (j, h) are edges in g. The paths ijh and hji are considered different.
 // Further, the function computes the signed or unsigned angle between the two edges (i, j) and (j, h) 
 // for each path and returns it together with the paths.
 std::vector<DirectedPathLength2> findAllPathsOfLength2(GeometricGraph const &G, AngleType const &angle_type) {
     std::vector<DirectedPathLength2> paths;
-    for (auto j: G.vertices()) {
-        for (VertexID i: G.neighbors(j.id)) {
+    for (auto j: G.nodes()) {
+        for (NodeID i: G.neighbors(j.id)) {
             if (i == j.id) continue;
-            for (VertexID h: G.neighbors(j.id)) {
+            for (NodeID h: G.neighbors(j.id)) {
                 if (h == j.id || h == i) continue;
                 auto const angle = (angle_type == AngleType::Signed ?
-                        compute_signed_angle_between_lines(G.vertex(i).p, j.p, G.vertex(h).p) :
-                        compute_unsigned_angle_between_lines(G.vertex(i).p, j.p, G.vertex(h).p));
+                        compute_signed_angle_between_lines(G.node(i).p, j.p, G.node(h).p) :
+                        compute_unsigned_angle_between_lines(G.node(i).p, j.p, G.node(h).p));
                 paths.emplace_back(i, j.id, h, angle);
             }
         }
@@ -180,8 +180,8 @@ GeomGMDForiSolver::GeomGMDForiSolver(GeometricGraph const &G_,
     , G(std::max(G_, H_))
     , H(std::min(H_, G_))
     , swapped(&G != &G_)
-    , nh(H.num_vertices())
-    , ng(G.num_vertices())
+    , nh(H.num_nodes())
+    , ng(G.num_nodes())
     , eh(H.num_edges())
     , eg(G.num_edges())
     , env(GurobiEnvManager::getEnv())
@@ -440,10 +440,10 @@ void GeomGMDForiSolver::add_node_mapping_constraints()
     // Add constraints ensuring a valid node mapping, i.e., 
     // each node in G is mapped to at most one node in H and vice versa.
     for (int i = 0; i < ng; i++){
-        model.addConstr(vecSum(x[i]) <= 1, "Vertex Mapping G");
+        model.addConstr(vecSum(x[i]) <= 1, "Node Mapping G");
     }
     for (int k = 0; k < nh; k++){
-        model.addConstr(colSum(x, k) <= 1, "Vertex Mapping H");
+        model.addConstr(colSum(x, k) <= 1, "Node Mapping H");
     }
 }
 
