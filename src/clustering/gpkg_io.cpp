@@ -98,6 +98,7 @@ void assignClustersToPolygons(
         geomgmd::log::warning("Warning: number of features in input layer (", inLayer->GetFeatureCount(), ") does not match number of cluster ids (", clusterIds.size(), ")");
     }
 
+    size_t num_polygons_without_graph = 0;
     while ((inFeat = inLayer->GetNextFeature()) != nullptr) {
 
         // Get polygon Ids from input geopackage, and corresponding graph id
@@ -115,7 +116,14 @@ void assignClustersToPolygons(
             GDALClose(inDs);
             return;
         }
-        GraphID gid = polygon_id_to_graph_id.at(pid);
+        auto const graph = polygon_id_to_graph_id.find(pid);
+        if (graph == polygon_id_to_graph_id.end()) {
+            // polygon without a graph in the input file: no cluster, left out of the output
+            ++num_polygons_without_graph;
+            OGRFeature::DestroyFeature(inFeat);
+            continue;
+        }
+        GraphID gid = graph->second;
 
         if (gid >= clusterIds.size()) {
             geomgmd::log::warning("Warning: cluster ID out of range for graph id ", gid);
@@ -158,6 +166,10 @@ void assignClustersToPolygons(
         OGRFeature::DestroyFeature(outFeat);
     }
 
+    if (num_polygons_without_graph > 0) {
+        geomgmd::log::warning(num_polygons_without_graph, " polygon(s) of ", inputGpkg,
+                              " have no graph in the input file and are left out");
+    }
     GDALClose(inDs);
     GDALClose(outDs);
 

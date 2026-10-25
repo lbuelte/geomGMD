@@ -1,7 +1,7 @@
 #include "utility/geometric_graph.h"
 
 #include <algorithm>
-#include <iostream>
+#include <string>
 #include <stdexcept>
 
 namespace {
@@ -16,6 +16,19 @@ namespace {
         return ax * by - ay * bx;
     }
 
+    // Position of node id among the neighbors of center; callers only pass neighbors, so anything else is a
+    // programming error
+    std::optional<NeighborID> neighbor_index(std::vector<NodeID> const &neighbors, NodeID center, NodeID id,
+                                             char const *function)
+    {
+        auto it = std::find(neighbors.begin(), neighbors.end(), id);
+        if (it == neighbors.end()) {
+            throw std::logic_error(std::string("GeometricGraph::") + function + ": node " + std::to_string(id)
+                                   + " is not a neighbor of node " + std::to_string(center));
+        }
+        return std::distance(neighbors.begin(), it);
+    }
+
 } // end of anonymous namespace
 
 
@@ -24,23 +37,8 @@ std::vector<NodeID> GeometricGraph::get_neighbor_sequence(NodeID center, NodeID 
     const auto neighbors = _ordered_adjacency_list[center];
    
 
-    auto idx = [&neighbors](NodeID id) -> std::optional<NeighborID> {
-        auto it = std::find(neighbors.begin(), neighbors.end(), id);
-        if (it != neighbors.end()) {
-            return std::distance(neighbors.begin(), it);
-        } else {
-            std::cerr << "Warning: GeometricGraph::get_neighbor_sequence was called with node" 
-                      << id << " not in neighborhood of center!" << std::endl;
-            return std::nullopt;
-        }
-    };
-    auto const start_idx = idx(start);
-    auto const end_idx = idx(end);
-    if (not start_idx.has_value() or not end_idx.has_value()){
-        std::cerr << "Warning: GeometricGraph::get_neighbor_sequence: node not in neighborhood of center " 
-                  << center << "!" << std::endl;
-        return std::vector<NodeID>();
-    }
+    auto const start_idx = neighbor_index(neighbors, center, start, "get_neighbor_sequence");
+    auto const end_idx = neighbor_index(neighbors, center, end, "get_neighbor_sequence");
     if (neighbors.size() <= 2) return std::vector<NodeID>();
 
     std::vector<NodeID> neighbor_sequence;
@@ -60,23 +58,8 @@ std::vector<NodeID> GeometricGraph::get_neighbor_sequence(NodeID center, NodeID 
 NodeID GeometricGraph::get_cyclic_order_distance(NodeID center, NodeID start, NodeID end) const
 {
     const auto neighbors = _ordered_adjacency_list[center];
-    auto idx = [&neighbors](NodeID id) -> std::optional<NeighborID> {
-        auto it = std::find(neighbors.begin(), neighbors.end(), id);
-        if (it != neighbors.end()) {
-            return std::distance(neighbors.begin(), it);
-        } else {
-            std::cerr << "Warning: GeometricGraph::get_cyclic_order_distance was called with node" 
-                      << id << " not in neighborhood of center!" << std::endl;
-            return std::nullopt;
-        }
-    };
-    auto const start_idx = idx(start);
-    auto const end_idx = idx(end);
-    if (not start_idx.has_value() or not end_idx.has_value()){
-        std::cerr << "Warning: GeometricGraph::get_cyclic_order_distance: node not in neighborhood of center " 
-                  << center << "!" << std::endl;
-        return 0;
-    }
+    auto const start_idx = neighbor_index(neighbors, center, start, "get_cyclic_order_distance");
+    auto const end_idx = neighbor_index(neighbors, center, end, "get_cyclic_order_distance");
     if (start_idx.value() < end_idx.value()){
         return end_idx.value() - start_idx.value() - 1;
     }

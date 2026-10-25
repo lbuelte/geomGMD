@@ -115,10 +115,9 @@ auto get_directed_edge_G(auto const i, auto const j, std::vector<std::vector<int
     else if (node_pair_to_zidx_G[j][i] != -1){
         return node_pair_to_zidx_G[j][i];
     }
-    else {
-        std::cerr << "Error: For j adjacent to i, we stored neither the edge ij nor the edge ji." << std::endl;
-        return -1;
-    }       
+    // j is adjacent to i, so one of the two orientations is stored; anything else is a programming error
+    throw std::logic_error("get_directed_edge_G: neither the edge (" + std::to_string(i) + ", " + std::to_string(j)
+                           + ") nor (" + std::to_string(j) + ", " + std::to_string(i) + ") is stored");
 }
 
 } // end of anonymous namespace
