@@ -93,8 +93,6 @@ int run(int argc, char* argv[]) {
 
     // Logging final clustering
     logger::info(clustering_result_to_string(clustering_result, std::string("Final clustering"), starting_instance));
-    
-    logger::close_file();
 
     // Result files (only the clustered graphs, with graph id and polygon id)
     write_clustering_csv(output_path / "clustering.csv", clustering_result, graphs);
@@ -129,9 +127,16 @@ int run(int argc, char* argv[]) {
         }
     }
 
-    assignClustersToPolygons(input_gpkg.string(), output_gpkg.string(), polygon_id_to_graph_id, cluster_ids, is_medoid);
+    // The GeoPackage is optional: without it, the clustering is only written to clustering.csv / clustering.json
+    if (std::filesystem::exists(input_gpkg)) {
+        assignClustersToPolygons(input_gpkg.string(), output_gpkg.string(), polygon_id_to_graph_id, cluster_ids,
+                                 is_medoid);
+    } else {
+        logger::warning("No GeoPackage ", input_gpkg, " with the polygons of the dataset: the clustering is only "
+                        "written to clustering.csv and clustering.json");
+    }
 
-
+    logger::close_file();
     return EXIT_SUCCESS;
 }
 

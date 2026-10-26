@@ -60,6 +60,7 @@ Cleaned-up and documented version of the `sigspatial26` code.
 - `write_distance_matrix` and `write_edgemaps` did not work in all executables.
 - The SVG of a graph contained a stray text node after every edge.
 - Polygons in the GeoPackage without a graph in the input file made `geomGMD_cluster` abort with an unclear message; now they are left out with a warning.
+- Without a GeoPackage, `geomGMD_cluster` printed an error only on the console, after the log file was closed; now it writes a warning to the console and to `run.log` (the GeoPackage is optional). Messages of the GeoPackage output are also written to `run.log`.
 - `IntervalDistance::operator==` was never true.
 
 ### Removed
