@@ -1,0 +1,14 @@
+# Example configuration for the tiny example dataset (examples/tiny/tiny_graphs.json).
+# Run from the repository root, e.g.
+#   ./build/release/geomGMD_pair 0 1 examples/config_tiny.toml
+#   ./build/release/geomGMD_matrix examples/config_tiny.toml
+# All other parameters have their defaults (the settings of the paper), see config_dist.toml.example.
+
+[IO]
+dataset = "tiny"
+input_path = "examples"
+output_path = "output"
+run_name = "tiny"
+
+[Parallel]
+num_threads = 2
