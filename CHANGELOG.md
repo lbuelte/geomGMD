@@ -2,7 +2,7 @@
 
 Changes compared to the tag [`sigspatial26`](https://github.com/lbuelte/geomGMD/tree/sigspatial26), the code that produced the results of the paper. The commit history has one commit per change; commits that change behaviour start with `Fix:` or `Change:`.
 
-## 1.0.0 (unreleased)
+## 1.0.0 (2026-10-26)
 
 Cleaned-up and documented version of the `sigspatial26` code.
 

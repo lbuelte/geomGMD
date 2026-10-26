@@ -16,6 +16,7 @@ authors:
 repository-code: "https://github.com/lbuelte/geomGMD"
 license: MIT
 version: "1.0.0"
+date-released: "2026-10-26"
 abstract: "C++ implementation of geomGMD, a translation- and rotation-invariant similarity measure for geometric graphs, computed exactly with a binary linear program (Gurobi). Used to compare building footprints via their medial axis graphs."
 keywords:
   - geometric graphs
