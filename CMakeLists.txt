@@ -41,6 +41,8 @@ file(GLOB UTILITY_SOURCES CONFIGURE_DEPENDS src/utility/*.cpp)
 add_library(geomGMD_utility ${UTILITY_SOURCES})
 target_include_directories(geomGMD_utility PUBLIC ${PROJECT_SOURCE_DIR}/include)
 target_include_directories(geomGMD_utility SYSTEM PUBLIC ${PROJECT_SOURCE_DIR}/external)
+# The headers need C++20, also in projects that use the libraries
+target_compile_features(geomGMD_utility PUBLIC cxx_std_20)
 geomgmd_enable_warnings(geomGMD_utility)
 
 # Distance: computation of geomGMD with Gurobi
