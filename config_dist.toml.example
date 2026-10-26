@@ -1,27 +1,39 @@
+# Configuration of geomGMD_pair, geomGMD_matrix and geomGMD_plot_edgemaps.
+# Copy this file to config_dist.toml (read from the working directory if no config is given) or pass it on
+# the command line. Commented-out keys show their default values; the defaults of [Gurobi] are the settings
+# of the paper. Unknown sections or keys are errors.
+
 [Gurobi]
-timelimit_sec = 300
-# threads = 1
-# seed = 1
-# mip_gap = 1e-4
-# enforce_cyclic_order = true
-# consider_angle_objective = false
-cost_factor_deletion_insertion = 1.0
-cost_factor_length_difference = 1.0
-cost_factor_angle_difference = 1.0
-# angle_type = "signed"
+# cost_factor_deletion_insertion = 1.0   # c_id: cost per length unit of a deleted or inserted edge
+# cost_factor_length_difference = 1.0    # c_m: cost per length unit of the length difference of a mapped edge
+# cost_factor_angle_difference = 1.0     # c_r: cost per radian of the angle difference of a mapped path
+# timelimit_sec = 300                    # Gurobi time limit per pair
+# threads = 1                            # Gurobi threads per pair (0: chosen by Gurobi)
+# seed = 1                               # Gurobi random seed
+# mip_gap = 1e-4                         # relative MIP gap at which a solution counts as optimal
+# angle_type = "signed"                  # "signed" (paper) or "unsigned" angles of paths
+# consider_angle_objective = true        # false: no path mapping cost
+# enforce_cyclic_order = false           # true: mapped edges must keep their cyclic order around nodes
 
 [IO]
-dataset = "Pennenfeld"
-input_path = "../input/Bonn/Verwaltungsdistrikte/"
-# global_log_file = "../Zentrum-Rheinviertel.log"
-output_path = "../output/Bonn/Verwaltungsdistrikte/"
-run_name = "testing"
-# generate_plots = false
-# write_distance_matrix = false
-# write_edgemaps = false
-# num_instances = 20
-# starting_instance = 0
+dataset = "my_dataset"                   # graphs are read from <input_path>/<dataset>/<dataset>_graphs.json
+input_path = "input"
+output_path = "output"                   # results are written to <output_path>/<dataset>/<run_name>/
+# run_name = "default_run"
+# overwrite = false                      # replace the results of an earlier run (also: --overwrite)
+# global_log_file = "geomGMD.log"        # log file instead of <run folder>/run.log
+# starting_instance = 0                  # use only the graphs starting_instance, ...,
+# num_instances = 20                     #   starting_instance + num_instances - 1 (default: all graphs)
+# write_distance_matrix = true           # intervaldistance_matrix.csv and computation_info.csv
+# write_edgemaps = true                  # edgemaps.json
 
 [Parallel]
-num_threads = 12
-# batch_size = 20
+# num_threads = 4                        # pairs computed in parallel by geomGMD_matrix
+# batch_size = 10                        # pairs handed to a thread at once
+
+[Logging]
+# level = "info"                         # console: "error", "warning", "info" or "debug" (also: --log-level)
+# file_level = "debug"                   # log file (also: --file-log-level)
+# gurobi_log = false                     # write Gurobi's own log to the log file (also: --gurobi-log)
+# gurobi_log_pairs = [[3, 19]]           # with gurobi_log: only these pairs (graph ids) ...
+# gurobi_log_min_gap = 1e-3              # ... and/or pairs whose final MIP gap is larger

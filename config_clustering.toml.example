@@ -1,49 +1,53 @@
+# Configuration of geomGMD_cluster.
+# Copy this file to config_clustering.toml (read from the working directory if no config is given) or pass
+# it on the command line. Commented-out keys show their default values; the defaults of [Gurobi] are the
+# settings of the paper. Unknown sections or keys are errors.
+
 [Gurobi]
-timelimit_sec = 10
-# threads = 1
-# seed = 1
-# mip_gap = 1e-4
-# enforce_cyclic_order = true
-# consider_angle_objective = false
+# The same keys as in config_dist.toml.example, e.g.
 # cost_factor_deletion_insertion = 1.0
 # cost_factor_length_difference = 1.0
 # cost_factor_angle_difference = 1.0
-# angle_type = "signed"
-
-[PAM]
-num_threads_matrix = 8
-
-[Clara]
-# sample_size = 80
-sample_fraction = 0.2
-min_sample_size = 50
-num_samples = 5
-num_threads_assignment = 16
-random_seeds = []
-
-[Clarans]
-# num_local = 2
-# max_neighbors = 100
-# num_threads = 16
-random_seeds_initialization = []
-# random_seed_local_search = 42
+# timelimit_sec = 300
 
 [IO]
-dataset = "Zentrum-Rheinviertel"
-input_path = "../input/Bonn/Verwaltungsdistrikte/"
-# global_log_file = "log.txt"
-output_path = "../output/Bonn/Verwaltungsdistrikte/"
-# run_name = "
-# generate_plots = false
-# write_distance_matrix = false
-# write_edgemaps = false
-# num_instances = 100
-# starting_instance = 0
+dataset = "my_dataset"                   # graphs: <input_path>/<dataset>/<dataset>_graphs.json, polygons
+input_path = "input"                     #   (optional): <input_path>/<dataset>/<dataset>.gpkg
+output_path = "output"                   # results are written to <output_path>/<dataset>/<run_name>/
+# run_name = "PAM_10"                    # default: <algorithm>_<k>
+# overwrite = false                      # replace the results of an earlier run (also: --overwrite)
+# starting_instance = 0                  # cluster only the graphs starting_instance, ...,
+# num_instances = 100                    #   starting_instance + num_instances - 1 (default: all graphs)
+# generate_plots = true                  # SVG plots of the clusters
+# write_distance_matrix = true           # intervaldistance_matrix.csv and computation_info.csv
+# write_edgemaps = true                  # edgemaps.json
 
 [Clustering]
-k = 10
-# clustering_algo = "PAM"   # default; or "CLARA", "CLARANS"
-# parallel = false
-# distance_matrix = "../output/Bonn/Verwaltungsdistrikte/Zentrum-Rheinviertel/matrix/intervaldistance_matrix.csv"
-# compute_missing_distances = false
-# failed_distances = "abort"   # or "infinite", "exclude"
+k = 10                                   # number of clusters
+# clustering_algo = "PAM"                # "PAM" (paper), "CLARA" or "CLARANS"
+# parallel = true                        # compute distances in parallel (threads: see the algorithm sections)
+# distance_matrix = "output/my_dataset/default_run/intervaldistance_matrix.csv"   # reuse geomGMD_matrix results
+# compute_missing_distances = true       # false: stop if distance_matrix lacks a pair
+# failed_distances = "abort"             # pairs without distance: "abort", "infinite" or "exclude" graphs
+
+[PAM]
+# num_threads_matrix = 8
+
+[Clara]
+# sample_size = 100                      # graphs per sample (default: 80 + 2k) ...
+# sample_fraction = 0.2                  # ... or this fraction of the graphs
+# min_sample_size = 50
+# num_samples = 1
+# num_threads_assignment = 8
+# random_seeds = [1]                     # one per sample (missing seeds are random)
+
+[Clarans]
+# num_local = 1                          # number of local searches
+# max_neighbors = 100                    # neighbours examined per local search (at least 1.25 % of k(n - k))
+# num_threads = 8
+# random_seeds_initialization = [1]      # one per local search (missing seeds are random)
+# random_seed_local_search = 42          # default: random
+
+[Logging]
+# level = "info"                         # see config_dist.toml.example
+# file_level = "debug"
