@@ -1,4 +1,5 @@
 cff-version: 1.2.0
+message: "If you use this software, please cite the paper below."
 title: "geomGMD: Translation- and Rotation-Invariant Geometric Graph Mapping Distance for Building Footprint Similarity"
 type: software
 authors:
@@ -13,3 +14,38 @@ authors:
   - family-names: "Mutzel"
     given-names: "Petra"
 repository-code: "https://github.com/lbuelte/geomGMD"
+license: MIT
+version: "1.0.0"
+abstract: "C++ implementation of geomGMD, a translation- and rotation-invariant similarity measure for geometric graphs, computed exactly with a binary linear program (Gurobi). Used to compare building footprints via their medial axis graphs."
+keywords:
+  - geometric graphs
+  - graph edit distance
+  - medial axis
+  - building footprints
+  - polygon similarity
+preferred-citation:
+  type: conference-paper
+  title: "geomGMD: Translation- and Rotation-Invariant Geometric Graph Mapping Distance for Building Footprint Similarity"
+  authors:
+    - family-names: "Bülte"
+      given-names: "Laura"
+    - family-names: "Naumann"
+      given-names: "Alexander"
+    - family-names: "Schlurmann"
+      given-names: "Johanna"
+    - family-names: "Haunert"
+      given-names: "Jan-Henrik"
+    - family-names: "Mutzel"
+      given-names: "Petra"
+  collection-title: "The 34th ACM International Conference on Advances in Geographic Information Systems (SIGSPATIAL '26)"
+  conference:
+    name: "SIGSPATIAL '26"
+    city: "Riverside, CA"
+    country: "US"
+    date-start: "2026-11-03"
+    date-end: "2026-11-06"
+  publisher:
+    name: "ACM"
+  year: 2026
+  month: 11
+  doi: "10.1145/3841645.3844193"
