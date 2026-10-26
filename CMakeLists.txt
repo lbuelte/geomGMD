@@ -12,6 +12,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 option(GEOMGMD_BUILD_CLUSTERING "Build the clustering library and geomGMD_cluster (requires GDAL)" ON)
+option(GEOMGMD_BUILD_TESTS "Build the tests (run with ctest)" ON)
 
 find_package(GUROBI REQUIRED)
 if(GEOMGMD_BUILD_CLUSTERING)
@@ -85,6 +86,11 @@ if(GEOMGMD_BUILD_CLUSTERING)
   add_executable(geomGMD_cluster apps/geomGMD_cluster.cpp)
   target_link_libraries(geomGMD_cluster PRIVATE geomGMD_clustering)
   geomgmd_enable_warnings(geomGMD_cluster)
+endif()
+
+if(GEOMGMD_BUILD_TESTS)
+  enable_testing()
+  add_subdirectory(tests)
 endif()
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
