@@ -1,12 +1,13 @@
 #include "utility/angle_computation.h"
 
-#include <cmath>        // std::fabs, std::atan2, std::cos, std::sin    
+#include <cmath>        // std::fabs, std::atan2, std::cos, std::sin
+#include <numbers>      // std::numbers::pi_v
 
-// Returns the signed angle in radians between the line segments ab and bc, in (-π, π].
-// Positive angles are counter-clockwise rotations from ab to bc. Negative angles are clockwise rotations.
-// In particular, we distinguish between the input (a,b,c) and (c,b,a). 
-// We have here, that angle(a,b,c)=-angle(c,b,a).
-long double compute_signed_angle_between_lines(Point const &a, Point const &b, Point const &c){
+namespace {
+
+// Returns the angle in radians from the segment ba to the segment bc, in (-π, π].
+// Positive angles are counter-clockwise rotations from ba to bc, negative angles clockwise rotations.
+long double angle_minus_pi_to_pi(Point const &a, Point const &b, Point const &c){
 
     // v1 = a - b (incoming edge)
     long double vx1 = a.x - b.x;
@@ -26,14 +27,17 @@ long double compute_signed_angle_between_lines(Point const &a, Point const &b, P
     long double vy2r = vx2 * sin_t + vy2 * cos_t;
 
     // now compute angle of rotated v2
-    long double angle = std::atan2(vy2r, vx2r); // in (-π, π]
-
-    return angle;
+    return std::atan2(vy2r, vx2r); // in (-π, π]
 }
 
-// Returns the signed angle in radians between the line segments ab and bc, in (0, π].
-// This is always the "smaller" angle between the lines.
-// In particular, we do not distinguish between the input (a,b,c) and (c,b,a).
+} // end of anonymous namespace
+
+long double compute_anticlockwise_angle(Point const &a, Point const &b, Point const &c){
+    long double const angle = angle_minus_pi_to_pi(a, b, c);
+    // clockwise rotations by |angle| are anti-clockwise rotations by 2π - |angle|
+    return angle < 0 ? angle + 2 * std::numbers::pi_v<long double> : angle;
+}
+
 long double compute_unsigned_angle_between_lines(Point const &a, Point const &b, Point const &c){
-    return std::fabs(compute_signed_angle_between_lines(a, b, c));
+    return std::fabs(angle_minus_pi_to_pi(a, b, c));
 }

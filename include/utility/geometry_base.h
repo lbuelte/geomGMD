@@ -9,6 +9,9 @@ struct Point {
 };
 
 
+// Angle of a path of length two in the path mapping cost ([Gurobi] angle_type = "signed" / "unsigned"):
+// Signed: anti-clockwise enclosed angle in [0, 2π) as in the paper (the name is kept for the config files);
+// Unsigned: the smaller angle between the two edges, in [0, π].
 enum class AngleType{
         Signed,
         Unsigned

@@ -59,7 +59,7 @@ double path_angle_cost(
 
                 // Angle for path ijh
                 double angle1 = (params.angle_type == AngleType::Signed) ?
-                        compute_signed_angle_between_lines(G.node(i).p, G.node(j).p, G.node(h).p) :
+                        compute_anticlockwise_angle(G.node(i).p, G.node(j).p, G.node(h).p) :
                         compute_unsigned_angle_between_lines(G.node(i).p, G.node(j).p, G.node(h).p);
 
                 // Helper to find middle node of corresponding path in H
@@ -86,7 +86,7 @@ double path_angle_cost(
 
                 // Angle for path klm
                 double angle2 = (params.angle_type == AngleType::Signed) ?
-                        compute_signed_angle_between_lines(H.node(k).p, H.node(l).p, H.node(m).p) :
+                        compute_anticlockwise_angle(H.node(k).p, H.node(l).p, H.node(m).p) :
                         compute_unsigned_angle_between_lines(H.node(k).p, H.node(l).p, H.node(m).p);
 
                 objective_value += params.cost_factor_angle_difference * std::abs(angle1 - angle2);

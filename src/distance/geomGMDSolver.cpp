@@ -10,7 +10,7 @@ namespace{
 
 // Finds all directed paths of length 2 in the graph g, i.e., all triples of nodes (i, j, h)
 // such that (i, j) and (j, h) are edges in g. The paths ijh and hji are considered different.
-// Further, the function computes the signed or unsigned angle between the two edges (i, j) and (j, h) 
+// Further, the function computes the angle (anti-clockwise in [0, 2π), or unsigned) between the edges (i, j) and (j, h)
 // for each path and returns it together with the paths.
 std::vector<DirectedPathLength2> findAllPathsOfLength2(GeometricGraph const &G, AngleType const &angle_type) {
     std::vector<DirectedPathLength2> paths;
@@ -20,7 +20,7 @@ std::vector<DirectedPathLength2> findAllPathsOfLength2(GeometricGraph const &G, 
             for (NodeID h: G.neighbors(j.id)) {
                 if (h == j.id || h == i) continue;
                 auto const angle = (angle_type == AngleType::Signed ?
-                        compute_signed_angle_between_lines(G.node(i).p, j.p, G.node(h).p) :
+                        compute_anticlockwise_angle(G.node(i).p, j.p, G.node(h).p) :
                         compute_unsigned_angle_between_lines(G.node(i).p, j.p, G.node(h).p));
                 paths.emplace_back(i, j.id, h, angle);
             }

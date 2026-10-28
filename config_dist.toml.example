@@ -11,7 +11,7 @@
 # threads = 1                            # Gurobi threads per pair (0: chosen by Gurobi)
 # seed = 1                               # Gurobi random seed
 # mip_gap = 1e-4                         # relative MIP gap at which a solution counts as optimal
-# angle_type = "signed"                  # "signed" (paper) or "unsigned" angles of paths
+# angle_type = "signed"                  # "signed": anti-clockwise path angles in [0, 2π) (paper); "unsigned": [0, π]
 # consider_angle_objective = true        # false: no path mapping cost
 # enforce_cyclic_order = false           # true: mapped edges must keep their cyclic order around nodes
 

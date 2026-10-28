@@ -74,9 +74,9 @@ int main(int argc, char* argv[])
 
     // Rectangle edges 0 (to (7, 3), 0°) and 1 (to (0, 0), 225°) at node 0 mapped to two square edges at its
     // centre (edge 0 to (0, 0), 225°; edge 1 to (8, 0), 315°). Both mapped paths of length two (one per
-    // direction) count. The signed angles are measured in (-pi, pi] (as in sigspatial26; the paper defines
-    // [0, 2 pi), see the planned angle fix): -135° / 135° in the rectangle. Matching orientation (-90° / 90°
-    // in the square): 45° per path. Opposite orientation (90° / -90°): 225° per path ([0, 2 pi): 135°).
+    // direction) count; their anti-clockwise angles are 225° / 135° in the rectangle. Matching orientation
+    // (270° / 90° in the square): 45° per path. Opposite orientation (90° / 270°): 135° per path.
+    // (Up to version 1.0.0, angles were measured in (-pi, pi], which gave 225° per path here.)
     {
         // square edge 1 goes to (8, 0) (315°), edge 0 to (0, 0) (225°)
         auto const map = edge_map(rectangle, square, {{0, 1}, {1, 0}});
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
 
         auto const swapped = compute_mapping_cost(rectangle, square, edge_map(rectangle, square, {{0, 0}, {1, 1}}),
                                                   paper);
-        CHECK_NEAR(swapped.path_angle, 2 * 5 * pi / 4, 1e-12);
+        CHECK_NEAR(swapped.path_angle, 2 * 3 * pi / 4, 1e-12);
 
         ModelParameters weighted = paper;
         weighted.cost_factor_length_difference = 3.0;

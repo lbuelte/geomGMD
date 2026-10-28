@@ -12,6 +12,7 @@ function(geomgmd_add_test name library)
 endfunction()
 
 geomgmd_add_test(test_geometric_graph geomGMD_io ${TINY_GRAPHS})
+geomgmd_add_test(test_angles geomGMD_utility)
 geomgmd_add_test(test_mapping_cost geomGMD_io ${TINY_GRAPHS})
 geomgmd_add_test(test_config geomGMD_io)
 geomgmd_add_test(test_geomGMD_values geomGMD_io ${TINY_GRAPHS})
