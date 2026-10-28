@@ -176,7 +176,8 @@ public:
     // Status, MIP gap and node count of the last run_optimization() (only read from Gurobi).
     SolveStatistics solve_statistics() const { return statistics; }
     // Constrained edge map of the computed solution, between the solver's G and H (see g_graph_id/h_graph_id;
-    // the solver uses the graph with more edges as G). Empty if no solution was computed.
+    // the solver uses the graph with more edges as G). If Gurobi found no solution, the trivial edge map
+    // (all edges of G deleted, all edges of H inserted).
     EdgeMap return_edge_map();
     // True if the solver's G is the caller's second graph, i.e. the edge map and the run info refer to
     // the graphs in swapped order (compute_geomGMD transposes them back).
@@ -233,6 +234,9 @@ private:
 
     std::vector<DirectedPathLength2> directed_paths_G;
     std::vector<DirectedPathLength2> directed_paths_H;
+
+    // Cost of the trivial edge map (all edges deleted and inserted), an upper bound of geomGMD
+    double trivial_upper_bound() const;
 
     void create_node_and_edge_variables();
     void create_path_variables();

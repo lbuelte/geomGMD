@@ -315,8 +315,10 @@ DistanceResult GeomGMDForiSolver::run_optimization()
             return CutoffHit{ model.get(GRB_DoubleAttr_ObjBound) };
         }
         else if (status == GRB_TIME_LIMIT) {
-            return IntervalDistance( lower_bound(), 
-                                        model.get(GRB_DoubleAttr_ObjVal) );
+            // Without a solution, the trivial edge map (delete and insert everything) gives the upper bound
+            double const upper_bound = model.get(GRB_IntAttr_SolCount) > 0 ? model.get(GRB_DoubleAttr_ObjVal)
+                                                                            : trivial_upper_bound();
+            return IntervalDistance(lower_bound(), upper_bound);
         } else if (status == GRB_INFEASIBLE) {
             // Without a cutoff the model is always feasible (deleting all edges is a valid constrained
             // edge map). With a cutoff, Gurobi may report INFEASIBLE instead of CUTOFF if no solution
@@ -349,8 +351,11 @@ DistanceResult GeomGMDForiSolver::run_optimization()
 EdgeMap GeomGMDForiSolver::return_edge_map()
 {
     if (model.get(GRB_IntAttr_SolCount) == 0){
-        // No solution was computed (callers only request the edge map after a successful optimization)
-        return EdgeMap{G.optional_graph_id(), H.optional_graph_id(), {}};
+        // No solution was computed (time limit): the trivial edge map, see trivial_upper_bound()
+        std::vector<EdgeMap::EdgePair> pairs;
+        for (EdgeID e = 0; e < G.num_edges(); ++e) pairs.emplace_back(e, std::nullopt);
+        for (EdgeID e = 0; e < H.num_edges(); ++e) pairs.emplace_back(std::nullopt, e);
+        return EdgeMap{G.optional_graph_id(), H.optional_graph_id(), std::move(pairs)};
     }
 
     double tol = model.get(GRB_DoubleParam_IntFeasTol);
@@ -382,6 +387,14 @@ EdgeMap GeomGMDForiSolver::return_edge_map()
         }
     }
     return EdgeMap{G.optional_graph_id(), H.optional_graph_id(), std::move(pairs)};
+}
+
+double GeomGMDForiSolver::trivial_upper_bound() const
+{
+    double length = 0;
+    for (auto const &e : G.edges()) length += e.length;
+    for (auto const &e : H.edges()) length += e.length;
+    return params.cost_factor_deletion_insertion * length;
 }
 
 void GeomGMDForiSolver::create_node_and_edge_variables()
