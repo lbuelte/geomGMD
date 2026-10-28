@@ -1,5 +1,6 @@
 // geomGMD of all pairs of the tiny example graphs with the paper settings must equal the values computed with
-// the sigspatial26 version (the code of the paper results). Also checks that every returned edge map is a
+// the sigspatial26 version (the code of the paper results); the fixes of version 2.0.0 (path angles in [0, 2π),
+// no induced edge maps) do not change them for these graphs. Also checks that every returned edge map is a
 // valid constrained edge map whose cost equals the distance, and that geomGMD is symmetric.
 // Needs a Gurobi licence (skipped otherwise).
 //

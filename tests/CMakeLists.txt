@@ -16,6 +16,7 @@ geomgmd_add_test(test_angles geomGMD_utility)
 geomgmd_add_test(test_mapping_cost geomGMD_io ${TINY_GRAPHS})
 geomgmd_add_test(test_config geomGMD_io)
 geomgmd_add_test(test_geomGMD_values geomGMD_io ${TINY_GRAPHS})
+geomgmd_add_test(test_constrained_edge_map geomGMD_distance)
 
 # Application test of geomGMD_matrix
 add_executable(gurobi_check gurobi_check.cpp)

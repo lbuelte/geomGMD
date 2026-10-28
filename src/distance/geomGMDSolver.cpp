@@ -491,17 +491,9 @@ void GeomGMDForiSolver::add_node_edge_linking_constraints()
             }
         }
     }
-    // These are already implied for an optimal solution, but may help optimization
-    for (auto const &edgeG : G.edges()){
-        auto const i = edgeG.v1;
-        auto const j = edgeG.v2;
-        for (auto const &edgeH :H.edges()){
-            auto const k = edgeH.v1;
-            auto const l = edgeH.v2;
-            model.addConstr(z[node_pair_to_zidx_G[i][j]][node_pair_to_zidx_H[k][l]] >= x[i][k] + x[j][l] - 1);
-            model.addConstr(z[node_pair_to_zidx_G[i][j]][node_pair_to_zidx_H[l][k]] >= x[i][l] + x[j][k] - 1);
-        }
-    }
+    // No constraints z_ij,kl >= x_ik + x_jl - 1: they would force every edge whose end nodes are mapped onto the
+    // end nodes of an edge to be mapped (an induced edge map). With path mapping costs, deleting ij and inserting
+    // kl can be cheaper, and geomGMD minimizes over all constrained edge maps (paper, Remark 5.6).
 }
 
 void GeomGMDForiSolver::add_edge_path_linking_constraints()
