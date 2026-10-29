@@ -10,7 +10,7 @@ This repository contains the C++ implementation of the paper:
 
 The medial axis graphs of polygons are computed with the separate repository [polygon-medial-axis-graph](https://github.com/lbuelte/polygon-medial-axis-graph), see [Preparing your own data](#preparing-your-own-data).
 
-**Reproducing the paper:** the code used for the results in the paper is the tag [`sigspatial26`](https://github.com/lbuelte/geomGMD/tree/sigspatial26), see [Paper version](#paper-version). The `main` branch is a cleaned-up and documented version of that code that computes the same distances; [CHANGELOG.md](CHANGELOG.md) lists all changes.
+**Reproducing the paper:** the code used for the results in the paper is the tag [`sigspatial26`](https://github.com/lbuelte/geomGMD/tree/sigspatial26), see [Paper version](#paper-version). The `main` branch is a cleaned-up and documented version of that code. Since version 2.0.0, it also corrects deviations from the definitions of the paper, so some distances differ from those in the paper. [CHANGELOG.md](CHANGELOG.md) lists all changes.
 
 ## What geomGMD computes
 
@@ -23,7 +23,7 @@ geomGMD compares two geometric graphs *G* and *H* by mapping edges of *G* to edg
   - *c*<sub>r</sub> · |*α*(*q*) − *α*(*ρ*(*q*))| for every path *q* of two mapped edges, where *α* is the angle enclosed at the middle node and *ρ*(*q*) is the image of the path (path mapping cost).
 - **geomGMD** is the minimum cost over all constrained edge maps. It is a metric for *c*<sub>m</sub> = *c*<sub>id</sub>.
 
-Computing geomGMD is NP-hard. It is computed exactly by a binary linear program (BLP), solved with Gurobi. Besides the distance, the computed edge map is returned. If the time limit is reached, the result is an interval: the best lower bound and the cost of the best edge map found.
+Computing geomGMD is NP-hard. It is computed exactly by a binary linear program (BLP), solved with Gurobi. Besides the distance, the computed edge map is returned. If the time limit is reached, the result is an interval: the best lower bound and the cost of the best edge map found. If no edge map was found, the upper bound is the cost of deleting all edges of *G* and inserting all edges of *H*.
 
 ## Requirements
 
@@ -75,7 +75,7 @@ Run the tests with
 ctest --test-dir build/release --output-on-failure
 ```
 
-The tests that compute geomGMD need a Gurobi licence. Without one, they are reported as skipped. One of them checks that the distances of the example graphs are those of the paper version.
+The tests that compute geomGMD need a Gurobi licence. Without one, they are reported as skipped. One of them checks that the distances of the example graphs are those of the paper version; the corrections of version 2.0.0 do not change them.
 
 ## Quick start
 
@@ -266,7 +266,15 @@ To use the tagged version, note:
 - Its executables have other names: `SingleDistance` (now `geomGMD_pair`), `modGEDComputations` (`geomGMD_matrix`), `PlotNodemaps` (`geomGMD_plot_edgemaps`) and `PolygonClustering` (`geomGMD_cluster`).
 - Its built-in defaults differ from the paper settings (e.g. `cost_factor_angle_difference = 2.0`, `timelimit_sec = 60`), so set all parameters in the config file, as in its `config_dist.toml.example`.
 
-The current version computes the same distances as the tagged version; the tests check this for the example graphs. The changes, e.g. in the output formats, are listed in [CHANGELOG.md](CHANGELOG.md).
+The tag [`v1.0.0`](https://github.com/lbuelte/geomGMD/tree/v1.0.0) is a cleaned-up version of the paper code that computes the same distances.
+
+Version 2.0.0 corrects three points in which the paper code deviates from the definitions in the paper:
+
+- The paper code measured path angles in (−π, π] instead of anti-clockwise in [0, 2π). Mapping a path that bends slightly to the left onto one that bends slightly to the right then cost almost 2π instead of almost 0.
+- The BLP of the paper code also contained the constraints z<sub>ij,kl</sub> ≥ x<sub>ik</sub> + x<sub>jl</sub> − 1. They restrict the minimum to induced edge maps, which the paper explicitly does not do (Remark 5.6).
+- If Gurobi found no edge map within the time limit, the upper bound was 10¹⁰⁰.
+
+Because of the first two points, some distances computed with the current version differ from those of the paper code; most of them are smaller. For 408 pairs of building footprints, 42 distances became smaller by more than 10⁻⁴ (relative), by up to 19 %; none became larger. The details and all other changes, e.g. in the output formats, are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## Citation
 
@@ -300,4 +308,4 @@ Third-party components:
 
 ## Use of AI
 
-The code used for the paper (tag `sigspatial26`) was written by the authors without AI assistance. The preparation of this repository for publication was done with the help of the AI model Claude Opus 5.5 (Anthropic), using Claude Code: restructuring and commenting the code, the configuration and command line interface, the bug fixes listed in [CHANGELOG.md](CHANGELOG.md) and in the commit history, the tests and example data, and the documentation. All changes were directed and reviewed by the authors, and the computed distances were checked against those of the paper's code.
+The code used for the paper (tag `sigspatial26`) was written by the authors without AI assistance. The preparation of this repository for publication was done with the help of the AI model Claude Opus 5.5 (Anthropic), using Claude Code: restructuring and commenting the code, the configuration and command line interface, the bug fixes listed in [CHANGELOG.md](CHANGELOG.md) and in the commit history, the tests and example data, and the documentation. All changes were directed and reviewed by the authors. The distances computed by version 1.0.0 were checked against those of the paper's code; the corrections of version 2.0.0 were tested on the building footprints of all districts of Bonn.

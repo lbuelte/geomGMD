@@ -2,6 +2,22 @@
 
 Changes compared to the tag [`sigspatial26`](https://github.com/lbuelte/geomGMD/tree/sigspatial26), the code that produced the results of the paper. The commit history has one commit per change; commits that change behaviour start with `Fix:` or `Change:`.
 
+## 2.0.0 (2026-10-29)
+
+Corrections that make the computation follow the definitions of the paper.
+
+**geomGMD values change** compared to `sigspatial26` and 1.0.0. Most changed distances become smaller. For 408 pairs of real building footprints, 42 distances changed by more than Gurobi's relative MIP gap of 10⁻⁴; all of them became smaller, by up to 19 %. The distances of the example graphs in `examples/tiny` do not change. To reproduce the values of the paper, use the tag `sigspatial26`, or `v1.0.0` for the cleaned-up version of the same code.
+
+### Fixed
+
+- **Path angles** are measured anti-clockwise in [0, 2π), as defined in the paper. Before, they were measured in (−π, π]. With the old range, a path that bends slightly to the left and one that bends slightly to the right got angles near π and −π. Mapping one onto the other then cost almost 2π instead of almost 0. This affects `angle_type = "signed"` (the default); `"unsigned"` is unchanged.
+- **geomGMD is minimized over all constrained edge maps**, as defined in the paper. Before, the BLP contained the constraints z<sub>ij,kl</sub> ≥ x<sub>ik</sub> + x<sub>jl</sub> − 1. These forced every edge whose end nodes are mapped onto the end nodes of an edge to be mapped as well, which restricted the minimum to induced edge maps (paper, Remark 5.6). With path mapping costs, deleting such an edge and inserting its counterpart can be cheaper, so some distances were too high. Also, the triangle inequality was not guaranteed for the old values.
+- **Time limit without a solution:** if Gurobi found no edge map within the time limit, the upper bound was 10¹⁰⁰ and the edge map was empty. Now the upper bound is the cost of the trivial edge map, which deletes all edges of *G* and inserts all edges of *H*. That edge map is returned.
+
+### Added
+
+- Tests for the path angles and for a pair whose optimal edge map is not induced.
+
 ## 1.0.0 (2026-10-26)
 
 Cleaned-up and documented version of the `sigspatial26` code.
